@@ -25,7 +25,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Fits_Cs
+namespace FitsCs
 {
     public class DataBlob
     {
