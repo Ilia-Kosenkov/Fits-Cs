@@ -20,30 +20,50 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using FitsCs;
+using System;
+using System.Buffers;
+using System.Text;
+using FitsCs.Internals;
 
-namespace Tests
+namespace FitsCs
 {
-    class Program
+    public class FitsKey
     {
-        static async Task<int> Main(string[] args)
+        public const int NameSize = 8;
+        public const int EqualsPos = 8;
+        public const int ValueStart = 10;
+        public const int EntrySize = 80;
+
+        private static readonly int AsciiCharSize = Encoding.ASCII.GetMaxCharCount(1);
+
+        public static bool IsValidKeyName(ReadOnlySpan<byte> input)
         {
-            var name = @"WFPC2ASSNu5780205bx.fits";
-            using (var fileStream = new FileStream(name, FileMode.Open, FileAccess.Read))
-                using (var reader = new FitsReader(fileStream, 1))
+            bool IsAllowed(char c)
+            {
+                return char.IsUpper(c)
+                       || char.IsDigit(c)
+                       || c == ' '
+                       || c == '-'
+                       || c == '_';
+            }
+
+            if (input.Length == NameSize)
+            {
+                var buffer = ArrayPool<char>.Shared.Rent(NameSize * AsciiCharSize);
+                var charSpan = buffer.AsSpan(0, NameSize * AsciiCharSize);
+
+                Encoding.ASCII.GetChars(input, charSpan);
+                try
                 {
-                    var blobs = await reader.ReadBlockAsync(23);
-                    var all = blobs.Select(y => y.TestIsKeywordsWeak()).ToImmutableList();
-                    var all2 = blobs.Select(y => y.TestIsKeywordsStrong()).ToImmutableList();
+                    return charSpan.All(IsAllowed);
                 }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
+            }
 
-
-
-            return 0;
+            return false;
         }
     }
 }

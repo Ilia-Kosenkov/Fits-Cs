@@ -21,10 +21,12 @@
 //     SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using FitsCs.Internals;
 
 namespace FitsCs
 {
@@ -68,11 +70,24 @@ namespace FitsCs
 
         public async Task<DataBlob> ReadAsync(CancellationToken token = default)
         {
-            var blob = new DataBlob();
-            return await blob.TryInitializeAsync(_stream, token)
-                ? blob
-                : null;
+            var buffer = ArrayPool<byte>.Shared.Rent(DataBlob.SizeInBytes);
 
+            try
+            {
+                var n = await _stream.ReadAsync(buffer, 0, DataBlob.SizeInBytes, token);
+                if(n != DataBlob.SizeInBytes)
+                    throw new InvalidOperationException("Failed to read whole blob");
+
+                var blob = new DataBlob();
+                if(!blob.TryInitialize(buffer))
+                        throw new InvalidOperationException("Failed to copy data.");
+
+                return blob;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         public Task<ImmutableArray<DataBlob>> ReadBlockAsync(int n, CancellationToken token = default)
@@ -155,13 +170,12 @@ namespace FitsCs
 
             for (var i = 0; i < nBlobs; i++)
             {
-                var blob = new DataBlob();
-                if (!await blob.TryInitializeAsync(_stream, token))
-                    break;
+                var blob = await ReadAsync(token);
                 builder.Add(blob);
             }
 
             return builder.ToImmutable();
         }
+
     }
 }
