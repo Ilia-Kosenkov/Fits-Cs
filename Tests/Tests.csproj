@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Compatibility.Bridge">
+      <HintPath>..\..\Compatibility.Bridge\Compatibility.Bridge\bin\Debug\netstandard2.0\Compatibility.Bridge.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />

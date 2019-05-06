@@ -21,12 +21,6 @@
 //     SOFTWARE.
 
 using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
-using FitsCs.Internals;
 
 namespace FitsCs
 {
@@ -35,12 +29,13 @@ namespace FitsCs
         public const int KeysPerBlob = SizeInBytes / FitsKey.EntrySize;
         public const int SizeInBytes = 2880;
         private readonly byte[] _data;
-        private readonly ReadOnlyMemory<byte> _rMemory;
         public bool IsInitialized { get; private set; }
+        public ReadOnlyMemory<byte> Memory { get; }
+
         public DataBlob()
         {
             _data = new byte[SizeInBytes];
-            _rMemory = new ReadOnlyMemory<byte>(_data);
+            Memory = new ReadOnlyMemory<byte>(_data);
         }
 
         public bool TryInitialize(ReadOnlySpan<byte> span)
@@ -65,23 +60,23 @@ namespace FitsCs
 
         public bool TestIsKeywordsWeak()
         {
-            var isFirstKey = FitsKey.IsValidKeyName(_rMemory.Span.Slice(0, FitsKey.NameSize));
+            var isFirstKey = FitsKey.IsValidKeyName(Memory.Span.Slice(0, FitsKey.NameSize));
             if (!isFirstKey)
                 return false;
 
-            var lastKeySpan = _rMemory.Span.Slice(_rMemory.Length - FitsKey.EntrySize, FitsKey.NameSize);
+            var lastKeySpan = Memory.Span.Slice(Memory.Length - FitsKey.EntrySize, FitsKey.NameSize);
 
             return FitsKey.IsValidKeyName(lastKeySpan);
         }
 
         public bool TestIsKeywordsStrong()
         {
-            var isFirstKey = FitsKey.IsValidKeyName(_rMemory.Span.Slice(0, FitsKey.NameSize));
+            var isFirstKey = FitsKey.IsValidKeyName(Memory.Span.Slice(0, FitsKey.NameSize));
             if (!isFirstKey)
                 return false;
 
             for (var i = 1; i < KeysPerBlob; i++)
-                if (!FitsKey.IsValidKeyName(_rMemory.Span.Slice(i * FitsKey.EntrySize, FitsKey.NameSize)))
+                if (!FitsKey.IsValidKeyName(Memory.Span.Slice(i * FitsKey.EntrySize, FitsKey.NameSize)))
                     return false;
 
             return true;

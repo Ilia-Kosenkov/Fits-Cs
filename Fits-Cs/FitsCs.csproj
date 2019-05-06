@@ -19,4 +19,10 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Compatibility.Bridge">
+      <HintPath>..\..\Compatibility.Bridge\Compatibility.Bridge\bin\Debug\netstandard2.0\Compatibility.Bridge.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

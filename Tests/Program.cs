@@ -20,10 +20,14 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
+using Compatibility.Bridge;
 using FitsCs;
 
 namespace Tests
@@ -32,16 +36,36 @@ namespace Tests
     {
         static async Task<int> Main(string[] args)
         {
-            var name = @"WFPC2ASSNu5780205bx.fits";
-            using (var fileStream = new FileStream(name, FileMode.Open, FileAccess.Read))
-                using (var reader = new FitsReader(fileStream, 1))
-                {
-                    var blobs = await reader.ReadBlockAsync(23);
-                    var all = blobs.Select(y => y.TestIsKeywordsWeak()).ToImmutableList();
-                    var all2 = blobs.Select(y => y.TestIsKeywordsStrong()).ToImmutableList();
-                }
+            try
+            {
+                var name = @"WFPC2ASSNu5780205bx.fits";
+                using (var fileStream = new FileStream(name, FileMode.Open, FileAccess.Read))
+                    using (var reader = new FitsReader(fileStream, 1))
+                    {
+                        var blobs = await reader.ReadBlockAsync(23);
+
+                        var keys = blobs.Where(x => x.TestIsKeywordsWeak()).SelectMany(x =>
+                        {
+                            var span = x.Memory.Span;
+                            var collection = new List<FitsKey>(DataBlob.KeysPerBlob);
+                            for (var i = 0; i < DataBlob.KeysPerBlob; i++)
+                                collection.Add(FitsKey.Create(span.Slice(i * FitsKey.EntrySizeInBytes,
+                                    FitsKey.EntrySizeInBytes)));
+                            return collection;
+                        }, (x, y) => y).ToImmutableList();
+
+                        foreach (var item in keys.Where(x => !x.IsEmpty).Select(x => x is BoolFitsKey b
+                            ? b.WithUpdates(y => y.Name = @"TEST")
+                            : x))
+                            Console.WriteLine(item.ToString(true));
+                    }
 
 
+            }
+            catch (Exception e)
+            {
+                
+            }
 
             return 0;
         }

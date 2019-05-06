@@ -26,7 +26,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using FitsCs.Internals;
 
 namespace FitsCs
 {
