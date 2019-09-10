@@ -25,24 +25,23 @@ using System;
 
 namespace FitsCs
 {
-    public sealed class FloatFitsKey : FitsKey
+    public sealed class FixedBoolKey : FixedFitsKey, IFitsValue<bool>
     {
+        private const int FieldSize = 20;
+        private const char TrueConst = 'T';
+        private const char FalseConst = 'F';
+        private protected override string TypePrefix => @"[   int]";
+
         public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public override string ToString(bool prefixType)
-        {
-            return ToString();
-        }
+        public bool RawValue { get; }
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
-        {
-            throw new NotImplementedException();
-        }
+            => FormatFixed(span, string.Format($"{{0,{FieldSize}}}", RawValue ? TrueConst : FalseConst),
+                out charsWritten);
 
-        public float RawValue { get; }
 
-        public FloatFitsKey(string name, float value, string comment = "")
-            : base(name, comment)
+        internal FixedBoolKey(string name, bool value, string comment) : base(name, comment)
         {
             RawValue = value;
         }

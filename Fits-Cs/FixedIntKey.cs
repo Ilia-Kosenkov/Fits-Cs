@@ -20,28 +20,29 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
-
 using System;
+
 
 namespace FitsCs
 {
-    public sealed class MetaFitsKey : FitsKey
+    public sealed class FixedIntKey : FixedFitsKey, IFitsValue<int>
     {
-        public override object Value => null;
-        public override bool IsEmpty => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Comment);
-        public override string ToString(bool prefixType)
-        {
-            return ToString();
-        }
+        private const int FieldSize = 20;
+        private protected override string TypePrefix => @"[   int]";
+
+        public override object Value => RawValue;
+        public override bool IsEmpty => false;
+        public int RawValue { get; }
+
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
+            => FormatFixed(span, string.Format($"{{0,{FieldSize}}}", RawValue), out charsWritten);
+
+        internal FixedIntKey(string name, int value, string comment = "") : base(name, comment)
         {
-            throw new NotImplementedException();
+            ValidateInput(name, comment, FieldSize);
+            RawValue = value;
         }
 
-        public MetaFitsKey(string name, string comment)
-            : base(name, comment)
-        {
-        }
     }
 }

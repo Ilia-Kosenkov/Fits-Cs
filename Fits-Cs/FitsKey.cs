@@ -23,14 +23,13 @@
 using System;
 using System.Buffers;
 using System.Collections.Immutable;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using IndexRange;
 using MemoryExtensions;
 using TextExtensions;
+
+using static Internal.UnsafeUtils.Utils;
 
 namespace FitsCs
 {
@@ -40,9 +39,8 @@ namespace FitsCs
         Fixed,
         Free
     }
-    public abstract class FitsKey
+    public abstract class FitsKey : IFitsValue
     {
-        private const string FormatError = @"[FormatError]";
         public const int NameSize = 8;
         public const int EqualsPos = 8;
         public const int ValueStart = 10;
@@ -59,6 +57,8 @@ namespace FitsCs
             typeof(bool),
             typeof(System.Numerics.Complex)
         }.ToImmutableList();
+
+        private protected virtual string TypePrefix => @"[  null]";
 
         public string Name { get; }
         public string Comment { get; }
@@ -78,16 +78,45 @@ namespace FitsCs
             Comment = comment ?? string.Empty;
         }
 
-        public override string ToString() => FormatError;
+        public override string ToString()
+        {
+            var pool = ArrayPool<char>.Shared.Rent(EntrySize);
+            try
+            {
+                var span = pool.AsSpan(0, EntrySize);
+                return TryFormat(span, out var chars)
+                    ? span.Slice(0, chars).ToString()
+                    : base.ToString();
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(pool, true);
+            }
+        }
 
-        public abstract string ToString(bool prefixType);
+        public string ToString(bool prefixType)
+            => prefixType ? TypePrefix + ToString() : ToString();
         
         public abstract bool TryFormat(Span<char> span, out int charsWritten);
-
-
-        static FitsKey()
+        public bool TryGetBytes(Span<byte> span)
         {
+            if (span.Length < EntrySizeInBytes)
+                return false;
+            var charBuff = ArrayPool<char>.Shared.Rent(EntrySize);
+            try
+            {
+                var charSpan = charBuff.AsSpan(0, EntrySize);
+                charSpan.Fill(' ');
+                if (!TryFormat(charSpan, out _))
+                    return false;
 
+                var nBytes = Encoding.GetBytes(charSpan, span);
+                return nBytes > 0 && nBytes < EntrySizeInBytes;
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(charBuff, true);
+            }
         }
 
         private static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
@@ -202,37 +231,6 @@ namespace FitsCs
             return false;
         }
 
-        public static FitsKey Create(ReadOnlySpan<byte> input)
-        {
-            var (name, value, comment) = ParseRawData(input);
-
-            if(string.IsNullOrEmpty(value))
-                return new MetaFitsKey(name, comment);
-
-            var span = value.AsSpan();
-            if (span[0] == '=')
-            {
-                var lastSymb = char.ToUpper(span.Get(-1));
-                if(lastSymb == 'T')
-                    return new BoolFitsKey(name, true, comment);
-                if(lastSymb == 'F')
-                    return new BoolFitsKey(name, false, comment);
-
-                var valSpan = span.Slice(1).Trim();
-                if (valSpan[0] == '\'' && valSpan.Get(-1) == '\'')
-                    return new StringFitsKey(name, valSpan.Slice((1, -1)).Trim().ToString().Replace("\'\'", "\'"), comment);
-
-                var valStr = valSpan.ToString();
-
-                if (int.TryParse(valStr, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var iVal))
-                    return new FixedIntKey(name, iVal, comment);
-                if (float.TryParse(valStr, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var fVal))
-                    return new FloatFitsKey(name, fVal, comment);
-            }
-            // TODO : Treat special cases
-            return null;
-        }
-
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed)
         {
             if (type == KeyType.Free)
@@ -282,7 +280,12 @@ namespace FitsCs
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {
             ValidateType<T>();
-            throw new NotSupportedException();
+            var t = typeof(T);
+            if(t == typeof(bool))
+                return new FixedBoolKey(name, UnsafeSpecify<bool, T>(value), comment) as IFitsValue<T>;
+            if(t == typeof(int))
+                return new FixedIntKey(name, UnsafeSpecify<int, T>(value), comment) as IFitsValue<T>;
+            return null;
         }
     }
 }

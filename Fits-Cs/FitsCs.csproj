@@ -29,6 +29,9 @@
     <Reference Include="IndexRange">
       <HintPath>..\..\..\Compatibility\src\IndexRange\bin\x64\Debug\netstandard2.0\IndexRange.dll</HintPath>
     </Reference>
+    <Reference Include="Intenral.UnsafeUtils">
+      <HintPath>..\..\Internal\src\UnsafeUtils\bin\Debug\netstandard2.0\Intenral.UnsafeUtils.dll</HintPath>
+    </Reference>
     <Reference Include="MemoryExtensions">
       <HintPath>..\..\..\Compatibility\src\MemoryExtensions\bin\x64\Debug\netstandard2.0\MemoryExtensions.dll</HintPath>
     </Reference>
