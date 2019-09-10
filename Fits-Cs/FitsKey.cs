@@ -22,7 +22,11 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Immutable;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using IndexRange;
 using MemoryExtensions;
@@ -38,15 +42,23 @@ namespace FitsCs
     }
     public abstract class FitsKey
     {
-      
-
+        private const string FormatError = @"[FormatError]";
         public const int NameSize = 8;
         public const int EqualsPos = 8;
         public const int ValueStart = 10;
         public const int EntrySize = 80;
 
-        private static readonly int AsciiCharSize = Encoding.ASCII.GetMaxCharCount(1);
-        public static readonly int EntrySizeInBytes = EntrySize * AsciiCharSize;
+        private protected static Encoding Encoding { get; } = Encoding.ASCII;
+        private static  int AsciiCharSize { get; } = Encoding.GetMaxCharCount(1);
+        public static int EntrySizeInBytes { get; }= EntrySize * AsciiCharSize;
+        public static IImmutableList<Type> AllowedTypes { get; } = new[]
+        {
+            typeof(int),
+            typeof(float),
+            typeof(string),
+            typeof(bool),
+            typeof(System.Numerics.Complex)
+        }.ToImmutableList();
 
         public string Name { get; }
         public string Comment { get; }
@@ -66,8 +78,10 @@ namespace FitsCs
             Comment = comment ?? string.Empty;
         }
 
-        public abstract string ToString(bool prefixType);
+        public override string ToString() => FormatError;
 
+        public abstract string ToString(bool prefixType);
+        
         public abstract bool TryFormat(Span<char> span, out int charsWritten);
 
 
@@ -91,7 +105,7 @@ namespace FitsCs
                 : i;
         }
 
-        protected static (string Name, string Value, string Comment) ParseRawData(ReadOnlySpan<byte> data)
+        private protected static (string Name, string Value, string Comment) ParseRawData(ReadOnlySpan<byte> data)
         {
             if (data.Length != EntrySize * AsciiCharSize)
                 throw new ArgumentException("Size of data is incorrect.", nameof(data));
@@ -140,6 +154,23 @@ namespace FitsCs
             {
                 ArrayPool<char>.Shared.Return(buffer);
             }
+        }
+
+        private protected static void ValidateInput(string name, string comment, int valueSize)
+        {
+            if(name.Length == 0)
+                throw new ArgumentException("Keyword name is too short.", nameof(name));
+            if (name.Length > NameSize)
+                throw new ArgumentException("Keyword name is too long.", nameof(name));
+
+            if(comment.Length + valueSize > EntrySize - EqualsPos - 4)
+                throw new ArgumentException("Keyword content is too long.");
+        }
+
+        private protected static void ValidateType<T>()
+        {
+            if(!AllowedTypes.Contains(typeof(T)))
+                throw new NotSupportedException(@"Type is not supported.");
         }
         public static bool IsValidKeyName(ReadOnlySpan<byte> input)
         {
@@ -206,10 +237,8 @@ namespace FitsCs
         {
             if (type == KeyType.Free)
                 throw new NotImplementedException();
-            if (type == KeyType.Fixed)
-                throw new NotImplementedException();
-            throw new NotImplementedException();
 
+            return FixedFitsKey.Create(name, value, comment);
         }
     }
 
@@ -218,6 +247,42 @@ namespace FitsCs
         public override KeyType Type => KeyType.Fixed;
         private protected FixedFitsKey(string name, string comment) : base(name, comment)
         {
+        }
+
+        private protected bool FormatFixed(Span<char> span, string value, out int charsWritten)
+        {
+            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
+            charsWritten = 0;
+            var len = EqualsPos + 2 +
+                      value.Length +
+                      (!isCommentNull
+                          ? Comment.Length + 2
+                          : 0);
+
+            if (span.Length < len)
+                return false;
+
+            span.Slice(0, len).Fill(' ');
+            Name.AsSpan().CopyTo(span);
+            span[EqualsPos] = '=';
+            value.AsSpan().CopyTo(span.Slice(EqualsPos + 2));
+
+            charsWritten = value.Length + NameSize + 2;
+
+            if (!isCommentNull)
+            {
+                Comment.AsSpan().CopyTo(span.Slice(charsWritten + 2));
+                span[charsWritten + 1] = '/';
+                charsWritten += 2 + Comment.Length;
+            }
+
+            return true;
+        }
+
+        public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
+        {
+            ValidateType<T>();
+            throw new NotSupportedException();
         }
     }
 }

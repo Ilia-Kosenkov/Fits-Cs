@@ -95,7 +95,7 @@ namespace FitsCs
                 var span = buffer.AsSpan(0, len);
                 if (!TryFormat(span, out _))
                     throw new FormatException("Failed to format keyword");
-                return span.TrimEnd().ToString();
+                return System.MemoryExtensions.Trim(span).ToString();
             }
             finally
             {
@@ -120,7 +120,7 @@ namespace FitsCs
                     if (!TryFormat(span.Slice(TypePrefix.Length), out _))
                         throw new FormatException("Failed to format keyword");
                     TypePrefix.AsSpan().CopyTo(buffer);
-                    return span.TrimEnd().ToString();
+                    return System.MemoryExtensions.TrimEnd(span).ToString();
                 }
                 finally
                 {

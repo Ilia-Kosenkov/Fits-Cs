@@ -21,60 +21,70 @@
 //     SOFTWARE.
 
 using System;
-using System.Runtime.CompilerServices;
+using System.Buffers;
+using TextExtensions;
 
 
-[assembly:InternalsVisibleTo("Sandbox")]
 namespace FitsCs
 {
     public class FixedIntKey : FixedFitsKey, IFitsValue<int>
     {
         private const int FieldSize = 20;
+        private const string TypePrefix = @"[   int]";
+
         public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public override string ToString(bool prefixType)
-        {
-            return ToString();
-        }
+        public int RawValue { get; }
+
+        public override string ToString(bool prefixType) 
+            => prefixType ? TypePrefix + ToString() : ToString();
 
         public override string ToString()
         {
-            return base.ToString();
+            var pool = ArrayPool<char>.Shared.Rent(EntrySize);
+            try
+            {
+                var span = pool.AsSpan(0, EntrySize);
+                return TryFormat(span, out var chars)
+                    ? span.Slice(0, chars).ToString()
+                    : base.ToString();
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(pool, true);
+            }
+
         }
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
+            => FormatFixed(span, string.Format($"{{0,{FieldSize}}}", RawValue), out charsWritten);
+
+        public bool TryGetBytes(Span<byte> span)
         {
-            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            charsWritten = 0;
-            var len = EqualsPos + 2 +
-                      FieldSize +
-                      (!isCommentNull
-                          ? Comment.Length + 2
-                          : 0);
-
-            if (span.Length < len)
+            if (span.Length < EntrySizeInBytes)
                 return false;
-            
-            span.Slice(0, len).Fill(' ');
-            Name.AsSpan().CopyTo(span);
-            span[EqualsPos] = '=';
-            string.Format($"{{0,{FieldSize}}}", RawValue).AsSpan().CopyTo(span.Slice(EqualsPos + 2));
-
-            charsWritten = FieldSize + NameSize + 2;
-
-            if (!isCommentNull)
+            var charBuff = ArrayPool<char>.Shared.Rent(EntrySize);
+            try
             {
-                Comment.AsSpan().CopyTo(span.Slice(charsWritten + 2));
-                span[charsWritten + 1] = '/';
-                charsWritten += 2 + Comment.Length;
+                var charSpan = charBuff.AsSpan(0, EntrySize);
+                charSpan.Fill(' ');
+                if (!TryFormat(charSpan, out _))
+                    return false;
+                
+                var nBytes = Encoding.GetBytes(charSpan, span);
+                return nBytes > 0 && nBytes < EntrySizeInBytes;
+            }
+            finally
+            {
+                ArrayPool<char>.Shared.Return(charBuff, true);
             }
 
-            return true;
+
         }
 
-        public int RawValue { get; }
         internal FixedIntKey(string name, int value, string comment = "") : base(name, comment)
         {
+            ValidateInput(name, comment, FieldSize);
             RawValue = value;
         }
 
