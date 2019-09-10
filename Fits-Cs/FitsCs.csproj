@@ -3,25 +3,37 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>FitsCs</RootNamespace>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
-    <PackageReference Include="System.Memory" Version="4.5.2" />
-    <PackageReference Include="System.Reactive" Version="4.1.5" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Compatibility.Bridge">
-      <HintPath>..\..\Compatibility.Bridge\Compatibility.Bridge\bin\Debug\netstandard2.0\Compatibility.Bridge.dll</HintPath>
+    <Reference Include="IndexRange">
+      <HintPath>..\..\..\Compatibility\src\IndexRange\bin\x64\Debug\netstandard2.0\IndexRange.dll</HintPath>
+    </Reference>
+    <Reference Include="MemoryExtensions">
+      <HintPath>..\..\..\Compatibility\src\MemoryExtensions\bin\x64\Debug\netstandard2.0\MemoryExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="TextExtensions">
+      <HintPath>..\..\..\Compatibility\src\TextExtensions\bin\x64\Debug\netstandard2.0\TextExtensions.dll</HintPath>
     </Reference>
   </ItemGroup>
 

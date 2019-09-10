@@ -23,7 +23,7 @@
 
 using System;
 using System.Buffers;
-using Compatibility.Bridge;
+using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -53,7 +53,7 @@ namespace FitsCs
             public bool Value;
         }
 
-        private const string TypePrefix = @"[bool ]";
+        private const string TypePrefix = @"[bool  ]";
         public const int ValuePositionFixed = 30;
 
         public override object Value => RawValue;
@@ -106,25 +106,30 @@ namespace FitsCs
 
         public override string ToString(bool prefixType)
         {
-            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            char[] buffer = null;
-            try
+            if (prefixType)
             {
-                var len = (Comment?.Length ?? 0) + ValuePositionFixed + 4;
-                if (len > EntrySize)
-                    len = EqualsPos + 2 + (isCommentNull ? 0 : 3 + Comment.Length);
-                buffer = ArrayPool<char>.Shared.Rent(len + TypePrefix.Length);
-                var span = buffer.AsSpan(0, len + TypePrefix.Length);
-                if (!TryFormat(span.Slice(TypePrefix.Length), out _))
-                    throw new FormatException("Failed to format keyword");
-                TypePrefix.AsSpan().CopyTo(buffer);
-                return span.TrimEnd().ToString();
+                var isCommentNull = string.IsNullOrWhiteSpace(Comment);
+                char[] buffer = null;
+                try
+                {
+                    var len = (Comment?.Length ?? 0) + ValuePositionFixed + 4;
+                    if (len > EntrySize)
+                        len = EqualsPos + 2 + (isCommentNull ? 0 : 3 + Comment.Length);
+                    buffer = ArrayPool<char>.Shared.Rent(len + TypePrefix.Length);
+                    var span = buffer.AsSpan(0, len + TypePrefix.Length);
+                    if (!TryFormat(span.Slice(TypePrefix.Length), out _))
+                        throw new FormatException("Failed to format keyword");
+                    TypePrefix.AsSpan().CopyTo(buffer);
+                    return span.TrimEnd().ToString();
+                }
+                finally
+                {
+                    if (!(buffer is null))
+                        ArrayPool<char>.Shared.Return(buffer, true);
+                }
             }
-            finally
-            {
-                if (!(buffer is null))
-                    ArrayPool<char>.Shared.Return(buffer, true);
-            }
+
+            return ToString();
         }
         public override bool TryFormat(Span<char> span, out int charsWritten)
         {
@@ -135,19 +140,18 @@ namespace FitsCs
             {
                 if (len > span.Length)
                     return false;
-                span.Fill(' ');
+                span.Slice(0, len).Fill(' ');
 
                 // Fits into fixed-form field
-                Name.AsSpan().CopyTo(span);
+                if (!Name.AsSpan().TryCopyTo(span))
+                    return false;
                 span[EqualsPos] = '=';
-                span[EqualsPos + 1] = ' ';
                 span[ValuePositionFixed] = RawValue ? 'T' : 'F';
                 if (!isCommentNull)
                 {
-                    span[ValuePositionFixed + 1] = ' ';
                     span[ValuePositionFixed + 2] = '/';
-                    span[ValuePositionFixed + 3] = ' ';
-                    Comment.AsSpan().CopyTo(span.Slice(ValuePositionFixed + 4));
+                    if(!Comment.AsSpan().TryCopyTo(span.Slice(ValuePositionFixed + 4)))
+                        return false;
                 }
             }
             else
@@ -155,18 +159,18 @@ namespace FitsCs
                 len = EqualsPos + 2 + (isCommentNull ? 0 : 3 + Comment.Length);
                 if (len > span.Length)
                     return false;
-                span.Fill(' ');
+                span.Slice(0, len).Fill(' ');
 
-                Name.AsSpan().CopyTo(span);
+
+                if (!Name.AsSpan().TryCopyTo(span))
+                    return false;
                 span[EqualsPos] = '=';
-                span[EqualsPos + 1] = ' ';
                 span[EqualsPos + 2] = RawValue ? 'T' : 'F';
                 if (!isCommentNull)
                 {
-                    span[EqualsPos + 3] = ' ';
                     span[EqualsPos + 4] = '/';
-                    span[EqualsPos + 5] = ' ';
-                    Comment.AsSpan().CopyTo(span.Slice(EqualsPos + 6));
+                    if (!Comment.AsSpan().TryCopyTo(span.Slice(EqualsPos + 6)))
+                        return false;
                 }
             }
 

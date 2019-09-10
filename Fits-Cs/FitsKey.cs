@@ -22,16 +22,24 @@
 
 using System;
 using System.Buffers;
-using System.ComponentModel.Design;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
-using Compatibility.Bridge;
+using IndexRange;
+using MemoryExtensions;
+using TextExtensions;
 
 namespace FitsCs
 {
+
+    public enum KeyType : byte
+    {
+        Fixed,
+        Free
+    }
     public abstract class FitsKey
     {
+      
+
         public const int NameSize = 8;
         public const int EqualsPos = 8;
         public const int ValueStart = 10;
@@ -43,27 +51,39 @@ namespace FitsCs
         public string Name { get; }
         public string Comment { get; }
         public abstract object Value { get; }
+        public virtual KeyType Type => throw new NotImplementedException();
 
         public abstract  bool IsEmpty { get; }
 
         private protected FitsKey(string name, string comment)
         {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+            if (name.Length > NameSize)
+                throw new ArgumentException($"Name should be a string of (1, {NameSize}] symbols.", nameof(name));
+
             Name = name;
-            Comment = comment;
+            Comment = comment ?? string.Empty;
         }
 
         public abstract string ToString(bool prefixType);
 
         public abstract bool TryFormat(Span<char> span, out int charsWritten);
 
+
+        static FitsKey()
+        {
+
+        }
+
         private static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
         {
             var inQuotes = false;
-            var i = 0;
+            int i;
             for(i = 0;  i < input.Length; i++)
                 if (input[i] == '\'')
                     inQuotes = !inQuotes;
-                else if (!inQuotes && input[i] == '/')
+                else if (!inQuotes && input[i] == sep)
                     break;
 
             return i == input.Length - 1
@@ -169,17 +189,35 @@ namespace FitsCs
 
                 var valSpan = span.Slice(1).Trim();
                 if (valSpan[0] == '\'' && valSpan.Get(-1) == '\'')
-                    return new StringFitsKey(name, valSpan.Slice((1, -1)).ToString().Replace("\'\'", "\'"), comment);
+                    return new StringFitsKey(name, valSpan.Slice((1, -1)).Trim().ToString().Replace("\'\'", "\'"), comment);
 
                 var valStr = valSpan.ToString();
 
                 if (int.TryParse(valStr, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var iVal))
-                    return new IntFitsKey(name, iVal, comment);
-                else if (float.TryParse(valStr, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var fVal))
-                    return new FloatFitsKey(name, iVal, comment);
+                    return new FixedIntKey(name, iVal, comment);
+                if (float.TryParse(valStr, NumberStyles.Any, NumberFormatInfo.InvariantInfo, out var fVal))
+                    return new FloatFitsKey(name, fVal, comment);
             }
             // TODO : Treat special cases
             return null;
+        }
+
+        public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed)
+        {
+            if (type == KeyType.Free)
+                throw new NotImplementedException();
+            if (type == KeyType.Fixed)
+                throw new NotImplementedException();
+            throw new NotImplementedException();
+
+        }
+    }
+
+    public abstract class FixedFitsKey : FitsKey
+    {
+        public override KeyType Type => KeyType.Fixed;
+        private protected FixedFitsKey(string name, string comment) : base(name, comment)
+        {
         }
     }
 }
