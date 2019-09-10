@@ -12,7 +12,7 @@ namespace Sandbox
 
         private static void Test1()
         {
-            var key = FitsKey.Create("TEST", 11, "Some comment");
+            var key = FitsKey.Create("TEST", 11.0f, "Some comment");
 
             Span<char> span = new char[90];
 

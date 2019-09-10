@@ -29,8 +29,6 @@ using IndexRange;
 using MemoryExtensions;
 using TextExtensions;
 
-using static Internal.UnsafeUtils.Utils;
-
 namespace FitsCs
 {
 
@@ -280,12 +278,17 @@ namespace FitsCs
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {
             ValidateType<T>();
-            var t = typeof(T);
-            if(t == typeof(bool))
-                return new FixedBoolKey(name, UnsafeSpecify<bool, T>(value), comment) as IFitsValue<T>;
-            if(t == typeof(int))
-                return new FixedIntKey(name, UnsafeSpecify<int, T>(value), comment) as IFitsValue<T>;
-            return null;
+
+            switch (value)
+            {
+                case float fVal:
+                    return new FixedFloatKey(name, fVal, comment) as IFitsValue<T>;
+                case int iVal:
+                    return new FixedIntKey(name, iVal, comment) as IFitsValue<T>;
+                case bool bVal:
+                    return new FixedBoolKey(name, bVal, comment) as IFitsValue<T>;
+            }
+           throw new NotSupportedException();
         }
     }
 }
