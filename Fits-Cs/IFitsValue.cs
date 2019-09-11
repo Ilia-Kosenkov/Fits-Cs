@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Maybe;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -21,7 +22,6 @@ namespace FitsCs
 
     public interface IFitsValue<T> : IFitsValue
     {
-
-        T RawValue { get; }
+        Maybe<T> RawValue { get; }
     }
 }

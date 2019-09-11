@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 using System;
+using Maybe;
 
 
 namespace FitsCs
@@ -30,19 +31,24 @@ namespace FitsCs
         private const int FieldSize = 20;
         private protected override string TypePrefix => @"[   int]";
 
-        public override object Value => RawValue;
+        public override object Value => RawValue.Match(x => (object)x);
+
         public override bool IsEmpty => false;
-        public int RawValue { get; }
+        public Maybe<int> RawValue { get; }
 
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
-            => FormatFixed(span, string.Format($"{{0,{FieldSize}}}", RawValue), out charsWritten);
+            => FormatFixed(
+                span, 
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x), string.Empty), 
+                out charsWritten);
 
-        internal FixedIntKey(string name, int value, string comment = "") : base(name, comment)
+        internal FixedIntKey(string name, Maybe<int> value, string comment = "") : base(name, comment)
         {
             ValidateInput(name, comment, FieldSize);
             RawValue = value;
         }
 
+    
     }
 }

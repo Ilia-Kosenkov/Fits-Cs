@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 
+using Maybe;
 using System;
 
 namespace FitsCs
@@ -32,16 +33,18 @@ namespace FitsCs
         private const char FalseConst = 'F';
         private protected override string TypePrefix => @"[   int]";
 
-        public override object Value => RawValue;
+        public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public bool RawValue { get; }
+        public Maybe<bool> RawValue { get; }
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
-            => FormatFixed(span, string.Format($"{{0,{FieldSize}}}", RawValue ? TrueConst : FalseConst),
+            => FormatFixed(
+                span, 
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x ? TrueConst : FalseConst), string.Empty),
                 out charsWritten);
 
 
-        internal FixedBoolKey(string name, bool value, string comment) : base(name, comment)
+        internal FixedBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
         {
             RawValue = value;
         }

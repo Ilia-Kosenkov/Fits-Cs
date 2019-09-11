@@ -1,5 +1,6 @@
 ﻿using System;
 using FitsCs;
+using Maybe;
 
 namespace Sandbox
 {
@@ -12,7 +13,7 @@ namespace Sandbox
 
         private static void Test1()
         {
-            var key = FitsKey.Create("TEST", 11.0f, "Some comment");
+            var key = FitsKey.Create("TEST", 11.0f.Some(), "Some comment");
 
             Span<char> span = new char[90];
 
@@ -25,6 +26,10 @@ namespace Sandbox
             Span<byte> bytes = new byte[128];
 
             key.TryGetBytes(bytes);
+
+            var anotherKey = FitsKey.Create<float>("NOVAL", None.Get);
+            span.Fill('\0');
+            anotherKey.TryFormat(span, out chars);
         }
     }
 }

@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 using System;
+using Maybe;
 
 
 namespace FitsCs
@@ -30,15 +31,18 @@ namespace FitsCs
         private const int FieldSize = 20;
         private protected override string TypePrefix => @"[ float]";
 
-        public override object Value => RawValue;
+        public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public float RawValue { get; }
+        public Maybe<float> RawValue { get; }
 
 
         public override bool TryFormat(Span<char> span, out int charsWritten)
-            => FormatFixed(span, string.Format($"{{0,{FieldSize}:0.#############E+00}}", RawValue), out charsWritten);
+            => FormatFixed(
+                span, 
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}:0.#############E+00}}", x), string.Empty),
+                out charsWritten);
 
-        internal FixedFloatKey(string name, float value, string comment = "") : base(name, comment)
+        internal FixedFloatKey(string name, Maybe<float> value, string comment = "") : base(name, comment)
         {
             ValidateInput(name, comment, FieldSize);
             RawValue = value;

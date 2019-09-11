@@ -29,6 +29,9 @@
     <Reference Include="IndexRange">
       <HintPath>..\..\..\Compatibility\src\IndexRange\bin\x64\Debug\netstandard2.0\IndexRange.dll</HintPath>
     </Reference>
+    <Reference Include="Maybe">
+      <HintPath>..\..\..\Compatibility\src\Maybe\bin\x64\Debug\netstandard2.0\Maybe.dll</HintPath>
+    </Reference>
     <Reference Include="MemoryExtensions">
       <HintPath>..\..\..\Compatibility\src\MemoryExtensions\bin\x64\Debug\netstandard2.0\MemoryExtensions.dll</HintPath>
     </Reference>
