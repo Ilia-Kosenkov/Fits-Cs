@@ -236,6 +236,10 @@ namespace FitsCs
 
             return FixedFitsKey.Create(name, value, comment);
         }
+
+        public static IFitsValue Create() => BlankKey.Blank;
+        public static IFitsValue Create(string content) => new ArbitraryKey(content);
+
     }
 
     public abstract class FixedFitsKey : FitsKey
