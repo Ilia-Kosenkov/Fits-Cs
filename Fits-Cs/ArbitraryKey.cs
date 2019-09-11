@@ -19,13 +19,13 @@ namespace FitsCs
         public override bool TryFormat(Span<char> span, out int charsWritten)
         {
             charsWritten = 0;
-            if (span.Length < EntrySizeInBytes)
+            if (span.Length < _contents.Length)
                 return false;
 
-            var exactSpan = span.Slice(0, EntrySizeInBytes);
+            var exactSpan = span.Slice(0, _contents.Length);
             exactSpan.Fill(' ');
             _contents.AsSpan().CopyTo(exactSpan);
-            charsWritten = EntrySizeInBytes;
+            charsWritten = _contents.Length;
             return true;
         }
     }
