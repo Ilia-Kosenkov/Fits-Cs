@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using FitsCs;
 using Maybe;
 
@@ -27,7 +28,7 @@ namespace Sandbox
 
             key.TryGetBytes(bytes);
 
-            var anotherKey = FitsKey.Create<float>("NOVAL", None.Get);
+            var anotherKey = FitsKey.Create<Complex>("CMPLX", new Complex(250,0 ), "complex num");
             span.Fill('\0');
             anotherKey.TryFormat(span, out chars);
         }
