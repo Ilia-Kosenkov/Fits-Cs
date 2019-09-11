@@ -233,6 +233,9 @@ namespace FitsCs
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
         {
+            if(name is null)
+                throw new ArgumentNullException(nameof(name));
+
             if (type == KeyType.Free)
                 throw new NotImplementedException();
 
@@ -242,61 +245,5 @@ namespace FitsCs
         public static IFitsValue Create() => BlankKey.Blank;
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
 
-    }
-
-    public abstract class FixedFitsKey : FitsKey
-    {
-        private protected static readonly string EmptyString = string.Intern(new string (' ', 20));
-
-        public override KeyType Type => KeyType.Fixed;
-        private protected FixedFitsKey(string name, string comment) : base(name, comment)
-        {
-        }
-
-        private protected bool FormatFixed(Span<char> span, string value, out int charsWritten)
-        {
-            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            charsWritten = 0;
-            var len = NameSize +
-                      value.Length +
-                      (!isCommentNull
-                          ? Comment.Length + 2
-                          : 0);
-
-            if (span.Length < len)
-                return false;
-
-            span.Slice(0, len).Fill(' ');
-            Name.AsSpan().CopyTo(span);
-            value.AsSpan().CopyTo(span.Slice(NameSize));
-
-            charsWritten = value.Length + NameSize;
-
-            if (!isCommentNull)
-            {
-                Comment.AsSpan().CopyTo(span.Slice(charsWritten + 2));
-                span[charsWritten + 1] = '/';
-                charsWritten += 2 + Comment.Length;
-            }
-
-            return true;
-        }
-
-        public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
-        {
-            ValidateType<T>();
-
-
-            switch (value)
-            {
-                case Maybe<float> fVal:
-                    return new FixedFloatKey(name, fVal, comment) as IFitsValue<T>;
-                case Maybe<int> iVal:
-                    return new FixedIntKey(name, iVal, comment) as IFitsValue<T>;
-                case Maybe<bool> bVal:
-                    return new FixedBoolKey(name, bVal, comment) as IFitsValue<T>;
-            }
-            throw new NotSupportedException();
-        }
     }
 }
