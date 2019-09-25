@@ -17,27 +17,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="Maybe" Version="1.0.0" />
+    <PackageReference Include="MemoryExtensions" Version="1.0.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.6.0" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="IndexRange">
-      <HintPath>..\..\..\Compatibility\src\IndexRange\bin\x64\Debug\netstandard2.0\IndexRange.dll</HintPath>
-    </Reference>
-    <Reference Include="Maybe">
-      <HintPath>..\..\..\Compatibility\src\Maybe\bin\x64\Debug\netstandard2.0\Maybe.dll</HintPath>
-    </Reference>
-    <Reference Include="MemoryExtensions">
-      <HintPath>..\..\..\Compatibility\src\MemoryExtensions\bin\x64\Debug\netstandard2.0\MemoryExtensions.dll</HintPath>
-    </Reference>
-    <Reference Include="TextExtensions">
-      <HintPath>..\..\..\Compatibility\src\TextExtensions\bin\x64\Debug\netstandard2.0\TextExtensions.dll</HintPath>
-    </Reference>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.6.0" />
+    <PackageReference Include="TextExtensions" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
