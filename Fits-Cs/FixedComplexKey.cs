@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using Maybe;
 
@@ -30,7 +31,7 @@ namespace FitsCs
     public sealed class FixedComplexKey : FixedFitsKey, IFitsValue<Complex>
     {
         private const int FieldSize = 20;
-        private protected override string TypePrefix => @"[ float]";
+        private protected override string TypePrefix => @"[ cmplx]";
 
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;

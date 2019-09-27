@@ -36,9 +36,13 @@ namespace FitsCs
 
     public enum KeyType : byte
     {
-        Fixed,
-        Free
+        Undefined = 0,
+        Fixed = 1,
+        Free = 2
     }
+
+    // ReSharper disable once UseNameofExpression
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public abstract class FitsKey : IFitsValue
     {
         public const int NameSize = 8;
@@ -60,10 +64,12 @@ namespace FitsCs
 
         private protected virtual string TypePrefix => @"[  null]";
 
+        private protected virtual string DebuggerDisplay => $"{TypePrefix}: {ToString()}";
+
         public string Name { get; }
         public string Comment { get; }
         public abstract object Value { get; }
-        public virtual KeyType Type => throw new NotImplementedException();
+        public virtual KeyType Type => KeyType.Undefined;
 
         public abstract  bool IsEmpty { get; }
 
