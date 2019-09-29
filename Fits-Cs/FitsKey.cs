@@ -201,6 +201,8 @@ namespace FitsCs
         }
         public static IFitsValue Create() => BlankKey.Blank;
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
+        public static IFitsValue CreateComment(string comment) => new ArbitraryKey(@"COMMENT " + comment);
+        public static IFitsValue CreateHistory(string history) => new ArbitraryKey(@"HISTORY " + history);
 
     }
 }
