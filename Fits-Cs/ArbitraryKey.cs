@@ -9,7 +9,7 @@ namespace FitsCs
         internal ArbitraryKey(string contents) : base(string.Empty, string.Empty)
         {
             if(string.IsNullOrWhiteSpace(contents) || contents.Length > EntrySize)
-                throw new ArgumentException(nameof(contents));
+                throw new ArgumentException(SR.KeyValueTooLarge, nameof(contents));
 
             _contents = contents;
         }

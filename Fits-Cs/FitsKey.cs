@@ -26,7 +26,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using IndexRange;
 using Maybe;
 using MemoryExtensions;
 using TextExtensions;
@@ -75,12 +74,7 @@ namespace FitsCs
 
         private protected FitsKey(string name, string comment)
         {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name));
-            if (name.Length > NameSize)
-                throw new ArgumentException($"Name should be a string of (1, {NameSize}] symbols.", nameof(name));
-
-            Name = name;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             Comment = comment ?? string.Empty;
         }
 
@@ -104,6 +98,7 @@ namespace FitsCs
             => prefixType ? TypePrefix + ToString() : ToString();
         
         public abstract bool TryFormat(Span<char> span);
+
         public bool TryGetBytes(Span<byte> span)
         {
             if (span.Length < EntrySizeInBytes)
@@ -112,18 +107,67 @@ namespace FitsCs
             try
             {
                 var charSpan = charBuff.AsSpan(0, EntrySize);
-                charSpan.Fill(' ');
                 if (!TryFormat(charSpan))
                     return false;
 
                 var nBytes = Encoding.GetBytes(charSpan, span);
-                return nBytes > 0 && nBytes < EntrySizeInBytes;
+                return nBytes > 0 && nBytes <= EntrySizeInBytes;
             }
             finally
             {
                 ArrayPool<char>.Shared.Return(charBuff, true);
             }
         }
+
+
+        private protected static void ValidateInput(string name, string comment, int valueSize)
+        {
+            if(name.Length == 0)
+                throw new ArgumentException(SR.KeyNameTooShort, nameof(name));
+            if (name.Length > NameSize)
+                throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
+
+            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize - 2)
+                throw new ArgumentException(SR.KeyValueTooLarge);
+        }
+
+        private protected static void ValidateType<T>()
+        {
+            if(!AllowedTypes.Contains(typeof(T)))
+                throw new NotSupportedException(@"Type is not supported.");
+        }
+
+        public static bool IsValidKeyName(ReadOnlySpan<byte> input)
+        {
+            bool IsAllowed(char c)
+            {
+                return char.IsUpper(c)
+                       || char.IsDigit(c)
+                       || c == ' '
+                       || c == '-'
+                       || c == '_';
+            }
+
+            if (input.Length > 0 && 
+                input.Length <= NameSize * AsciiCharSize)
+            {
+                var buffer = ArrayPool<char>.Shared.Rent(NameSize * AsciiCharSize);
+                var charSpan = buffer.AsSpan(0, NameSize * AsciiCharSize);
+
+                try
+                {
+                    Encoding.ASCII.GetChars(input, charSpan);
+                    return charSpan.All(IsAllowed);
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
+            }
+
+            return false;
+        }
+
 
         private static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
         {
@@ -139,115 +183,22 @@ namespace FitsCs
                 ? input.Length
                 : i;
         }
-
-        private protected static (string Name, string Value, string Comment) ParseRawData(ReadOnlySpan<byte> data)
+        private protected static bool TryReadFromBinary(ReadOnlySpan<byte> span, out IFitsValue val)
         {
-            if (data.Length != EntrySize * AsciiCharSize)
-                throw new ArgumentException("Size of data is incorrect.", nameof(data));
-            if (!IsValidKeyName(data.Slice(0, NameSize * AsciiCharSize)))
-                throw new ArgumentException("Provided input is not a valid keyword", nameof(data));
-
-            var buffer = ArrayPool<char>.Shared.Rent(EntrySize);
-            var rwMem = buffer.AsMemory(0, EntrySize);
-            var roMem = buffer.AsReadOnlyMemory(0, EntrySize);
-            try
-            {
-                var n = Encoding.ASCII.GetChars(data, rwMem.Span);
-                if (n != EntrySize)
-                    throw new ArgumentException("Provided input is not a valid keyword", nameof(data));
-
-                roMem.Span.Slice(0, NameSize).ToUpperInvariant(rwMem.Span);
-
-                var name = roMem.Slice(0, NameSize).Span.Trim().ToString();
-
-                var bodySpan = roMem.Slice(NameSize);
-                if (bodySpan.Span[EqualsPos - NameSize] == '=')
-                {
-                    var commentInd = FindCommentStart(bodySpan.Span);
-
-                    var value = bodySpan.Slice((EqualsPos - NameSize, commentInd)).Trim().ToString();
-
-                    Range commRange = (commentInd + 1, Index.End);
-                    var comment = commRange.IsValidRange(bodySpan.Length)
-                        ? bodySpan.Slice(commRange).Trim().ToString()
-                        : string.Empty;
-                    return (name, value, comment);
-                }
-                // Must be comment or some empty key
-                if (string.IsNullOrWhiteSpace(name))
-                    return (string.Empty, string.Empty, bodySpan.Trim().ToString());
-
-                if (name == @"COMMENT" || name == @"HISTORY" || name == @"REFERENCE")
-                    return (name, string.Empty, bodySpan.Trim().ToString());
-
-                if (name == @"END")
-                    return (name, string.Empty, string.Empty);
-
-                throw new NotSupportedException(@"Keyword format is not supported");
-            }
-            finally
-            {
-                ArrayPool<char>.Shared.Return(buffer);
-            }
-        }
-
-        private protected static void ValidateInput(string name, string comment, int valueSize)
-        {
-            if(name.Length == 0)
-                throw new ArgumentException("Keyword name is too short.", nameof(name));
-            if (name.Length > NameSize)
-                throw new ArgumentException("Keyword name is too long.", nameof(name));
-
-            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize - 2)
-                throw new ArgumentException("Keyword content is too long.");
-        }
-
-        private protected static void ValidateType<T>()
-        {
-            if(!AllowedTypes.Contains(typeof(T)))
-                throw new NotSupportedException(@"Type is not supported.");
-        }
-        public static bool IsValidKeyName(ReadOnlySpan<byte> input)
-        {
-            bool IsAllowed(char c)
-            {
-                return char.IsUpper(c)
-                       || char.IsDigit(c)
-                       || c == ' '
-                       || c == '-'
-                       || c == '_';
-            }
-
-            if (input.Length == NameSize * AsciiCharSize)
-            {
-                var buffer = ArrayPool<char>.Shared.Rent(NameSize * AsciiCharSize);
-                var charSpan = buffer.AsSpan(0, NameSize * AsciiCharSize);
-
-                Encoding.ASCII.GetChars(input, charSpan);
-                try
-                {
-                    return charSpan.All(IsAllowed);
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(buffer);
-                }
-            }
-
+            val = null;
             return false;
         }
+
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
         {
             if(name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            if (type == KeyType.Free)
-                throw new NotImplementedException();
-
-            return FixedFitsKey.Create(name, value, comment);
+            return type == KeyType.Free 
+                ? FreeFitsKey.Create(name, value, comment) 
+                : FixedFitsKey.Create(name, value, comment);
         }
-
         public static IFitsValue Create() => BlankKey.Blank;
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
 

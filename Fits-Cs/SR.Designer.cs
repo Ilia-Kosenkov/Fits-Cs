@@ -61,7 +61,25 @@ namespace FitsCs {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Key value is tool arge and cannot be stored.
+        ///   Looks up a localized string similar to Key name is too large..
+        /// </summary>
+        internal static string KeyNameTooLong {
+            get {
+                return ResourceManager.GetString("KeyNameTooLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key name cannot be empty..
+        /// </summary>
+        internal static string KeyNameTooShort {
+            get {
+                return ResourceManager.GetString("KeyNameTooShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Key value is too large and cannot be stored..
         /// </summary>
         internal static string KeyValueTooLarge {
             get {
