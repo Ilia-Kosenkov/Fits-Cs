@@ -14,7 +14,7 @@ namespace FitsCs
 
         private protected bool FormatFree(Span<char> span, string value, out int charsWritten)
         {
-            throw new NotImplementedException(SR.Method_Not_Implemented);
+            throw new NotImplementedException(SR.MethodNotImplemented);
             //var isCommentNull = string.IsNullOrWhiteSpace(Comment);
             //charsWritten = 0;
             //var len = NameSize +
@@ -40,7 +40,7 @@ namespace FitsCs
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
         {
-            throw new NotImplementedException(SR.Method_Not_Implemented);
+            throw new NotImplementedException(SR.MethodNotImplemented);
 
             //ValidateType<T>();
 

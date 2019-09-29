@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Buffers;
-using System.Text;
-using TextExtensions;
 using MemoryExtensions;
 
 namespace FitsCs
 {
-    public static class Extensions
+    internal static class Extensions
     {    
-        public static int StringSizeWithQuoteReplacement(this ReadOnlySpan<char> s)
+        public static int StringSizeWithQuoteReplacement(
+            this ReadOnlySpan<char> s,
+            int minLength = 10)
         {
             var sum = 2;
             foreach (var item in s)
@@ -23,10 +22,13 @@ namespace FitsCs
                     sum += 3;
             }
 
-            return sum;
+            return sum < minLength ? minLength : sum;
         }
 
-        public static bool TryGetCompatibleString(this ReadOnlySpan<char> source, Span<char> target)
+        public static bool TryGetCompatibleString(
+            this ReadOnlySpan<char> source, 
+            Span<char> target,
+            int minLength = 10)
         {
             if (source.IsEmpty)
                 return true;
@@ -69,6 +71,12 @@ namespace FitsCs
 
             if (targetInd >= target.Length)
                 return false;
+
+            if (targetInd < minLength - 1)
+            {
+                target.Slice((targetInd, minLength - 1)).Fill(' ');
+                targetInd = minLength - 1;
+            }
 
             target[targetInd] = '\'';
 

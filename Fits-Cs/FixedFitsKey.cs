@@ -53,6 +53,8 @@ namespace FitsCs
                     return new FixedBoolKey(name, bVal, comment) as IFitsValue<T>;
                 case Maybe<Complex> cVal:
                     return new FixedComplexKey(name, cVal, comment) as IFitsValue<T>;
+                case Maybe<string> sVal:
+                    return new FixedStringKey(name, sVal, comment) as IFitsValue<T>;
             }
             throw new NotSupportedException();
         }

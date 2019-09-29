@@ -61,11 +61,20 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Key value is tool arge and cannot be stored.
+        /// </summary>
+        internal static string KeyValueTooLarge {
+            get {
+                return ResourceManager.GetString("KeyValueTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Method is supported, but not implemented yet..
         /// </summary>
-        internal static string Method_Not_Implemented {
+        internal static string MethodNotImplemented {
             get {
-                return ResourceManager.GetString("Method_Not_Implemented", resourceCulture);
+                return ResourceManager.GetString("MethodNotImplemented", resourceCulture);
             }
         }
     }
