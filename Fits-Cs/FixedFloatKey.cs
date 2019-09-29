@@ -36,11 +36,10 @@ namespace FitsCs
         public Maybe<float> RawValue { get; }
 
 
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
-                RawValue.Match(x => string.Format($"= {{0,{FieldSize}:0.#############E+00}}", x), string.Empty),
-                out charsWritten);
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}:0.#############E+00}}", x), string.Empty));
 
         internal FixedFloatKey(string name, Maybe<float> value, string comment = "") : base(name, comment)
         {

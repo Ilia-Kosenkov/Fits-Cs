@@ -6,7 +6,6 @@ namespace FitsCs
     public sealed class FixedStringKey : FixedFitsKey, IFitsValue<string>
     {
         private const int MaxStringLength = 60;
-        private const int StringStart = 10;
         internal FixedStringKey(string name, string comment) : base(name, comment)
         {
         }
@@ -14,10 +13,9 @@ namespace FitsCs
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => RawValue.Match(_ => true);
         public Maybe<string> RawValue { get; }
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
         {
             var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            charsWritten = 0;
             var len = NameSize +
                       RawValue.Match(x => x.AsSpan().StringSizeWithQuoteReplacement() + 2);
 
@@ -28,7 +26,7 @@ namespace FitsCs
             Name.AsSpan().CopyTo(span);
             span[EqualsPos] = '=';
             
-            if (!RawValue.Match(string.Empty).AsSpan().TryGetCompatibleString(span.Slice(StringStart)))
+            if (!RawValue.Match(string.Empty).AsSpan().TryGetCompatibleString(span.Slice(ValueStart)))
             {
                 span.Slice(0, EntrySizeInBytes).Fill(' ');
                 return false;
@@ -40,7 +38,6 @@ namespace FitsCs
                 span[len + 1] = '/';
             }
 
-            charsWritten = EntrySizeInBytes;
             return true;
         }
 

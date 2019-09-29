@@ -15,7 +15,7 @@ namespace FitsCs
         bool IsEmpty { get; }
 
         string ToString();
-        bool TryFormat(Span<char> span, out int charsWritten);
+        bool TryFormat(Span<char> span);
 
         bool TryGetBytes(Span<byte> span);
     }

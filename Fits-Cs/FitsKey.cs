@@ -90,8 +90,8 @@ namespace FitsCs
             try
             {
                 var span = pool.AsSpan(0, EntrySize);
-                return TryFormat(span, out var chars)
-                    ? span.Slice(0, chars).ToString()
+                return TryFormat(span)
+                    ? span.Slice(0, EntrySize).ToString()
                     : base.ToString();
             }
             finally
@@ -103,7 +103,7 @@ namespace FitsCs
         public string ToString(bool prefixType)
             => prefixType ? TypePrefix + ToString() : ToString();
         
-        public abstract bool TryFormat(Span<char> span, out int charsWritten);
+        public abstract bool TryFormat(Span<char> span);
         public bool TryGetBytes(Span<byte> span)
         {
             if (span.Length < EntrySizeInBytes)
@@ -113,7 +113,7 @@ namespace FitsCs
             {
                 var charSpan = charBuff.AsSpan(0, EntrySize);
                 charSpan.Fill(' ');
-                if (!TryFormat(charSpan, out _))
+                if (!TryFormat(charSpan))
                     return false;
 
                 var nBytes = Encoding.GetBytes(charSpan, span);

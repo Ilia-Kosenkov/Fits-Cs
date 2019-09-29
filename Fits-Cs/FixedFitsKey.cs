@@ -13,10 +13,9 @@ namespace FitsCs
         {
         }
 
-        private protected bool FormatFixed(Span<char> span, string value, out int charsWritten)
+        private protected bool FormatFixed(Span<char> span, string value)
         {
             var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            charsWritten = 0;
             var len = NameSize +
                       value.Length;
 
@@ -34,7 +33,6 @@ namespace FitsCs
                 span[len + 1] = '/';
             }
 
-            charsWritten = EntrySizeInBytes;
             return true;
         }
 

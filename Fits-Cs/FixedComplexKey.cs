@@ -38,13 +38,12 @@ namespace FitsCs
         public Maybe<Complex> RawValue { get; }
 
 
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
                 RawValue.Match(x => 
                     string.Format($"= {{0,{FieldSize}:0.#############E+00}}{{1,{FieldSize}:0.#############E+00}}",
-                        x.Real, x.Imaginary), string.Empty),
-                out charsWritten);
+                        x.Real, x.Imaginary), string.Empty));
 
         internal FixedComplexKey(string name, Maybe<Complex> value, string comment = "") : base(name, comment)
         {

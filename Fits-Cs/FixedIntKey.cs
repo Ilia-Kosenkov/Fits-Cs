@@ -37,11 +37,10 @@ namespace FitsCs
         public Maybe<int> RawValue { get; }
 
 
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
-                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x), string.Empty), 
-                out charsWritten);
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x), string.Empty));
 
         internal FixedIntKey(string name, Maybe<int> value, string comment = "") : base(name, comment)
         {

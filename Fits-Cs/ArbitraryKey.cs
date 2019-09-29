@@ -16,16 +16,14 @@ namespace FitsCs
 
         public override object Value => _contents;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(_contents);
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
         {
-            charsWritten = 0;
             if (span.Length < EntrySizeInBytes)
                 return false;
 
             var exactSpan = span.Slice(0, _contents.Length);
             exactSpan.Fill(' ');
             _contents.AsSpan().CopyTo(exactSpan);
-            charsWritten = EntrySizeInBytes;
             return true;
         }
     }

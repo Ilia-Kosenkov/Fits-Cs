@@ -37,11 +37,10 @@ namespace FitsCs
         public override bool IsEmpty => false;
         public Maybe<bool> RawValue { get; }
 
-        public override bool TryFormat(Span<char> span, out int charsWritten)
+        public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
-                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x ? TrueConst : FalseConst), string.Empty),
-                out charsWritten);
+                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
 
 
         internal FixedBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
