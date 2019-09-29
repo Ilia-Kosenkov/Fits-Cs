@@ -4,10 +4,11 @@ using MemoryExtensions;
 namespace FitsCs
 {
     internal static class Extensions
-    {    
+    {
+        private const int MinFixedStringSize = 10;
         public static int StringSizeWithQuoteReplacement(
             this ReadOnlySpan<char> s,
-            int minLength = 10)
+            int minLength = MinFixedStringSize)
         {
             var sum = 2;
             foreach (var item in s)
@@ -28,7 +29,7 @@ namespace FitsCs
         public static bool TryGetCompatibleString(
             this ReadOnlySpan<char> source, 
             Span<char> target,
-            int minLength = 10)
+            int minLength = MinFixedStringSize)
         {
             if (source.IsEmpty)
                 return true;

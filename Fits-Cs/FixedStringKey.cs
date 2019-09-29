@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography.X509Certificates;
 using Maybe;
 
 namespace FitsCs
@@ -6,10 +7,7 @@ namespace FitsCs
     public sealed class FixedStringKey : FixedFitsKey, IFitsValue<string>
     {
         private const int MaxStringLength = 60;
-        internal FixedStringKey(string name, string comment) : base(name, comment)
-        {
-        }
-
+        
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => RawValue.Match(_ => true);
         public Maybe<string> RawValue { get; }
@@ -44,9 +42,7 @@ namespace FitsCs
 
         internal FixedStringKey(string name, Maybe<string> value, string comment) : base(name, comment)
         {
-            value
-                .Select(x => x.AsSpan().StringSizeWithQuoteReplacement() > MaxStringLength)
-                .Match(new ArgumentException(SR.KeyValueTooLarge));
+            ValidateInput(name, comment, value.Match( x => x.AsSpan().StringSizeWithQuoteReplacement()));
 
             RawValue = value;
         }
