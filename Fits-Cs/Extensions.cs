@@ -126,5 +126,28 @@ namespace FitsCs
             
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
+
+        public static IFitsValue With<T>(this IFitsValue<T> @this, Action<KeyUpdater<T>> updateAction)
+        {
+            var updater = new KeyUpdater<T>()
+            {
+                Name = @this.Name,
+                Comment = @this.Comment,
+                Value = @this.RawValue,
+                Type = @this.Type
+            };
+
+            updateAction(updater);
+
+            // If it creation fails, return null
+            try
+            {
+                return FitsKey.Create(updater.Name, updater.Value, updater.Comment, updater.Type);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }
