@@ -5,6 +5,8 @@ namespace FitsCs
 {
     public sealed class FreeStringKey : FreeFitsKey, IFitsValue<string>
     {
+        private protected override string TypePrefix => @"[string]";
+
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => RawValue.Match(_ => true);
         public Maybe<string> RawValue { get; }
@@ -39,6 +41,10 @@ namespace FitsCs
         internal FreeStringKey(string name, Maybe<string> value, string comment) : base(name, comment)
         {
             ValidateInput(name, comment, value.Match( x => x.AsSpan().StringSizeWithQuoteReplacement(0) + 2));
+            
+            if(value.Match(x => !x.AsSpan().IsStringHduCompatible()))
+                throw new ArgumentException(SR.HduStringIllegal, nameof(value));
+
             RawValue = value;
         }
     }

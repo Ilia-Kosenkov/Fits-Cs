@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Text;
 using MemoryExtensions;
-
+using TextExtensions;
 
 namespace FitsCs
 {
@@ -110,6 +111,20 @@ namespace FitsCs
             if (resultStr.Length > maxSize)
                 resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
             return resultStr;
+        }
+
+        public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding enc = null)
+        {
+            if (enc is null)
+                enc= Encoding.ASCII;
+
+            var byteSize = enc.GetByteCount(@string);
+
+            Span<byte> buff = stackalloc byte[byteSize];
+
+            var n = enc.GetBytes(@string, buff);
+            
+            return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
     }
 }

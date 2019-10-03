@@ -150,7 +150,7 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
 
             if(!IsValidKeyName(name.AsSpan()))
-                throw new ArgumentException(SR.KeyNameIllegal, nameof(name));
+                throw new ArgumentException(SR.HduStringIllegal, nameof(name));
 
             if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);

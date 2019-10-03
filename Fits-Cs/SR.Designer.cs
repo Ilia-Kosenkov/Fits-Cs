@@ -61,11 +61,11 @@ namespace FitsCs {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Key name contains illegal symbols.
+        ///   Looks up a localized string similar to String contains characters that cannot be used in the HDU..
         /// </summary>
-        internal static string KeyNameIllegal {
+        internal static string HduStringIllegal {
             get {
-                return ResourceManager.GetString("KeyNameIllegal", resourceCulture);
+                return ResourceManager.GetString("HduStringIllegal", resourceCulture);
             }
         }
         

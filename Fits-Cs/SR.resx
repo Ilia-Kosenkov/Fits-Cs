@@ -117,8 +117,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="KeyNameIllegal" xml:space="preserve">
-    <value>Key name contains illegal symbols</value>
+  <data name="HduStringIllegal" xml:space="preserve">
+    <value>String contains characters that cannot be used in the HDU.</value>
   </data>
   <data name="KeyNameTooLong" xml:space="preserve">
     <value>Key name is too large.</value>
