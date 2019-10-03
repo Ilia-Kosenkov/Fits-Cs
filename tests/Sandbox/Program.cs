@@ -35,11 +35,10 @@ namespace Sandbox
 
         private static void Test2()
         {
-            var key = FitsKey.Create("Name", "textsome''".Some(), "comment", KeyType.Free);
+            var key = FitsKey.Create("NAME", "textsome\r''".Some(), "comment", KeyType.Free);
             Span<char> span = new char[90];
 
             key.TryFormat(span);
-            80.ToString();
             var result = span.Slice(0, 80).ToString();
 
          
