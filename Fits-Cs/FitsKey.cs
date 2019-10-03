@@ -54,6 +54,7 @@ namespace FitsCs
         public static int EntrySizeInBytes { get; }= EntrySize * AsciiCharSize;
         public static IImmutableList<Type> AllowedTypes { get; } = new[]
         {
+            typeof(double),
             typeof(int),
             typeof(float),
             typeof(string),

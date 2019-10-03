@@ -43,6 +43,8 @@ namespace FitsCs
 
             switch (value)
             {
+                case Maybe<double> dVal:
+                    return new FixedDoubleKey(name, dVal, comment) as IFitsValue<T>;
                 case Maybe<float> fVal:
                     return new FixedFloatKey(name, fVal, comment) as IFitsValue<T>;
                 case Maybe<int> iVal:

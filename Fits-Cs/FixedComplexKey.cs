@@ -38,10 +38,14 @@ namespace FitsCs
 
         public override bool TryFormat(Span<char> span)
             => FormatFixed(
-                span, 
-                RawValue.Match(x => 
-                    string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}{{1,{FixedFieldSize}:0.#############E+00}}",
-                        x.Real, x.Imaginary), string.Empty));
+                span,
+                //RawValue.Match(x => 
+                //    string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}{{1,{FixedFieldSize}:0.#############E+00}}",
+                //        x.Real, x.Imaginary), string.Empty));
+                RawValue.Match(x =>
+                        $"= {x.Real.FormatDouble(17, FixedFieldSize)}{x.Imaginary.FormatDouble(17, FixedFieldSize)}",
+                    string.Empty));
+                   
 
         internal FixedComplexKey(string name, Maybe<Complex> value, string comment = "") : base(name, comment)
         {
