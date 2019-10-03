@@ -1,7 +1,7 @@
-﻿using System;
-using System.Numerics;
-using FitsCs;
+﻿using FitsCs;
 using Maybe;
+using System;
+using System.Numerics;
 
 namespace Sandbox
 {
@@ -9,7 +9,7 @@ namespace Sandbox
     {
         static void Main(string[] args)
         {
-            Test1();
+            Test2();
         }
 
         private static void Test1()
@@ -18,9 +18,9 @@ namespace Sandbox
 
             Span<char> span = new char[90];
 
-            key.TryFormat(span, out var chars);
+            key.TryFormat(span);
 
-            var result = span.Slice(0, chars).ToString();
+            var result = span.Slice(0, 80).ToString();
 
             var tr = result == key.ToString();
 
@@ -28,9 +28,23 @@ namespace Sandbox
 
             key.TryGetBytes(bytes);
 
-            var anotherKey = FitsKey.Create<Complex>("CMPLX", new Complex(250,0 ), "complex num");
+            var anotherKey = FitsKey.Create<Complex>("CMPLX", new Complex(250, 0), "complex num");
             span.Fill('\0');
-            anotherKey.TryFormat(span, out chars);
+            anotherKey.TryFormat(span);
+        }
+
+        private static void Test2()
+        {
+            var key = FitsKey.Create("Name", "textsome''".Some(), "comment", KeyType.Free);
+            Span<char> span = new char[90];
+
+            key.TryFormat(span);
+            80.ToString();
+            var result = span.Slice(0, 80).ToString();
+
+         
+
         }
     }
+
 }
