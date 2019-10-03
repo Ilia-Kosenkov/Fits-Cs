@@ -56,7 +56,7 @@ namespace FitsCs
                 case Maybe<Complex> cVal:
                     return new FreeComplexKey(name, cVal, comment) as IFitsValue<T>;
                 case Maybe<string> sval:
-                    throw new NotImplementedException(SR.MethodNotImplemented);
+                    return new FreeStringKey(name, sval, comment) as IFitsValue<T>;
             }
             throw new NotSupportedException();
         }
