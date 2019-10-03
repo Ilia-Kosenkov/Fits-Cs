@@ -127,7 +127,7 @@ namespace FitsCs
             if (name.Length > NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
 
-            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize - 2)
+            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
@@ -151,12 +151,12 @@ namespace FitsCs
             if (input.Length > 0 && 
                 input.Length <= NameSize * AsciiCharSize)
             {
-                var buffer = ArrayPool<char>.Shared.Rent(NameSize * AsciiCharSize);
-                var charSpan = buffer.AsSpan(0, NameSize * AsciiCharSize);
+                var buffer = ArrayPool<char>.Shared.Rent(NameSize);
+                var charSpan = buffer.AsSpan(0, NameSize);
 
                 try
                 {
-                    Encoding.ASCII.GetChars(input, charSpan);
+                    Encoding.ASCII.GetChars(input.Slice(0, NameSize * AsciiCharSize), charSpan);
                     return charSpan.All(IsAllowed);
                 }
                 finally
@@ -186,7 +186,11 @@ namespace FitsCs
         private protected static bool TryReadFromBinary(ReadOnlySpan<byte> span, out IFitsValue val)
         {
             val = null;
-            return false;
+            
+            if (span.Length <= EntrySizeInBytes || !IsValidKeyName(span))
+                return false;
+
+            throw new NotImplementedException(SR.MethodNotImplemented);
         }
 
 

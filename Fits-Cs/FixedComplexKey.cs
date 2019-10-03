@@ -21,7 +21,6 @@
 //     SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using Maybe;
 
@@ -30,7 +29,6 @@ namespace FitsCs
 {
     public sealed class FixedComplexKey : FixedFitsKey, IFitsValue<Complex>
     {
-        private const int FieldSize = 20;
         private protected override string TypePrefix => @"[ cmplx]";
 
         public override object Value => RawValue.Match(x => (object)x);
@@ -42,12 +40,12 @@ namespace FitsCs
             => FormatFixed(
                 span, 
                 RawValue.Match(x => 
-                    string.Format($"= {{0,{FieldSize}:0.#############E+00}}{{1,{FieldSize}:0.#############E+00}}",
+                    string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}{{1,{FixedFieldSize}:0.#############E+00}}",
                         x.Real, x.Imaginary), string.Empty));
 
         internal FixedComplexKey(string name, Maybe<Complex> value, string comment = "") : base(name, comment)
         {
-            ValidateInput(name, comment, FieldSize);
+            ValidateInput(name, comment, value.Match(x => 2 * FixedFieldSize + 2));
             RawValue = value;
         }
 

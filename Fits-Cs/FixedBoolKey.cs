@@ -28,10 +28,9 @@ namespace FitsCs
 {
     public sealed class FixedBoolKey : FixedFitsKey, IFitsValue<bool>
     {
-        private const int FieldSize = 20;
         private const char TrueConst = 'T';
         private const char FalseConst = 'F';
-        private protected override string TypePrefix => @"[   int]";
+        private protected override string TypePrefix => @"[  bool]";
 
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
@@ -40,11 +39,12 @@ namespace FitsCs
         public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
-                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
+                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
 
 
         internal FixedBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
         {
+            ValidateInput(name, comment, value.Match(x => 3));
             RawValue = value;
         }
     }

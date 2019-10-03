@@ -28,7 +28,6 @@ namespace FitsCs
 {
     public sealed class FixedIntKey : FixedFitsKey, IFitsValue<int>
     {
-        private const int FieldSize = 20;
         private protected override string TypePrefix => @"[   int]";
 
         public override object Value => RawValue.Match(x => (object)x);
@@ -40,11 +39,11 @@ namespace FitsCs
         public override bool TryFormat(Span<char> span)
             => FormatFixed(
                 span, 
-                RawValue.Match(x => string.Format($"= {{0,{FieldSize}}}", x), string.Empty));
+                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x), string.Empty));
 
         internal FixedIntKey(string name, Maybe<int> value, string comment = "") : base(name, comment)
         {
-            ValidateInput(name, comment, FieldSize);
+            ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
             RawValue = value;
         }
 

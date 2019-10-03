@@ -38,8 +38,7 @@ namespace FitsCs
 
         internal FixedStringKey(string name, Maybe<string> value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match( x => x.AsSpan().StringSizeWithQuoteReplacement()));
-
+            ValidateInput(name, comment, value.Match( x => x.AsSpan().StringSizeWithQuoteReplacement() + 2));
             RawValue = value;
         }
     }
