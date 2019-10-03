@@ -20,32 +20,30 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+
 using System;
 using Maybe;
 
-
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FixedDoubleKey : FixedFitsKey, IFitsValue<double>
+    public sealed class FreeFloatKey : FreeFitsKey, IFitsValue<float>
     {
-        private protected override string TypePrefix => @"[double]";
-
+        private protected override string TypePrefix => @"[ float]";
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public Maybe<double> RawValue { get; }
-
+        public Maybe<float> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                //RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}", x), string.Empty));
-                RawValue.Match(x => $"= {x.FormatDouble(17, FixedFieldSize)}", string.Empty));
+                RawValue.Match(x => $"= {x:G9}", string.Empty));
 
-        internal FixedDoubleKey(string name, Maybe<double> value, string comment = "") : base(name, comment)
+
+        internal FreeFloatKey(string name, Maybe<float> value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
+            // Conservative size estimate - 15 is the total size of %+15.9e+2
+            ValidateInput(name, comment, value.Match(x => 2 + 15));
             RawValue = value;
         }
-
     }
 }

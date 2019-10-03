@@ -20,38 +20,33 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+
 using System;
 using System.Numerics;
 using Maybe;
 
-
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FixedComplexKey : FixedFitsKey, IFitsValue<Complex>
+    public sealed class FreeComplexKey : FreeFitsKey, IFitsValue<Complex>
     {
         private protected override string TypePrefix => @"[ cmplx]";
-
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
         public Maybe<Complex> RawValue { get; }
 
-
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                //RawValue.Match(x => 
-                //    string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}{{1,{FixedFieldSize}:0.#############E+00}}",
-                //        x.Real, x.Imaginary), string.Empty));
-                RawValue.Match(x =>
-                        $"= {x.Real.FormatDouble(17, FixedFieldSize)}{x.Imaginary.FormatDouble(17, FixedFieldSize)}",
+                RawValue.Match(x => $"= {x.Real.FormatDouble(17,24)}:{x.Imaginary.FormatDouble(17, 24)}", 
                     string.Empty));
-                   
 
-        internal FixedComplexKey(string name, Maybe<Complex> value, string comment = "") : base(name, comment)
+
+        internal FreeComplexKey(string name, Maybe<Complex> value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 2 * FixedFieldSize + 2));
+            // Conservative size estimate - 24 is the total size of %+24.17e+3
+            // Multiplying by 2 and 1 symbol for column separator
+            ValidateInput(name, comment, value.Match(x => 2 + 2 * 24 + 1));
             RawValue = value;
         }
-
     }
 }

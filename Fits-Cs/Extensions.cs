@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using FitsCs.Keys;
 using MemoryExtensions;
 using TextExtensions;
 

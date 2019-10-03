@@ -20,29 +20,31 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
-
-using Maybe;
 using System;
+using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FreeIntKey : FreeFitsKey, IFitsValue<int>
+    public sealed class FixedDoubleKey : FixedFitsKey, IFitsValue<double>
     {
-        private protected override string TypePrefix => @"[   int]";
+        private protected override string TypePrefix => @"[double]";
 
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public Maybe<int> RawValue { get; }
+        public Maybe<double> RawValue { get; }
+
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x}", string.Empty));
+                //RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}", x), string.Empty));
+                RawValue.Match(x => $"= {x.FormatDouble(17, FixedFieldSize)}", string.Empty));
 
-        internal FreeIntKey(string name, Maybe<int> value, string comment) : base(name, comment)
+        internal FixedDoubleKey(string name, Maybe<double> value, string comment = "") : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 2 + x.SignificantDigitsCount()));
+            ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
             RawValue = value;
         }
+
     }
 }

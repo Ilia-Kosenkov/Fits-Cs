@@ -21,30 +21,28 @@
 //     SOFTWARE.
 
 
-using Maybe;
 using System;
+using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FreeBoolKey : FreeFitsKey, IFitsValue<bool>
+    public sealed class FreeDoubleKey : FreeFitsKey, IFitsValue<double>
     {
-        private const char TrueConst = 'T';
-        private const char FalseConst = 'F';
-        private protected override string TypePrefix => @"[  bool]";
-
+        private protected override string TypePrefix => @"[double]";
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public Maybe<bool> RawValue { get; }
+        public Maybe<double> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {(x ? TrueConst : FalseConst)}", string.Empty));
+                RawValue.Match(x => $"= {x.FormatDouble(17, 24)}", string.Empty));
 
 
-        internal FreeBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
+        internal FreeDoubleKey(string name, Maybe<double> value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 3));
+            // Conservative size estimate - 24 is the total size of %+24.17e+3
+            ValidateInput(name, comment, value.Match(x => 2 + 24));
             RawValue = value;
         }
     }

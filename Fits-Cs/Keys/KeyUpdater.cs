@@ -1,4 +1,4 @@
-﻿namespace FitsCs
+﻿namespace FitsCs.Keys
 {
     public class KeyUpdater<T>
     {

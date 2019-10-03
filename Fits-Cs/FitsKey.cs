@@ -26,8 +26,8 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using FitsCs.Keys;
 using Maybe;
-using MemoryExtensions;
 using TextExtensions;
 
 namespace FitsCs
@@ -162,38 +162,7 @@ namespace FitsCs
                 throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
 
-        private protected static bool IsValidKeyName(ReadOnlySpan<byte> input)
-        {
-            bool IsAllowed(char c)
-            {
-                return char.IsUpper(c)
-                       || char.IsDigit(c)
-                       || c == ' '
-                       || c == '-'
-                       || c == '_';
-            }
-
-            if (input.Length > 0 && 
-                input.Length <= NameSize * AsciiCharSize)
-            {
-                var buffer = ArrayPool<char>.Shared.Rent(NameSize);
-                var charSpan = buffer.AsSpan(0, NameSize);
-
-                try
-                {
-                    Encoding.ASCII.GetChars(input.Slice(0, NameSize * AsciiCharSize), charSpan);
-                    return charSpan.All(IsAllowed);
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(buffer);
-                }
-            }
-
-            return false;
-        }
-
-        private protected static bool IsValidKeyName(ReadOnlySpan<char> input)
+       private protected static bool IsValidKeyName(ReadOnlySpan<char> input)
         {
             if (input.IsEmpty)
                 return false;
@@ -209,31 +178,6 @@ namespace FitsCs
 
             return true;
         }
-
-        private protected static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
-        {
-            var inQuotes = false;
-            int i;
-            for(i = 0;  i < input.Length; i++)
-                if (input[i] == '\'')
-                    inQuotes = !inQuotes;
-                else if (!inQuotes && input[i] == sep)
-                    break;
-
-            return i == input.Length - 1
-                ? input.Length
-                : i;
-        }
-        private protected static bool TryReadFromBinary(ReadOnlySpan<byte> span, out IFitsValue val)
-        {
-            val = null;
-            
-            if (span.Length <= EntrySizeInBytes || !IsValidKeyName(span))
-                return false;
-
-            throw new NotImplementedException(SR.MethodNotImplemented);
-        }
-
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
         {

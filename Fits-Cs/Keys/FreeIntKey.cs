@@ -21,28 +21,27 @@
 //     SOFTWARE.
 
 
-using Maybe;
 using System;
+using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FreeFloatKey : FreeFitsKey, IFitsValue<float>
+    public sealed class FreeIntKey : FreeFitsKey, IFitsValue<int>
     {
-        private protected override string TypePrefix => @"[ float]";
+        private protected override string TypePrefix => @"[   int]";
+
         public override object Value => RawValue.Match(x => (object)x);
         public override bool IsEmpty => false;
-        public Maybe<float> RawValue { get; }
+        public Maybe<int> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x:G9}", string.Empty));
+                RawValue.Match(x => $"= {x}", string.Empty));
 
-
-        internal FreeFloatKey(string name, Maybe<float> value, string comment) : base(name, comment)
+        internal FreeIntKey(string name, Maybe<int> value, string comment) : base(name, comment)
         {
-            // Conservative size estimate - 15 is the total size of %+15.9e+2
-            ValidateInput(name, comment, value.Match(x => 2 + 15));
+            ValidateInput(name, comment, value.Match(x => 2 + x.SignificantDigitsCount()));
             RawValue = value;
         }
     }

@@ -21,12 +21,12 @@
 //     SOFTWARE.
 
 
-using Maybe;
 using System;
+using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FixedBoolKey : FixedFitsKey, IFitsValue<bool>
+    public sealed class FreeBoolKey : FreeFitsKey, IFitsValue<bool>
     {
         private const char TrueConst = 'T';
         private const char FalseConst = 'F';
@@ -38,11 +38,11 @@ namespace FitsCs
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
-                span, 
-                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
+                span,
+                RawValue.Match(x => $"= {(x ? TrueConst : FalseConst)}", string.Empty));
 
 
-        internal FixedBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
+        internal FreeBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
         {
             ValidateInput(name, comment, value.Match(x => 3));
             RawValue = value;

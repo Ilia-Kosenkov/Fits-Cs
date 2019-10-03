@@ -1,7 +1,7 @@
 ﻿using System;
 using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
     public sealed class FreeStringKey : FreeFitsKey, IFitsValue<string>
     {

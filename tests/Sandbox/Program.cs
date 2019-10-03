@@ -1,6 +1,7 @@
 ﻿using FitsCs;
 using Maybe;
 using System;
+using FitsCs.Keys;
 
 namespace Sandbox
 {

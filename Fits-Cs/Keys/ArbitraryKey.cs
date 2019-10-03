@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
     public sealed class ArbitraryKey : FitsKey
     {

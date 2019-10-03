@@ -1,7 +1,5 @@
-﻿using Maybe;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using Maybe;
 
 namespace FitsCs
 {

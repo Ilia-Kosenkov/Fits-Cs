@@ -20,33 +20,32 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
-
-using Maybe;
 using System;
-using System.Numerics;
+using Maybe;
 
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FreeComplexKey : FreeFitsKey, IFitsValue<Complex>
+    public sealed class FixedIntKey : FixedFitsKey, IFitsValue<int>
     {
-        private protected override string TypePrefix => @"[ cmplx]";
+        private protected override string TypePrefix => @"[   int]";
+
         public override object Value => RawValue.Match(x => (object)x);
+
         public override bool IsEmpty => false;
-        public Maybe<Complex> RawValue { get; }
+        public Maybe<int> RawValue { get; }
+
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
-                span,
-                RawValue.Match(x => $"= {x.Real.FormatDouble(17,24)}:{x.Imaginary.FormatDouble(17, 24)}", 
-                    string.Empty));
+                span, 
+                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x), string.Empty));
 
-
-        internal FreeComplexKey(string name, Maybe<Complex> value, string comment) : base(name, comment)
+        internal FixedIntKey(string name, Maybe<int> value, string comment = "") : base(name, comment)
         {
-            // Conservative size estimate - 24 is the total size of %+24.17e+3
-            // Multiplying by 2 and 1 symbol for column separator
-            ValidateInput(name, comment, value.Match(x => 2 + 2 * 24 + 1));
+            ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
             RawValue = value;
         }
+
+    
     }
 }

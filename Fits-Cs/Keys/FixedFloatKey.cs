@@ -23,30 +23,28 @@
 using System;
 using Maybe;
 
-
-namespace FitsCs
+namespace FitsCs.Keys
 {
-    public sealed class FixedIntKey : FixedFitsKey, IFitsValue<int>
+    public sealed class FixedFloatKey : FixedFitsKey, IFitsValue<float>
     {
-        private protected override string TypePrefix => @"[   int]";
+        private protected override string TypePrefix => @"[ float]";
 
         public override object Value => RawValue.Match(x => (object)x);
-
         public override bool IsEmpty => false;
-        public Maybe<int> RawValue { get; }
+        public Maybe<float> RawValue { get; }
 
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
-                span, 
-                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x), string.Empty));
+                span,
+                //RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}", x), string.Empty));
+                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:G9}}", x), string.Empty));
 
-        internal FixedIntKey(string name, Maybe<int> value, string comment = "") : base(name, comment)
+        internal FixedFloatKey(string name, Maybe<float> value, string comment = "") : base(name, comment)
         {
             ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
             RawValue = value;
         }
 
-    
     }
 }
