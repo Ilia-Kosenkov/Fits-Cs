@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using Maybe;
 
 namespace FitsCs
@@ -12,7 +13,7 @@ namespace FitsCs
         {
         }
 
-        private protected bool FormatFree(Span<char> span, string value, out int charsWritten)
+        private protected bool FormatFree(Span<char> span, string value)
         {
             throw new NotImplementedException(SR.MethodNotImplemented);
             //var isCommentNull = string.IsNullOrWhiteSpace(Comment);
@@ -40,23 +41,24 @@ namespace FitsCs
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
         {
-            throw new NotImplementedException(SR.MethodNotImplemented);
+            ValidateType<T>();
 
-            //ValidateType<T>();
-
-
-            //switch (value)
-            //{
-            //    case Maybe<float> fVal:
-            //        return new FixedFloatKey(name, fVal, comment) as IFitsValue<T>;
-            //    case Maybe<int> iVal:
-            //        return new FixedIntKey(name, iVal, comment) as IFitsValue<T>;
-            //    case Maybe<bool> bVal:
-            //        return new FixedBoolKey(name, bVal, comment) as IFitsValue<T>;
-            //    case Maybe<Complex> cVal:
-            //        return new FixedComplexKey(name, cVal, comment) as IFitsValue<T>;
-            //}
-            //throw new NotSupportedException();
+            switch (value)
+            {
+                case Maybe<double> dVal:
+                    return new FreeDoubleKey(name, dVal, comment) as IFitsValue<T>;
+                case Maybe<float> fVal:
+                    return new FreeFloatKey(name, fVal, comment) as IFitsValue<T>;
+                case Maybe<int> iVal:
+                    return new FreeIntKey(name, iVal, comment) as IFitsValue<T>;
+                case Maybe<bool> bVal:
+                    return new FreeBoolKey(name, bVal, comment) as IFitsValue<T>;
+                case Maybe<Complex> cVal:
+                    return new FreeComplexKey(name, cVal, comment) as IFitsValue<T>;
+                case Maybe<string> sval:
+                    throw new NotImplementedException(SR.MethodNotImplemented);
+            }
+            throw new NotSupportedException();
         }
     }
 }
