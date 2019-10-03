@@ -126,6 +126,9 @@
   <data name="KeyNameTooShort" xml:space="preserve">
     <value>Key name cannot be empty.</value>
   </data>
+  <data name="KeyTypeNotSupported" xml:space="preserve">
+    <value>Key type is not supported.</value>
+  </data>
   <data name="KeyValueTooLarge" xml:space="preserve">
     <value>Key value is too large and cannot be stored.</value>
   </data>

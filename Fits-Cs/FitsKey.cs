@@ -159,7 +159,7 @@ namespace FitsCs
         private protected static void ValidateType<T>()
         {
             if(!AllowedTypes.Contains(typeof(T)))
-                throw new NotSupportedException(@"Type is not supported.");
+                throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
 
         private protected static bool IsValidKeyName(ReadOnlySpan<byte> input)
@@ -244,7 +244,19 @@ namespace FitsCs
                 ? FreeFitsKey.Create(name, value, comment) 
                 : FixedFitsKey.Create(name, value, comment);
         }
-        public static IFitsValue Create() => BlankKey.Blank;
+
+        public static IFitsValue Create(string name, Maybe.Maybe value, string comment = null,
+            KeyType type = KeyType.Fixed)
+        {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            return type == KeyType.Free
+                ? FreeFitsKey.Create(name, value, comment)
+                : FixedFitsKey.Create(name, value, comment);
+        }
+
+        public static IFitsValue CreateBlank() => BlankKey.Blank;
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
         public static IFitsValue CreateComment(string comment) => new ArbitraryKey(@"COMMENT " + comment);
         public static IFitsValue CreateHistory(string history) => new ArbitraryKey(@"HISTORY " + history);

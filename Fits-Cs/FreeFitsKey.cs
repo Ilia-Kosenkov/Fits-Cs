@@ -54,7 +54,28 @@ namespace FitsCs
                 case Maybe<string> sval:
                     return new FreeStringKey(name, sval, comment) as IFitsValue<T>;
             }
-            throw new NotSupportedException();
+            throw new NotSupportedException(SR.KeyTypeNotSupported);
+        }
+
+        public static IFitsValue Create(string name, Maybe.Maybe value, string comment = null)
+        {
+
+            switch (value)
+            {
+                case Maybe<double> dVal:
+                    return new FreeDoubleKey(name, dVal, comment) as IFitsValue;
+                case Maybe<float> fVal:
+                    return new FreeFloatKey(name, fVal, comment) as IFitsValue;
+                case Maybe<int> iVal:
+                    return new FreeIntKey(name, iVal, comment) as IFitsValue;
+                case Maybe<bool> bVal:
+                    return new FreeBoolKey(name, bVal, comment) as IFitsValue;
+                case Maybe<Complex> cVal:
+                    return new FreeComplexKey(name, cVal, comment) as IFitsValue;
+                case Maybe<string> sval:
+                    return new FreeStringKey(name, sval, comment) as IFitsValue;
+            }
+            throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
     }
 }

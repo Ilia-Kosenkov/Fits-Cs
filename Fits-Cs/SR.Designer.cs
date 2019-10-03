@@ -88,6 +88,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Key type is not supported..
+        /// </summary>
+        internal static string KeyTypeNotSupported {
+            get {
+                return ResourceManager.GetString("KeyTypeNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Key value is too large and cannot be stored..
         /// </summary>
         internal static string KeyValueTooLarge {
