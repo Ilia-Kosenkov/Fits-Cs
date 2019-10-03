@@ -61,6 +61,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Key name contains illegal symbols.
+        /// </summary>
+        internal static string KeyNameIllegal {
+            get {
+                return ResourceManager.GetString("KeyNameIllegal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Key name is too large..
         /// </summary>
         internal static string KeyNameTooLong {

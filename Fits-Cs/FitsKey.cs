@@ -149,6 +149,9 @@ namespace FitsCs
             if (name.Length > NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
 
+            if(!IsValidKeyName(name.AsSpan()))
+                throw new ArgumentException(SR.KeyNameIllegal, nameof(name));
+
             if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
@@ -190,6 +193,22 @@ namespace FitsCs
             return false;
         }
 
+        public static bool IsValidKeyName(ReadOnlySpan<char> input)
+        {
+            if (input.IsEmpty)
+                return false;
+
+            if (input.Length > NameSize)
+                return false;
+
+            foreach (var @char in input.TrimEnd())
+            {
+                if (!char.IsUpper(@char) && !char.IsDigit(@char) && @char != '-' && @char != '_') 
+                    return false;
+            }
+
+            return true;
+        }
 
         private static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
         {
