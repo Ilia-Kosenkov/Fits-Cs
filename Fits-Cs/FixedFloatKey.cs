@@ -36,7 +36,7 @@ namespace FitsCs
 
 
         public override bool TryFormat(Span<char> span)
-            => FormatFixed(
+            => TryFormat(
                 span,
                 //RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}", x), string.Empty));
                 RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:G9}}", x), string.Empty));

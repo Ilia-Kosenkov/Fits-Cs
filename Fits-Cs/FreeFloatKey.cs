@@ -34,7 +34,7 @@ namespace FitsCs
         public Maybe<float> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => FormatFree(
+            => TryFormat(
                 span,
                 RawValue.Match(x => $"= {x:G9}", string.Empty));
 

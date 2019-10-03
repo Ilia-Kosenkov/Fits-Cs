@@ -6,35 +6,34 @@ namespace FitsCs
 {
     public abstract class FixedFitsKey : FitsKey
     {
-        private protected static readonly string EmptyString = string.Intern(new string (' ', 20));
         protected const int FixedFieldSize = 20;
         public override KeyType Type => KeyType.Fixed;
         private protected FixedFitsKey(string name, string comment) : base(name, comment)
         {
         }
 
-        private protected bool FormatFixed(Span<char> span, string value)
-        {
-            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            var len = NameSize +
-                      value.Length;
+        //private protected bool FormatFixed(Span<char> span, string value)
+        //{
+        //    if (span.Length < EntrySizeInBytes)
+        //        return false;
 
-            if (span.Length < EntrySizeInBytes)
-                return false;
+        //    var isCommentNull = string.IsNullOrWhiteSpace(Comment);
+        //    var len = NameSize +
+        //              value.Length;
 
-            span.Slice(0, EntrySizeInBytes).Fill(' ');
-            Name.AsSpan().CopyTo(span);
-            value.AsSpan().CopyTo(span.Slice(NameSize));
+        //    span.Slice(0, EntrySizeInBytes).Fill(' ');
+        //    Name.AsSpan().CopyTo(span);
+        //    value.AsSpan().CopyTo(span.Slice(NameSize));
 
 
-            if (!isCommentNull)
-            {
-                Comment.AsSpan().CopyTo(span.Slice(len + 2));
-                span[len + 1] = '/';
-            }
+        //    if (!isCommentNull)
+        //    {
+        //        Comment.AsSpan().CopyTo(span.Slice(len + 2));
+        //        span[len + 1] = '/';
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
         {

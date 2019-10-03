@@ -37,7 +37,7 @@ namespace FitsCs
         public Maybe<bool> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => FormatFixed(
+            => TryFormat(
                 span, 
                 RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
 

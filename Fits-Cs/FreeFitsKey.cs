@@ -13,31 +13,27 @@ namespace FitsCs
         {
         }
 
-        private protected bool FormatFree(Span<char> span, string value)
-        {
-            throw new NotImplementedException(SR.MethodNotImplemented);
-            //var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            //charsWritten = 0;
-            //var len = NameSize +
-            //          value.Length;
+        //private protected bool FormatFree(Span<char> span, string value)
+        //{
+        //    if (span.Length < EntrySizeInBytes)
+        //        return false;
+            
+        //    var isCommentNull = string.IsNullOrWhiteSpace(Comment);
+        //    var len = NameSize +
+        //              value.Length;
 
-            //if (span.Length < EntrySizeInBytes)
-            //    return false;
+        //    span.Slice(0, EntrySizeInBytes).Fill(' ');
+        //    Name.AsSpan().CopyTo(span);
+        //    value.AsSpan().CopyTo(span.Slice(NameSize));
+            
+        //    if (!isCommentNull)
+        //    {
+        //        Comment.AsSpan().CopyTo(span.Slice(len + 2));
+        //        span[len + 1] = '/';
+        //    }
 
-            //span.Slice(0, EntrySizeInBytes).Fill(' ');
-            //Name.AsSpan().CopyTo(span);
-            //value.AsSpan().CopyTo(span.Slice(NameSize));
-
-
-            //if (!isCommentNull)
-            //{
-            //    Comment.AsSpan().CopyTo(span.Slice(len + 2));
-            //    span[len + 1] = '/';
-            //}
-
-            //charsWritten = EntrySizeInBytes;
-            //return true;
-        }
+        //    return true;
+        //}
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
         {

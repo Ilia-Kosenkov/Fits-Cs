@@ -120,6 +120,27 @@ namespace FitsCs
             }
         }
 
+        private protected bool TryFormat(Span<char> span, string value)
+        {
+            if (span.Length < EntrySizeInBytes)
+                return false;
+
+            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
+            var len = NameSize +
+                      value.Length;
+
+            span.Slice(0, EntrySizeInBytes).Fill(' ');
+            Name.AsSpan().CopyTo(span);
+            value.AsSpan().CopyTo(span.Slice(NameSize));
+
+
+            if (isCommentNull) return true;
+
+            Comment.AsSpan().CopyTo(span.Slice(len + 2));
+            span[len + 1] = '/';
+
+            return true;
+        }
 
         private protected static void ValidateInput(string name, string comment, int valueSize)
         {

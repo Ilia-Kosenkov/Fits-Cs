@@ -35,7 +35,7 @@ namespace FitsCs
         public Maybe<Complex> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => FormatFree(
+            => TryFormat(
                 span,
                 RawValue.Match(x => $"= {x.Real.FormatDouble(17,24)}:{x.Imaginary.FormatDouble(17, 24)}", 
                     string.Empty));

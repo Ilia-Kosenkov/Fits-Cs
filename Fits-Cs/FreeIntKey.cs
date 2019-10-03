@@ -35,7 +35,7 @@ namespace FitsCs
         public Maybe<int> RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => FormatFree(
+            => TryFormat(
                 span,
                 RawValue.Match(x => $"= {x}", string.Empty));
 
