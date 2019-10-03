@@ -1,6 +1,7 @@
 ﻿using System;
 using MemoryExtensions;
 
+
 namespace FitsCs
 {
     internal static class Extensions
@@ -82,6 +83,33 @@ namespace FitsCs
             target[targetInd] = '\'';
 
             return true;
+        }
+
+        public static int SignificantDigitsCount(this int value)
+        {
+            if (value == 0)
+                return 1;
+            if (value < 0)
+                value = -value;
+
+            var n = 0;
+
+            while (value != 0)
+            {
+                n++;
+                value /= 10;
+            }
+
+            return n;
+        }
+
+        public static string FormatDouble(this double value, int decPos, int maxSize)
+        {
+            // Using straightforward two-attempt way
+            var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
+            if (resultStr.Length > maxSize)
+                resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
+            return resultStr;
         }
     }
 }
