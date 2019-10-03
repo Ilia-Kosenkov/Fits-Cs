@@ -34,8 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Maybe, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Maybe.1.0.0\lib\netstandard2.0\Maybe.dll</HintPath>
+    <Reference Include="Maybe, Version=1.5.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\..\packages\Maybe.1.5.0\lib\netstandard2.0\Maybe.dll</HintPath>
     </Reference>
     <Reference Include="MemoryExtensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\..\packages\MemoryExtensions.1.0.0\lib\netstandard2.0\MemoryExtensions.dll</HintPath>
@@ -79,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="FOCx38i0101t_c0f.fits">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

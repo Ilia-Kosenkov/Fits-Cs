@@ -5,7 +5,8 @@ using TextExtensions;
 
 namespace FitsCs
 {
-    internal static class Extensions
+    // Switch back to internal
+    public static class Extensions
     {
         private const int MinFixedStringSize = 10;
         public static int StringSizeWithQuoteReplacement(
