@@ -10,6 +10,8 @@ namespace FitsCs
         {
             if(string.IsNullOrWhiteSpace(contents) || contents.Length > EntrySize)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(contents));
+            if(!contents.AsSpan().IsStringHduCompatible())
+                throw new ArgumentException(SR.HduStringIllegal, nameof(contents));
 
             _contents = contents;
         }

@@ -162,7 +162,7 @@ namespace FitsCs
                 throw new NotSupportedException(@"Type is not supported.");
         }
 
-        public static bool IsValidKeyName(ReadOnlySpan<byte> input)
+        private protected static bool IsValidKeyName(ReadOnlySpan<byte> input)
         {
             bool IsAllowed(char c)
             {
@@ -193,7 +193,7 @@ namespace FitsCs
             return false;
         }
 
-        public static bool IsValidKeyName(ReadOnlySpan<char> input)
+        private protected static bool IsValidKeyName(ReadOnlySpan<char> input)
         {
             if (input.IsEmpty)
                 return false;
@@ -210,7 +210,7 @@ namespace FitsCs
             return true;
         }
 
-        private static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
+        private protected static int FindCommentStart(ReadOnlySpan<char> input, char sep = '/')
         {
             var inQuotes = false;
             int i;
