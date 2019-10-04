@@ -37,7 +37,7 @@ namespace FitsCs.Keys
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
         {
-            ValidateType<T>();
+            //ValidateType<T>();
 
             switch (value)
             {

@@ -156,11 +156,11 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
-        private protected static void ValidateType<T>()
-        {
-            if(!AllowedTypes.Contains(typeof(T)))
-                throw new NotSupportedException(SR.KeyTypeNotSupported);
-        }
+        //private protected static void ValidateType<T>()
+        //{
+        //    if(!AllowedTypes.Contains(typeof(T)))
+        //        throw new NotSupportedException(SR.KeyTypeNotSupported);
+        //}
 
        private protected static bool IsValidKeyName(ReadOnlySpan<char> input)
         {
