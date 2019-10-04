@@ -28,21 +28,26 @@ namespace FitsCs
     {
         public const int KeysPerBlob = SizeInBytes / FitsKey.EntrySize;
         public const int SizeInBytes = 2880;
-        private readonly byte[] _data;
-        public bool IsInitialized { get; private set; }
-        public ReadOnlyMemory<byte> Memory { get; }
+        private byte[] _data;
+        public bool IsInitialized { get; private set; } = false;
 
-        public DataBlob()
-        {
-            _data = new byte[SizeInBytes];
-            Memory = new ReadOnlyMemory<byte>(_data);
-        }
+        public ReadOnlySpan<byte> Data =>
+            IsInitialized
+                ? _data ?? ReadOnlySpan<byte>.Empty
+                : ReadOnlySpan<byte>.Empty;
 
         public bool TryInitialize(ReadOnlySpan<byte> span)
         {
-            var isOk = span.Length == SizeInBytes && span.TryCopyTo(_data.AsSpan());
-            IsInitialized = isOk;
-            return isOk;
+            if (IsInitialized || span.Length > SizeInBytes)
+                return false;
+
+            if(_data is null)
+                _data = new byte[SizeInBytes];
+
+            span.CopyTo(_data);
+            IsInitialized = true;
+
+            return true;
         }
 
         public bool TryInitialize(ReadOnlyMemory<byte> memory)
@@ -50,36 +55,22 @@ namespace FitsCs
         
         public bool TryInitialize(byte[] data)
         {
-            IsInitialized = false;
+            if (IsInitialized)
+                return false;
+
             if (data.Length <= SizeInBytes)
                 return false;
+
+            if(_data is null)
+                _data = new byte[SizeInBytes];
             Buffer.BlockCopy(data, 0, _data, 0, SizeInBytes);
             IsInitialized = true;
             return true;
         }
 
-        public bool TestIsKeywordsWeak()
+        public void Reset()
         {
-            var isFirstKey = FitsKey.IsValidKeyName(Memory.Span.Slice(0, FitsKey.NameSize));
-            if (!isFirstKey)
-                return false;
-
-            var lastKeySpan = Memory.Span.Slice(Memory.Length - FitsKey.EntrySize, FitsKey.NameSize);
-
-            return FitsKey.IsValidKeyName(lastKeySpan);
-        }
-
-        public bool TestIsKeywordsStrong()
-        {
-            var isFirstKey = FitsKey.IsValidKeyName(Memory.Span.Slice(0, FitsKey.NameSize));
-            if (!isFirstKey)
-                return false;
-
-            for (var i = 1; i < KeysPerBlob; i++)
-                if (!FitsKey.IsValidKeyName(Memory.Span.Slice(i * FitsKey.EntrySize, FitsKey.NameSize)))
-                    return false;
-
-            return true;
+            IsInitialized = false;
         }
     }
 }

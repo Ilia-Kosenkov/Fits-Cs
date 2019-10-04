@@ -20,9 +20,9 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+using Maybe;
 using System;
-using System.Buffers;
-using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,92 +33,109 @@ namespace FitsCs
     {
         // 16 * 2880 bytes is ~ 45 KB
         // It allows to process up to 16 Fits IDUs at once
-        public const int BufferSize = 16 * DataBlob.SizeInBytes;
-        private readonly int _allowedBufferSize;
-        private readonly int _blobsInBuffer;
-        private byte[] _buffer;
+        public const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
+        private readonly byte[] _buffer;
+        private int _nReadBytes = 0;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+
 
         private readonly Stream _stream;
         private readonly bool _leaveOpen;
 
+
+        private Span<byte> Span => _buffer;
+
         public FitsReader(Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _allowedBufferSize = BufferSize;
-            _blobsInBuffer = _allowedBufferSize / DataBlob.SizeInBytes;
+            _buffer = new byte[DefaultBufferSize];
         }
 
         public FitsReader(Stream stream, int bufferSize)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _allowedBufferSize = bufferSize <= 0
-                    ? 0
-                    : DataBlob.SizeInBytes * Math.Max(1, bufferSize / DataBlob.SizeInBytes);
-            _blobsInBuffer = _allowedBufferSize / DataBlob.SizeInBytes;
+            var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
+                ? DefaultBufferSize
+                : bufferSize;
+
+            _buffer = new byte[allowedBufferSize];
         }
 
         public FitsReader(Stream stream, int bufferSize, bool leaveOpen)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _allowedBufferSize = bufferSize <= 0
-                ? 0
-                : DataBlob.SizeInBytes * Math.Max(1, bufferSize / DataBlob.SizeInBytes);
-            _blobsInBuffer = _allowedBufferSize / DataBlob.SizeInBytes;
+            var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
+                ? DefaultBufferSize
+                : bufferSize;
             _leaveOpen = leaveOpen;
+
+            _buffer = new byte[allowedBufferSize];
         }
 
+        
         public async Task<DataBlob> ReadAsync(CancellationToken token = default)
         {
-            var buffer = ArrayPool<byte>.Shared.Rent(DataBlob.SizeInBytes);
+            // Synchronizing read access
+            await _semaphore.WaitAsync(token);
 
             try
             {
-                var n = await _stream.ReadAsync(buffer, 0, DataBlob.SizeInBytes, token);
-                if(n != DataBlob.SizeInBytes)
-                    throw new InvalidOperationException("Failed to read whole blob");
+                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                _nReadBytes += n;
 
+                if (_nReadBytes < DataBlob.SizeInBytes)
+                    return null;
+                
                 var blob = new DataBlob();
-                if(!blob.TryInitialize(buffer))
-                        throw new InvalidOperationException("Failed to copy data.");
 
+                if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
+                    return null;
+
+                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
+                _nReadBytes = 0;
+                
                 return blob;
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(buffer);
+                _semaphore.Release();
             }
         }
 
-        public Task<ImmutableArray<DataBlob>> ReadBlockAsync(int n, CancellationToken token = default)
+        public async Task<bool> ReadAsync(DataBlob blob, CancellationToken token = default)
         {
-            if(n <= 0)
-                throw new ArgumentException(@"Should be positive.", nameof(n));
-            int nBlobs;
+            // Synchronizing read access
+            await _semaphore.WaitAsync(token);
 
-            if (_stream.CanSeek)
+            try
             {
-                // We can estimate exactly how much data there are to read
-                var bytesLeft = _stream.Length - _stream.Position;
-                if (bytesLeft < DataBlob.SizeInBytes)
-                    return Task.FromResult(ImmutableArray<DataBlob>.Empty);
+                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                _nReadBytes += n;
 
-                nBlobs = (int)Math.Min(bytesLeft / DataBlob.SizeInBytes, n);
+                if (_nReadBytes < DataBlob.SizeInBytes)
+                    return false;
 
+                if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
+                    return false;
 
+                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
+                _nReadBytes = 0;
+
+                return true;
             }
-            else
-                nBlobs = n;
-
-            return _blobsInBuffer == 0
-                ? ReadBlockAsyncNoBuffer(nBlobs, token)
-                : ReadBlockAsyncWithBuffer(nBlobs, token);
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
+       
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-                if(!_leaveOpen)
+                _semaphore.Dispose();
+                if (!_leaveOpen)
                     _stream?.Dispose();
             }
         }
@@ -129,52 +146,7 @@ namespace FitsCs
             GC.SuppressFinalize(this);
         }
 
-        internal async Task<ImmutableArray<DataBlob>> ReadBlockAsyncWithBuffer(int nBlobs, CancellationToken token)
-        {
-            if (_buffer is null)
-                _buffer = new byte[_allowedBufferSize];
-            var memory = new ReadOnlyMemory<byte>(_buffer);
-
-            var builder = ImmutableArray.CreateBuilder<DataBlob>(nBlobs);
-            var nReads = (int)Math.Ceiling(1.0 * nBlobs / _blobsInBuffer);
-
-            for (var i = 0; i < nReads; i++)
-            {
-                var bytesToRead = i == nReads - 1
-                    ? nBlobs * DataBlob.SizeInBytes - (nReads - 1) * _buffer.Length
-                    : _buffer.Length;
-
-                var nReadBytes = await _stream.ReadAsync(_buffer, 0, bytesToRead, token);
-                if (nReadBytes % DataBlob.SizeInBytes != 0)
-                    throw new IOException("Inconsistent Stream size.");
-
-                if (nReadBytes == 0)
-                    break;
-
-                for (var j = 0; j < nReadBytes / DataBlob.SizeInBytes; j++)
-                {
-                    var blob = new DataBlob();
-                    if (!blob.TryInitialize(memory.Slice(j * DataBlob.SizeInBytes, DataBlob.SizeInBytes)))
-                        throw new InvalidOperationException("Failed to copy data.");
-                    builder.Add(blob);
-                }
-            }
-
-            return builder.ToImmutable();
-        }
-
-        internal async Task<ImmutableArray<DataBlob>> ReadBlockAsyncNoBuffer(int nBlobs, CancellationToken token)
-        {
-            var builder = ImmutableArray.CreateBuilder<DataBlob>(nBlobs);
-
-            for (var i = 0; i < nBlobs; i++)
-            {
-                var blob = await ReadAsync(token);
-                builder.Add(blob);
-            }
-
-            return builder.ToImmutable();
-        }
+  
 
     }
 }
