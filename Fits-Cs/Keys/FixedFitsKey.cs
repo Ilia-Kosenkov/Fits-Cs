@@ -6,7 +6,7 @@ namespace FitsCs.Keys
 {
     public abstract class FixedFitsKey : FitsKey
     {
-        protected const int FixedFieldSize = 20;
+        public const int FixedFieldSize = 20;
         public override KeyType Type => KeyType.Fixed;
         private protected FixedFitsKey(string name, string comment) : base(name, comment)
         {

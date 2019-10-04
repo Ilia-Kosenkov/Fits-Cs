@@ -27,7 +27,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using FitsCs.Keys;
+using JetBrains.Annotations;
 using Maybe;
+using MemoryExtensions;
 using TextExtensions;
 
 namespace FitsCs
@@ -156,12 +158,6 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
-        //private protected static void ValidateType<T>()
-        //{
-        //    if(!AllowedTypes.Contains(typeof(T)))
-        //        throw new NotSupportedException(SR.KeyTypeNotSupported);
-        //}
-
         private protected static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
@@ -194,6 +190,88 @@ namespace FitsCs
             return Encoding.GetChars(input, parsed) == NameSize && IsValidKeyName(parsed, allowBlank);
         }
 
+        [CanBeNull]
+        public static IFitsValue ParseRawData(ReadOnlySpan<byte> input)
+        {
+            if (input.Length < EntrySizeInBytes)
+                return null;
+            // Keyword is text-encoded, so convert whole input to chars and do checks
+
+            Span<char> charRep = stackalloc char[EntrySize];
+
+            // Byte array should be exactly convertible to char array, especially when default encoding is ASCII
+            if (Encoding.GetChars(input.Slice(0, EntrySizeInBytes), charRep) != EntrySize)
+                return null;
+            
+            // Here, `charRep` contains character representation and contents can be parsed
+
+            // Key name is not valid
+            if (!IsValidKeyName(charRep.Slice(0, NameSize), true))
+                return null;
+
+            // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
+            if (charRep[EqualsPos] == '=' && charRep[EqualsPos + 1] == ' ')
+            {
+                // Keyword has value
+                var contentSpan = charRep.Slice(EqualsPos + 2);
+                
+                // Look for first non-space symbol. The scheme is smth. like this:
+                // Quote -> string
+                //      Look for last quote then comment
+                // T/F -> bool, look for comment
+                // Everything else is treated as number, look for comment
+
+                var firstSymb = '\0';
+                var pos = 0;
+                foreach(var symb in contentSpan)
+                { 
+                    if (symb != ' ')
+                    {
+                        firstSymb = char.ToUpperInvariant(symb);
+                        break;
+                    }
+                    pos++;
+                }
+
+                
+                switch (firstSymb)
+                {
+                    case '\'':
+                        // Do string
+                        break;
+                    case 'T':
+                    case 'F':
+                        // Do bool
+                        var commentStart = FindComment(contentSpan);
+                        return Create<bool>(System.MemoryExtensions.TrimEnd(charRep.Slice(0, NameSize)).ToString(),
+                            firstSymb == 'T',
+                            commentStart < contentSpan.Length - 1
+                                ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
+                                : null,
+                            pos == FixedFitsKey.FixedFieldSize - 1
+                                ? KeyType.Fixed
+                                : KeyType.Free);
+                    default:
+                        // Treat everything else as number
+                        break;
+                }
+            }
+
+
+            return null;
+        }
+
+        private protected static int FindComment(ReadOnlySpan<char> input)
+        {
+            var index = 0;
+            foreach (var item in input)
+            {
+                if (item == '/')
+                    break;
+                index++;
+            }
+            return index;
+        }
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
         {
