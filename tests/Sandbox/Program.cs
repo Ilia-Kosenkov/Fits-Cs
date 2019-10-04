@@ -22,7 +22,8 @@ namespace Sandbox
             {
                 using (var reader = new FitsReader(fs))
                 {
-                    await reader.ReadAsync();
+                    var blob = await reader.ReadAsync();
+                    var result = blob?.GetContentType();
                 }
             }
         }
