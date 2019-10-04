@@ -24,6 +24,10 @@ namespace Sandbox
                 {
                     var blob = await reader.ReadAsync();
                     var result = blob?.GetContentType();
+                    if (result == BlobType.FitsHeader)
+                    {
+                        var key = FitsKey.ParseRawData(blob.Data);
+                    }
                 }
             }
         }
