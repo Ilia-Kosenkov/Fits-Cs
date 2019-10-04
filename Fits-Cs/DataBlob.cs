@@ -21,15 +21,25 @@
 //     SOFTWARE.
 
 using System;
+using JetBrains.Annotations;
 
 namespace FitsCs
 {
+    public enum BlobType : byte
+    {
+        Empty = 0,
+        Corrupted = 1,
+        FitsHeader = 2,
+        Data = 3
+    }
+
     public class DataBlob
     {
-        public const int KeysPerBlob = SizeInBytes / FitsKey.EntrySize;
         public const int SizeInBytes = 2880;
+        public static readonly int KeysPerBlob = SizeInBytes / FitsKey.EntrySizeInBytes;
+
         private byte[] _data;
-        public bool IsInitialized { get; private set; } = false;
+        public bool IsInitialized { get; private set; }
 
         public ReadOnlySpan<byte> Data =>
             IsInitialized
@@ -53,9 +63,11 @@ namespace FitsCs
         public bool TryInitialize(ReadOnlyMemory<byte> memory)
             => TryInitialize(memory.Span);
         
-        public bool TryInitialize(byte[] data)
+        [ContractAnnotation("null => false")]
+        public bool TryInitialize(
+            [CanBeNull] byte[] data)
         {
-            if (IsInitialized)
+            if (IsInitialized || data is null)
                 return false;
 
             if (data.Length <= SizeInBytes)
@@ -72,5 +84,32 @@ namespace FitsCs
         {
             IsInitialized = false;
         }
+
+
+        public BlobType GetContentType()
+        {
+            if (!IsInitialized)
+                return BlobType.Empty;
+            // Check if blob starts with key name
+            var step = FitsKey.EntrySizeInBytes;
+            var size = FitsKey.NameSize * FitsKey.CharSizeInBytes;
+            var span = Data;
+
+            if (FitsKey.IsValidKeyName(span.Slice(0, size), true))
+            {
+                // Now check all remaining
+                var counter = 1;
+                for (var i = 1; i < KeysPerBlob; i++)
+                    counter += FitsKey.IsValidKeyName(span.Slice(i * step, size), true) ? 1 : 0;
+
+                return counter == KeysPerBlob ? BlobType.FitsHeader : BlobType.Corrupted;
+            }
+
+            // If its not a fits key header, assume it is data
+            return BlobType.Data;
+        }
+
+
+        
     }
 }

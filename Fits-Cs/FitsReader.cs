@@ -20,12 +20,11 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
-using Maybe;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace FitsCs
 {
@@ -35,7 +34,7 @@ namespace FitsCs
         // It allows to process up to 16 Fits IDUs at once
         public const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
         private readonly byte[] _buffer;
-        private int _nReadBytes = 0;
+        private int _nReadBytes;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
 
@@ -45,13 +44,15 @@ namespace FitsCs
 
         private Span<byte> Span => _buffer;
 
-        public FitsReader(Stream stream)
+        public FitsReader([NotNull] Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _buffer = new byte[DefaultBufferSize];
         }
 
-        public FitsReader(Stream stream, int bufferSize)
+        public FitsReader(
+            [NotNull] Stream stream, 
+            int bufferSize)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
@@ -61,7 +62,9 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
-        public FitsReader(Stream stream, int bufferSize, bool leaveOpen)
+        public FitsReader(
+            [NotNull] Stream stream, 
+            int bufferSize, bool leaveOpen)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
@@ -72,7 +75,7 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
-        
+        [ItemCanBeNull]
         public async Task<DataBlob> ReadAsync(CancellationToken token = default)
         {
             // Synchronizing read access
@@ -102,8 +105,13 @@ namespace FitsCs
             }
         }
 
-        public async Task<bool> ReadAsync(DataBlob blob, CancellationToken token = default)
+        public async Task<bool> ReadAsync(
+            [NotNull] DataBlob blob,
+            CancellationToken token = default)
         {
+            if(blob is null)
+                throw new ArgumentException(SR.NullArgument, nameof(blob));
+
             // Synchronizing read access
             await _semaphore.WaitAsync(token);
 

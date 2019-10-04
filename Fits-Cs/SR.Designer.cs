@@ -113,5 +113,14 @@ namespace FitsCs {
                 return ResourceManager.GetString("MethodNotImplemented", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Argument cannot be null..
+        /// </summary>
+        internal static string NullArgument {
+            get {
+                return ResourceManager.GetString("NullArgument", resourceCulture);
+            }
+        }
     }
 }

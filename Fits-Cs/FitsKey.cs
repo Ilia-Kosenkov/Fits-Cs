@@ -24,7 +24,7 @@ using System;
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
 using System.Text;
 using FitsCs.Keys;
 using Maybe;
@@ -50,8 +50,8 @@ namespace FitsCs
         public const int EntrySize = 80;
 
         private protected static Encoding Encoding { get; } = Encoding.ASCII;
-        private static  int AsciiCharSize { get; } = Encoding.GetMaxCharCount(1);
-        public static int EntrySizeInBytes { get; }= EntrySize * AsciiCharSize;
+        public static  int CharSizeInBytes { get; } = Encoding.GetMaxCharCount(1);
+        public static int EntrySizeInBytes { get; }= EntrySize * CharSizeInBytes;
         public static IImmutableList<Type> AllowedTypes { get; } = new[]
         {
             typeof(double),
@@ -162,7 +162,7 @@ namespace FitsCs
         //        throw new NotSupportedException(SR.KeyTypeNotSupported);
         //}
 
-       private protected static bool IsValidKeyName(ReadOnlySpan<char> input)
+        private protected static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
                 return false;
@@ -172,12 +172,28 @@ namespace FitsCs
 
             foreach (var @char in input.TrimEnd())
             {
-                if (!char.IsUpper(@char) && !char.IsDigit(@char) && @char != '-' && @char != '_') 
+                if (!char.IsUpper(@char) 
+                    && !char.IsDigit(@char) 
+                    && @char != '-' && @char != '_'
+                    && !(allowBlank && @char == ' ')) 
                     return false;
             }
 
             return true;
         }
+
+        internal static bool IsValidKeyName(ReadOnlySpan<byte> input, bool allowBlank = false)
+        {
+            if (input.IsEmpty)
+                return false;
+            if (input.Length != NameSize * CharSizeInBytes)
+                return false;
+
+            Span<char> parsed = stackalloc char[NameSize * CharSizeInBytes];
+            
+            return Encoding.GetChars(input, parsed) == NameSize && IsValidKeyName(parsed, allowBlank);
+        }
+
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
         {
