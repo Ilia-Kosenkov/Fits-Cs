@@ -24,13 +24,12 @@ using System;
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using FitsCs.Keys;
 using JetBrains.Annotations;
 using Maybe;
-using MemoryExtensions;
 using TextExtensions;
+
 
 namespace FitsCs
 {
@@ -144,8 +143,14 @@ namespace FitsCs
             return true;
         }
 
-        private protected static void ValidateInput(string name, string comment, int valueSize)
+        [ContractAnnotation("name:null => halt")]
+        private protected static void ValidateInput(
+            [CanBeNull] string name,
+            [CanBeNull] string comment, 
+            int valueSize)
         {
+            if (name is null)
+                throw new ArgumentNullException(SR.NullArgument, nameof(name));
             if(name.Length == 0)
                 throw new ArgumentException(SR.KeyNameTooShort, nameof(name));
             if (name.Length > NameSize)
@@ -154,10 +159,14 @@ namespace FitsCs
             if(!IsValidKeyName(name.AsSpan()))
                 throw new ArgumentException(SR.HduStringIllegal, nameof(name));
 
+            if (valueSize < 0)
+                throw new ArgumentException(SR.InvalidArgument, nameof(valueSize));
+
             if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
+        [Pure]
         private protected static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
@@ -178,6 +187,7 @@ namespace FitsCs
             return true;
         }
 
+        [Pure]
         internal static bool IsValidKeyName(ReadOnlySpan<byte> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
@@ -237,10 +247,27 @@ namespace FitsCs
                 switch (firstSymb)
                 {
                     case '\'':
+                    {
                         // Do string
-                        break;
+                        var quoteEnd = FindLastQuote(contentSpan);
+                        // Incorrectly formed keyword
+                        if (quoteEnd == contentSpan.Length)
+                            return null;
+                        
+                        ReadOnlySpan<char> innerStrSpan = contentSpan.Slice(pos + 1, quoteEnd - pos - 1);
+
+                        var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
+                        return innerStrSpan.TryParseRaw(out var str)
+                            ? Create<string>(System.MemoryExtensions.TrimEnd(charRep.Slice(0, NameSize)).ToString(),
+                                str,
+                                commentStart < contentSpan.Length - 1 - quoteEnd
+                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
+                                    : null)
+                            : null;
+                    }
                     case 'T':
                     case 'F':
+                    {
                         // Do bool
                         var commentStart = FindComment(contentSpan);
                         return Create<bool>(System.MemoryExtensions.TrimEnd(charRep.Slice(0, NameSize)).ToString(),
@@ -251,6 +278,7 @@ namespace FitsCs
                             pos == FixedFitsKey.FixedFieldSize - 1
                                 ? KeyType.Fixed
                                 : KeyType.Free);
+                    }
                     default:
                         // Treat everything else as number
                         break;
@@ -263,14 +291,36 @@ namespace FitsCs
 
         private protected static int FindComment(ReadOnlySpan<char> input)
         {
-            var index = 0;
-            foreach (var item in input)
+            for(var i = input.Length - 1; i >= 0; i--)
+                if (input[i] == '/')
+                    return i;
+
+            return input.Length;
+        }
+
+        private protected static int FindLastQuote(ReadOnlySpan<char> input)
+        {
+            var inQuotes = false;
+            for (var i = 0; i < input.Length - 1; i++)
             {
-                if (item == '/')
-                    break;
-                index++;
+                if (input[i] == '\'')
+                {
+                    if (input[i + 1] != '\'')
+                    {
+                        if (inQuotes)
+                            return i;
+
+                        inQuotes = true;
+                    }
+                    else
+                        i++;
+                }
             }
-            return index;
+
+            if (input.Length >= 2 && input[input.Length - 2] != '\'' && input[input.Length - 1] == '\'')
+                return input.Length - 1;
+
+            return input.Length;
         }
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)

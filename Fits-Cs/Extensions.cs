@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Text;
 using FitsCs.Keys;
+using IndexRange;
+using JetBrains.Annotations;
 using MemoryExtensions;
 using TextExtensions;
 
@@ -150,6 +152,53 @@ namespace FitsCs
             {
                 return null;
             }
+        }
+    }
+
+    public static class ParsingExtensions
+    {
+        
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> quotedString, 
+            [CanBeNull] out string @string)
+        {
+            @string = null;
+            var trimmedInput = quotedString.Trim();
+            // If input is empty or exceeds one entry size;
+            if (trimmedInput.IsEmpty || trimmedInput.Length > FitsKey.EntrySize)
+                return false;
+            
+
+            Span<char> resultSpan = stackalloc char[trimmedInput.Length];
+
+            var start = 0;
+            var offset = 0;
+            for (var i = 0; i < trimmedInput.Length - 1; i++)
+            {
+                if (trimmedInput[i] == '\'')
+                {
+                    if (trimmedInput[i + 1] == '\'')
+                    {
+                        var len = i + 1 - start;
+                        if (!trimmedInput.Slice(start, len).TryCopyTo(resultSpan.Slice(offset)))
+                            return false;
+                        start += len + 1;
+                        offset += len;
+                        i += 1;
+                    }
+                    else
+                        return false;
+                }
+            }
+
+            if (start < trimmedInput.Length - 1 &&
+                trimmedInput.Slice((start, Index.End)).TryCopyTo(resultSpan.Slice(offset)))
+            {
+                @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
+                return true;
+            }
+
+            return false;
         }
     }
 }
