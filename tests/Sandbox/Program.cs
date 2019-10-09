@@ -1,18 +1,17 @@
-﻿using FitsCs;
-using Maybe;
-using System;
+﻿using System;
+using FitsCs;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using FitsCs.Keys;
 
 namespace Sandbox
 {
-    class Program
+    internal class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             await Test1();
-            Test2();
+            //Test2();
         }
 
         private static async Task Test1()
@@ -26,7 +25,11 @@ namespace Sandbox
                     var result = blob?.GetContentType();
                     if (result == BlobType.FitsHeader)
                     {
-                        var key = FitsKey.ParseRawData(blob.Data);
+                        var keys = new List<IFitsValue>(36);
+                        for (var i = 0; i < 36; i++)
+                        {
+                            keys.Add(FitsKey.ParseRawData(blob.Data.Slice(i * FitsKey.EntrySizeInBytes)));
+                        }
                     }
                 }
             }
@@ -35,14 +38,9 @@ namespace Sandbox
 
         private static void Test2()
         {
-            //    var key = FitsKey.Create("NAME", "textsome''".Some(), "comment", KeyType.Free);
-            //    Span<char> span = new char[90];
+            var str = "very ''''specific'''' string y''all know";
 
-            //    key.TryFormat(span);
-            //    var result = span.Slice(0, 80).ToString();
-
-
-            //    var anotherKey = key.With(x => x.Value = (x.Value as Maybe<string>).Select(y => y.Length));
+            ParsingExtensions.TryParseRaw(str.AsSpan(), out var result);
 
         }
     }
