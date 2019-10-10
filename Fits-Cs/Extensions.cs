@@ -11,7 +11,7 @@ namespace FitsCs
     // Switch back to internal
     public static class Extensions
     {
-        private const int MinFixedStringSize = 10;
+        private const int MinFixedStringSize = FixedFitsKey.FixedFieldSize - FitsKey.ValueStart;
         public static int StringSizeWithQuoteReplacement(
             this ReadOnlySpan<char> s,
             int minLength = MinFixedStringSize)

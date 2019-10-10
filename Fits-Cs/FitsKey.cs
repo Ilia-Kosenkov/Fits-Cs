@@ -29,7 +29,8 @@ using FitsCs.Keys;
 using JetBrains.Annotations;
 using Maybe;
 using TextExtensions;
-
+using IndexRange;
+using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -216,8 +217,10 @@ namespace FitsCs
             // Here, `charRep` contains character representation and contents can be parsed
 
             // Key name is not valid
-            if (!IsValidKeyName(charRep.Slice(0, NameSize), true))
+            var name = ((ReadOnlySpan<char>) charRep.Slice(0, NameSize)).TrimEnd();
+            if (!IsValidKeyName(name, true))
                 return null;
+
 
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
             if (charRep[EqualsPos] == '=' && charRep[EqualsPos + 1] == ' ')
@@ -258,11 +261,15 @@ namespace FitsCs
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
                         return innerStrSpan.TryParseRaw(out var str)
-                            ? Create<string>(System.MemoryExtensions.TrimEnd(charRep.Slice(0, NameSize)).ToString(),
+                            ? Create<string>(name.ToString(),
                                 str,
                                 commentStart < contentSpan.Length - 1 - quoteEnd
                                     ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
-                                    : null)
+                                    : null,
+                                innerStrSpan.Length <= FixedFitsKey.FixedFieldSize - ValueStart - 2
+                                ? KeyType.Free
+                                : KeyType.Fixed)
+                            // Returns null if cannot parse string
                             : null;
                     }
                     case 'T':
@@ -270,7 +277,7 @@ namespace FitsCs
                     {
                         // Do bool
                         var commentStart = FindComment(contentSpan);
-                        return Create<bool>(System.MemoryExtensions.TrimEnd(charRep.Slice(0, NameSize)).ToString(),
+                        return Create<bool>(name.ToString(),
                             firstSymb == 'T',
                             commentStart < contentSpan.Length - 1
                                 ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
@@ -280,8 +287,14 @@ namespace FitsCs
                                 : KeyType.Free);
                     }
                     default:
-                        // Treat everything else as number
-                        break;
+                    {
+                        var commentStart = FindComment(contentSpan);
+                        var innerStrSpan = ((ReadOnlySpan<char>)contentSpan.Slice(0, commentStart)).TrimEnd();
+                        var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
+                        return null;
+
+                    }
+
                 }
             }
 
@@ -321,6 +334,65 @@ namespace FitsCs
                 return input.Length - 1;
 
             return input.Length;
+        }
+
+        private protected static bool DetectNumericFormat(
+            ReadOnlySpan<char> input,
+            out NumericType numericType,
+            out KeyType layoutType)
+        {
+            numericType = NumericType.Integer;
+            layoutType = KeyType.Free;
+
+            if (input.IsEmpty)
+                return false;
+
+            var trimmedStr = input.Trim();
+
+            if (input.Length == FixedFitsKey.FixedFieldSize)
+            {
+                layoutType = KeyType.Fixed;
+                // Check for mandatory decimal separator
+                foreach (var item in input)
+                    if (item == '.')
+                    {
+                        numericType = NumericType.Float;
+                        break;
+                    }
+            }
+            else if (input.Length == 2 * FixedFitsKey.FixedFieldSize && trimmedStr.Length >= FixedFitsKey.FixedFieldSize)
+            {
+                // Fixed-format complex number
+                layoutType = KeyType.Fixed;
+                numericType = NumericType.Complex;
+            }
+            else
+            {
+                var nDots = 0;
+                var isComplex = false;
+                foreach (var item in trimmedStr)
+                {
+                    if (item == '.')
+                        nDots++;
+                    
+                    // Cannot be more than 2 decimal separators in the whole line
+                    if (nDots > 2)
+                        return false;
+                    if (item == ':')
+                    {
+                        isComplex = true;
+                        break;
+                    }
+                }
+
+                numericType = isComplex 
+                    ? NumericType.Complex 
+                    : (nDots > 0 
+                        ? NumericType.Float 
+                        : NumericType.Integer);
+            }
+            return true;
+
         }
 
         public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
