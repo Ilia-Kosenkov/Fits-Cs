@@ -59,21 +59,19 @@ namespace FitsCs.Keys
 
         public static IFitsValue Create(string name, Maybe.Maybe value, string comment = null)
         {
-            switch (value)
-            {
-                case Maybe<double> dVal:
-                    return new FixedDoubleKey(name, dVal, comment);
-                case Maybe<float> fVal:
-                    return new FixedFloatKey(name, fVal, comment);
-                case Maybe<int> iVal:
-                    return new FixedIntKey(name, iVal, comment);
-                case Maybe<bool> bVal:
-                    return new FixedBoolKey(name, bVal, comment);
-                case Maybe<Complex> cVal:
-                    return new FixedComplexKey(name, cVal, comment);
-                case Maybe<string> sVal:
-                    return new FixedStringKey(name, sVal, comment);
-            }
+            if (value.Is<double>())
+                return new FixedDoubleKey(name, value.As<double>(), comment);
+            if (value.Is<float>())
+                return new FixedFloatKey(name, value.As<float>(), comment);
+            if (value.Is<int>())
+                return new FixedIntKey(name, value.As<int>(), comment);
+            if (value.Is<bool>())
+                return new FixedBoolKey(name, value.As<bool>(), comment);
+            if (value.Is<Complex>())
+                return new FixedComplexKey(name, value.As<Complex>(), comment);
+            if (value.Is<string>()) 
+                return new FixedStringKey(name, value.As<string>(), comment);
+
             throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
     }

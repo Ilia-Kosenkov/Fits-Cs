@@ -58,8 +58,8 @@
     <Reference Include="IndexRange, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\..\packages\IndexRange.1.0.0\lib\netstandard2.0\IndexRange.dll</HintPath>
     </Reference>
-    <Reference Include="Maybe, Version=1.5.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\Maybe.1.5.0\lib\netstandard2.0\Maybe.dll</HintPath>
+    <Reference Include="Maybe, Version=2.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\..\packages\Maybe.2.0.0\lib\netstandard2.0\Maybe.dll</HintPath>
     </Reference>
     <Reference Include="MemoryExtensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\..\packages\MemoryExtensions.1.0.0\lib\netstandard2.0\MemoryExtensions.dll</HintPath>

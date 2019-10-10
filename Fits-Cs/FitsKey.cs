@@ -261,8 +261,8 @@ namespace FitsCs
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
                         return innerStrSpan.TryParseRaw(out var str)
-                            ? Create<string>(name.ToString(),
-                                str,
+                            ? Create(name.ToString(),
+                                str.Some(),
                                 commentStart < contentSpan.Length - 1 - quoteEnd
                                     ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
                                     : null,
@@ -277,8 +277,8 @@ namespace FitsCs
                     {
                         // Do bool
                         var commentStart = FindComment(contentSpan);
-                        return Create<bool>(name.ToString(),
-                            firstSymb == 'T',
+                        return Create(name.ToString(),
+                            (firstSymb == 'T').Some(),
                             commentStart < contentSpan.Length - 1
                                 ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
                                 : null,
