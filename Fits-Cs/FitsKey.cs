@@ -376,6 +376,7 @@ namespace FitsCs
             }
         }
 
+        [Pure]
         private protected static int FindComment(ReadOnlySpan<char> input)
         {
             //for(var i = input.Length - 1; i >= 0; i--)
@@ -386,6 +387,7 @@ namespace FitsCs
             return input.Length;
         }
 
+        [Pure]
         private protected static int FindLastQuote(ReadOnlySpan<char> input)
         {
             var inQuotes = false;
@@ -411,6 +413,7 @@ namespace FitsCs
             return input.Length;
         }
 
+        [Pure]
         private protected static bool DetectNumericFormat(
             ReadOnlySpan<char> input,
             out NumericType numericType,
@@ -470,26 +473,20 @@ namespace FitsCs
 
         }
 
-        public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed)
-        {
-            if(name is null)
-                throw new ArgumentNullException(nameof(name));
-
-            return type == KeyType.Free 
+        [NotNull]
+        [ContractAnnotation("name:null => halt")]
+        public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed) 
+            => type == KeyType.Free 
                 ? FreeFitsKey.Create(name, value, comment) 
                 : FixedFitsKey.Create(name, value, comment);
-        }
 
+        [NotNull]
+        [ContractAnnotation("name:null => halt;value:null => halt")]
         public static IFitsValue Create(string name, object value, string comment = null,
-            KeyType type = KeyType.Fixed)
-        {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name));
-
-            return type == KeyType.Free
+            KeyType type = KeyType.Fixed) 
+            => type == KeyType.Free
                 ? FreeFitsKey.Create(name, value, comment)
                 : FixedFitsKey.Create(name, value, comment);
-        }
 
         public static IFitsValue CreateBlank() => BlankKey.Blank;
         public static IFitsValue Create(string content) => new ArbitraryKey(content);

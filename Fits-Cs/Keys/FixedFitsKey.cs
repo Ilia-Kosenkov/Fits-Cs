@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using JetBrains.Annotations;
 
 namespace FitsCs.Keys
 {
@@ -12,10 +13,15 @@ namespace FitsCs.Keys
         private protected FixedFitsKey(string name, string comment) : base(name, comment)
         {
         }
+
+        [NotNull]
+        [ContractAnnotation("name:null => halt")]
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {
-            //ValidateType<T>();
+            if (name is null)
+                throw new ArgumentNullException(nameof(name), SR.NullArgument);
 
+            // ReSharper disable AssignNullToNotNullAttribute
             switch (value)
             {
                 case double dVal:
@@ -28,16 +34,24 @@ namespace FitsCs.Keys
                     return new FixedBoolKey(name, bVal, comment) as IFitsValue<T>;
                 case Complex cVal:
                     return new FixedComplexKey(name, cVal, comment) as IFitsValue<T>;
-                case string nullStr when nullStr is null:
-                    throw new ArgumentNullException(nameof(value), SR.NullArgument);
                 case string sVal:
                     return new FixedStringKey(name, sVal, comment) as IFitsValue<T>;
             }
+            // ReSharper restore AssignNullToNotNullAttribute
+
+
             throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
 
+        [NotNull]
+        [ContractAnnotation("name:null => halt;value:null => halt")]
         public static IFitsValue Create(string name, object value, string comment = null)
         {
+            if (name is null)
+                throw new ArgumentNullException(nameof(name), SR.NullArgument);
+            if (value is null)
+                throw new ArgumentNullException(nameof(value), SR.NullArgument);
+
             switch (value)
             {
                 case double dVal:
@@ -50,8 +64,6 @@ namespace FitsCs.Keys
                     return new FixedBoolKey(name, bVal, comment);
                 case Complex cVal:
                     return new FixedComplexKey(name, cVal, comment);
-                case string nullStr when nullStr is null:
-                    throw new ArgumentNullException(nameof(value), SR.NullArgument);
                 case string sVal:
                     return new FixedStringKey(name, sVal, comment);
             }
