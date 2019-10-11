@@ -63,8 +63,8 @@ namespace FitsCs
             typeof(Complex)
         }.ToImmutableList();
 
-        private protected virtual string TypePrefix => @"[  null]";
-
+        private protected virtual string TypePrefix => @"null";
+        
         private protected virtual string DebuggerDisplay => $"{TypePrefix}: {ToString()}";
 
         public string Name { get; }
@@ -97,7 +97,27 @@ namespace FitsCs
         }
 
         public string ToString(bool prefixType)
-            => prefixType ? $"{TypePrefix}: {ToString()}" : ToString();
+        {
+            if (prefixType)
+            {
+                string frmtStr = null;
+                switch(Type)
+                {
+                    case KeyType.Fixed:
+                        frmtStr = @"fix";
+                        break;
+                    case KeyType.Free:
+                        frmtStr = @"fre";
+                        break;
+                    default:
+                        frmtStr = @"udf";
+                        break;
+                }
+                return $"[{frmtStr,-3}|{TypePrefix, 6}]: {ToString()}";
+            }
+
+            return ToString();
+        }
         
         public abstract bool TryFormat(Span<char> span);
 

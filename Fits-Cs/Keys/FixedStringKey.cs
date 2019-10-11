@@ -4,7 +4,7 @@ namespace FitsCs.Keys
 {
     public sealed class FixedStringKey : FixedFitsKey, IFitsValue<string>
     {
-        private protected override string TypePrefix => @"[string]";
+        private protected override string TypePrefix => @"string";
 
 
         public override object Value => RawValue;

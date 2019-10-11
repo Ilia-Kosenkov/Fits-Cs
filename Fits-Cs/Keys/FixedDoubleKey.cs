@@ -26,7 +26,7 @@ namespace FitsCs.Keys
 {
     public sealed class FixedDoubleKey : FixedFitsKey, IFitsValue<double>
     {
-        private protected override string TypePrefix => @"[double]";
+        private protected override string TypePrefix => @"double";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;

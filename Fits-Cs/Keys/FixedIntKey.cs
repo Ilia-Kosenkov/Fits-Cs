@@ -26,7 +26,7 @@ namespace FitsCs.Keys
 {
     public sealed class FixedIntKey : FixedFitsKey, IFitsValue<int>
     {
-        private protected override string TypePrefix => @"[   int]";
+        private protected override string TypePrefix => @"int";
 
         public override object Value => RawValue;
 

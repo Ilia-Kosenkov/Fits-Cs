@@ -29,7 +29,7 @@ namespace FitsCs.Keys
     {
         private const char TrueConst = 'T';
         private const char FalseConst = 'F';
-        private protected override string TypePrefix => @"[  bool]";
+        private protected override string TypePrefix => @"bool";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;

@@ -27,7 +27,7 @@ namespace FitsCs.Keys
 {
     public sealed class FreeIntKey : FreeFitsKey, IFitsValue<int>
     {
-        private protected override string TypePrefix => @"[   int]";
+        private protected override string TypePrefix => @"int";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;

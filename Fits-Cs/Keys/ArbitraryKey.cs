@@ -17,7 +17,7 @@ namespace FitsCs.Keys
             _contents = contents;
         }
 
-        private protected override string TypePrefix => @"[ arbtr]";
+        private protected override string TypePrefix => @"arbtr";
         public override object Value => _contents;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(_contents);
         public override bool TryFormat(Span<char> span)

@@ -9,7 +9,7 @@ namespace FitsCs.Keys
         {
         }
 
-        private protected override string TypePrefix => @"[ blank]";
+        private protected override string TypePrefix => @"blank";
         public override object Value => null;
         public override bool IsEmpty => true;
         public override bool TryFormat(Span<char> span)

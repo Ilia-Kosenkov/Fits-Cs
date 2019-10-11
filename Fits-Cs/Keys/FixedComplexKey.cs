@@ -27,7 +27,7 @@ namespace FitsCs.Keys
 {
     public sealed class FixedComplexKey : FixedFitsKey, IFitsValue<Complex>
     {
-        private protected override string TypePrefix => @"[ cmplx]";
+        private protected override string TypePrefix => @"cmplx";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;

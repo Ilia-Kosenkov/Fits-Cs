@@ -28,7 +28,7 @@ namespace FitsCs.Keys
 {
     public sealed class FreeComplexKey : FreeFitsKey, IFitsValue<Complex>
     {
-        private protected override string TypePrefix => @"[ cmplx]";
+        private protected override string TypePrefix => @"cmplx";
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public Complex RawValue { get; }

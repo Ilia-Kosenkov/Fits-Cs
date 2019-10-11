@@ -27,7 +27,7 @@ namespace FitsCs.Keys
 {
     public sealed class FreeFloatKey : FreeFitsKey, IFitsValue<float>
     {
-        private protected override string TypePrefix => @"[ float]";
+        private protected override string TypePrefix => @"float";
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public float RawValue { get; }

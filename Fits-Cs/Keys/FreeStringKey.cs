@@ -4,7 +4,7 @@ namespace FitsCs.Keys
 {
     public sealed class FreeStringKey : FreeFitsKey, IFitsValue<string>
     {
-        private protected override string TypePrefix => @"[string]";
+        private protected override string TypePrefix => @"string";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
