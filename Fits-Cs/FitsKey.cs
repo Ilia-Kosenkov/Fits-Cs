@@ -378,7 +378,8 @@ namespace FitsCs
 
         private protected static int FindComment(ReadOnlySpan<char> input)
         {
-            for(var i = input.Length - 1; i >= 0; i--)
+            //for(var i = input.Length - 1; i >= 0; i--)
+            for (var i = 0; i < input.Length; i++)
                 if (input[i] == '/')
                     return i;
 

@@ -32,7 +32,7 @@ namespace FitsCs.Keys
             if (!isCommentNull)
             {
                 // Comment padding if it can be fit in the entry
-                if (len < FixedFieldSize + ValueStart && Comment.Length < EntrySize - FixedFieldSize - ValueStart - 2)
+                if (len < FixedFieldSize + ValueStart && Comment.Length <= EntrySize - FixedFieldSize - ValueStart - 2)
                     len = ValueStart + FixedFieldSize;
                 Comment.AsSpan().CopyTo(span.Slice(len + 2));
                 span[len + 1] = '/';
