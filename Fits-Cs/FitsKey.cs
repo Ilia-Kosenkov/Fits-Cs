@@ -60,7 +60,7 @@ namespace FitsCs
             typeof(float),
             typeof(string),
             typeof(bool),
-            typeof(System.Numerics.Complex)
+            typeof(Complex)
         }.ToImmutableList();
 
         private protected virtual string TypePrefix => @"[  null]";
@@ -213,13 +213,19 @@ namespace FitsCs
             if (Encoding.GetChars(input.Slice(0, EntrySizeInBytes), charRep) != EntrySize)
                 return null;
             
-            // Here, `charRep` contains character representation and contents can be parsed
 
-            // Key name is not valid
             var name = ((ReadOnlySpan<char>) charRep.Slice(0, NameSize)).TrimEnd();
             if (!IsValidKeyName(name, true))
-                return null;
-
+            {
+                // If name is invalid, it can be a blank key
+                if (BlankKey.IsBlank(charRep))
+                    return BlankKey.Blank;
+                if (ArbitraryKey.Create(charRep) is IFitsValue val)
+                    return val;
+                // Possible other cases?
+                else
+                    return null;
+            }
 
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
             if (charRep[EqualsPos] == '=' && charRep[EqualsPos + 1] == ' ')
@@ -343,9 +349,11 @@ namespace FitsCs
 
                 }
             }
-
-
-            return null;
+            else
+            {
+                // TODO: Keys with no value attached
+                return null;
+            }
         }
 
         private protected static int FindComment(ReadOnlySpan<char> input)

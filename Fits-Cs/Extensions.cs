@@ -10,8 +10,7 @@ using TextExtensions;
 
 namespace FitsCs
 {
-    // Switch back to internal
-    public static class Extensions
+    internal static class Extensions
     {
         private const int MinFixedStringSize = FixedFitsKey.FixedFieldSize - FitsKey.ValueStart;
         public static int StringSizeWithQuoteReplacement(
@@ -157,7 +156,7 @@ namespace FitsCs
         }
     }
 
-    public static class ParsingExtensions
+    internal static class ParsingExtensions
     {
         
         public static bool TryParseRaw(

@@ -9,6 +9,7 @@ namespace FitsCs.Keys
         {
         }
 
+        private protected override string TypePrefix => @"[ blank]";
         public override object Value => null;
         public override bool IsEmpty => true;
         public override bool TryFormat(Span<char> span)
@@ -17,6 +18,14 @@ namespace FitsCs.Keys
                 return false;
 
             span.Slice(0, EntrySizeInBytes).Fill(' ');
+            return true;
+        }
+
+        public static bool IsBlank(ReadOnlySpan<char> input)
+        {
+            foreach (var item in input)
+                if (item != ' ')
+                    return false;
             return true;
         }
     }

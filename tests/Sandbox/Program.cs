@@ -12,7 +12,6 @@ namespace Sandbox
         private static async Task Main(string[] args)
         {
             await Test1();
-            //Test2();
         }
 
         private static async Task Test1()
@@ -22,31 +21,24 @@ namespace Sandbox
             {
                 using (var reader = new FitsReader(fs))
                 {
+                    var keys = new List<IFitsValue>(36 * 3);
                     var blob = await reader.ReadAsync();
-                    var result = blob?.GetContentType();
-                    if (result == BlobType.FitsHeader)
+                    while (blob.GetContentType() == BlobType.FitsHeader)
                     {
-                        var keys = new List<IFitsValue>(36);
                         for (var i = 0; i < 36; i++)
                         {
                             keys.Add(FitsKey.ParseRawData(blob.Data.Slice(i * FitsKey.EntrySizeInBytes)));
                         }
 
-                        foreach (var key in keys.Where(x => x is object))
-                            Console.WriteLine(key.ToString(true));
+
+                        blob = await reader.ReadAsync();
                     }
+                    foreach (var key in keys.Where(x => x is object))
+                        Console.WriteLine(key.ToString(true));
                 }
             }
         }
-
-
-        private static void Test2()
-        {
-            var str = "very ''''specific'''' string y''all know";
-
-            ParsingExtensions.TryParseRaw(str.AsSpan(), out string result);
-
-        }
+        
     }
 
 }
