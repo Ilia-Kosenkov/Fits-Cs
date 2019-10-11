@@ -103,6 +103,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="FGSf64y0106m_a1f.fits">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="FOCx38i0101t_c0f.fits">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -17,7 +17,7 @@ namespace Sandbox
         private static async Task Test1()
         {
 
-            using (var fs = new FileStream("FOCx38i0101t_c0f.fits", FileMode.Open))
+            using (var fs = new FileStream("FGSf64y0106m_a1f.fits", FileMode.Open))
             {
                 using (var reader = new FitsReader(fs))
                 {
