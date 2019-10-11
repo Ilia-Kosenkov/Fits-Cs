@@ -3,6 +3,7 @@ using FitsCs;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Sandbox
 {
@@ -30,6 +31,9 @@ namespace Sandbox
                         {
                             keys.Add(FitsKey.ParseRawData(blob.Data.Slice(i * FitsKey.EntrySizeInBytes)));
                         }
+
+                        foreach (var key in keys.Where(x => x is object))
+                            Console.WriteLine(key.ToString(true));
                     }
                 }
             }

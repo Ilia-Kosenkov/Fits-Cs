@@ -29,6 +29,7 @@ using FitsCs.Keys;
 using JetBrains.Annotations;
 using TextExtensions;
 using MemoryExtensions;
+using System.Numerics;
 
 namespace FitsCs
 {
@@ -96,7 +97,7 @@ namespace FitsCs
         }
 
         public string ToString(bool prefixType)
-            => prefixType ? TypePrefix + ToString() : ToString();
+            => prefixType ? $"{TypePrefix}: {ToString()}" : ToString();
         
         public abstract bool TryFormat(Span<char> span);
 
@@ -144,7 +145,7 @@ namespace FitsCs
 
         [ContractAnnotation("name:null => halt")]
         private protected static void ValidateInput(
-            [CanBeNull] string name,
+            [NotNull] string name,
             [CanBeNull] string comment, 
             int valueSize)
         {
@@ -289,6 +290,7 @@ namespace FitsCs
                         var commentStart = FindComment(contentSpan);
                         var innerStrSpan = ((ReadOnlySpan<char>)contentSpan.Slice(0, commentStart)).TrimEnd();
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
+                        
                         if(!isNumber)
                             return null;
 
@@ -304,19 +306,38 @@ namespace FitsCs
                                             : null,
                                         keyType);
                                 case NumericType.Float when innerStrSpan.TryParseRaw(out double dVal):
-                                {
-                                        //return Create(
-                                        //    name.ToString(),
-                                        //    iVal.Some(),
-                                        //    commentStart < contentSpan.Length - 1
-                                        //        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                        //            .ToString()
-                                        //        : null,
-                                        //    keyType);
-                                        return null;
-                                }
+                                    {
+                                        return
+                                            dVal > float.MinValue && dVal < float.MaxValue
+                                            // Can be float
+                                            ? Create(
+                                                name.ToString(),
+                                                (float)dVal,
+                                                commentStart < contentSpan.Length - 1
+                                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                                        .ToString()
+                                                    : null,
+                                                keyType)
+                                            : Create(
+                                                name.ToString(),
+                                                dVal,
+                                                commentStart < contentSpan.Length - 1
+                                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                                        .ToString()
+                                                    : null,
+                                                keyType) as IFitsValue;
+                                    }
+                                case NumericType.Complex when innerStrSpan.TryParseRaw(out Complex cVal, keyType):
+                                    return Create(
+                                        name.ToString(),
+                                        cVal,
+                                        commentStart < contentSpan.Length - 1
+                                            ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                                .ToString()
+                                            : null,
+                                        keyType);
 
-                        }
+                            }
                         return null;
                     }
 

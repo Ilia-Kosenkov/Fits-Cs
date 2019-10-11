@@ -12,6 +12,7 @@ namespace FitsCs
         bool IsEmpty { get; }
 
         string ToString();
+        string ToString(bool prefixType);
         bool TryFormat(Span<char> span);
 
         bool TryGetBytes(Span<byte> span);
