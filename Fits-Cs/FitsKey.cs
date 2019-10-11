@@ -186,7 +186,7 @@ namespace FitsCs
             if (valueSize < 0)
                 throw new ArgumentException(SR.InvalidArgument, nameof(valueSize));
 
-            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
+            if((comment?.Length ?? 0) + valueSize + 2 > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
@@ -388,8 +388,7 @@ namespace FitsCs
                         ReadOnlySpan<char> innerStrSpan = contentSpan.Slice(pos + 1, quoteEnd - pos - 1);
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
-                        // WATCH : debug output
-                        var debugStr = innerStrSpan.ToString();
+                        
                         return innerStrSpan.TryParseRaw(out string str)
                             ? Create(name.ToString(),
                                 str,
@@ -508,10 +507,18 @@ namespace FitsCs
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
 
         [PublicAPI]
-        public static IFitsValue CreateComment(string comment) => throw new NotImplementedException(SR.MethodNotImplemented);
+        [NotNull]
+        [ContractAnnotation("name:null => halt")]
+        public static IFitsValue CreateSpecial(string name, string data) => new SpecialKey(name, data);
+
+
+        [PublicAPI]
+        [NotNull]
+        public static IFitsValue CreateComment(string comment) => new SpecialKey("COMMENT", comment);
         
         [PublicAPI]
-        public static IFitsValue CreateHistory(string history) => throw new NotImplementedException(SR.MethodNotImplemented);
+        [NotNull]
+        public static IFitsValue CreateHistory(string history) => new SpecialKey("HISTORY", history);
 
     }
 }

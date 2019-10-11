@@ -15,8 +15,9 @@ namespace FitsCs.Keys
         [ContractAnnotation("name:null => halt")]
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name), SR.NullArgument);
+            // Validation happens inside constructors
+            //if (name is null)
+            //    throw new ArgumentNullException(nameof(name), SR.NullArgument);
             
             // ReSharper disable AssignNullToNotNullAttribute
             switch (value)
@@ -43,8 +44,10 @@ namespace FitsCs.Keys
         [ContractAnnotation("name:null => halt;value:null => halt")]
         public static IFitsValue Create(string name, object value, string comment = null)
         {
-            if (name is null)
-                throw new ArgumentNullException(nameof(name), SR.NullArgument);
+            // Validation happens inside constructors
+
+            //if (name is null)
+            //    throw new ArgumentNullException(nameof(name), SR.NullArgument);
             if (value is null)
                 throw new ArgumentNullException(nameof(value), SR.NullArgument);
 
