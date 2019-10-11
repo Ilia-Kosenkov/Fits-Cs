@@ -271,7 +271,7 @@ namespace FitsCs
                                 commentStart < contentSpan.Length - 1 - quoteEnd
                                     ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
                                     : null,
-                                innerStrSpan.Length <= FixedFitsKey.FixedFieldSize - ValueStart - 2
+                                quoteEnd <= FixedFitsKey.FixedFieldSize
                                 ? KeyType.Free
                                 : KeyType.Fixed)
                             // Returns null if cannot parse string

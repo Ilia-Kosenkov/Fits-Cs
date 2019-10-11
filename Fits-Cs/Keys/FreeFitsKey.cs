@@ -11,28 +11,7 @@ namespace FitsCs.Keys
         private protected FreeFitsKey(string name, string comment) : base(name, comment)
         {
         }
-
-        //private protected bool FormatFree(Span<char> span, string value)
-        //{
-        //    if (span.Length < EntrySizeInBytes)
-        //        return false;
-            
-        //    var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-        //    var len = NameSize +
-        //              value.Length;
-
-        //    span.Slice(0, EntrySizeInBytes).Fill(' ');
-        //    Name.AsSpan().CopyTo(span);
-        //    value.AsSpan().CopyTo(span.Slice(NameSize));
-            
-        //    if (!isCommentNull)
-        //    {
-        //        Comment.AsSpan().CopyTo(span.Slice(len + 2));
-        //        span[len + 1] = '/';
-        //    }
-
-        //    return true;
-        //}
+        
 
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {

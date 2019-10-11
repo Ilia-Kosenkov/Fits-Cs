@@ -28,8 +28,12 @@ namespace FitsCs.Keys
                 return false;
             }
 
+
             if (!isCommentNull)
             {
+                // Comment padding if it can be fit in the entry
+                if (len < FixedFieldSize + ValueStart && Comment.Length < EntrySize - FixedFieldSize - ValueStart - 2)
+                    len = ValueStart + FixedFieldSize;
                 Comment.AsSpan().CopyTo(span.Slice(len + 2));
                 span[len + 1] = '/';
             }
