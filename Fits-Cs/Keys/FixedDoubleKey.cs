@@ -21,7 +21,6 @@
 //     SOFTWARE.
 
 using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -29,20 +28,19 @@ namespace FitsCs.Keys
     {
         private protected override string TypePrefix => @"[double]";
 
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<double> RawValue { get; }
+        public double RawValue { get; }
 
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                //RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}", x), string.Empty));
-                RawValue.Match(x => $"= {x.FormatDouble(17, FixedFieldSize)}", string.Empty));
+                 $"= {RawValue.FormatDouble(17, FixedFieldSize)}");
 
-        internal FixedDoubleKey(string name, Maybe<double> value, string comment = "") : base(name, comment)
+        internal FixedDoubleKey(string name, double value, string comment = "") : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => FixedFieldSize + 2));
+            ValidateInput(name, comment, FixedFieldSize + 2);
             RawValue = value;
         }
 

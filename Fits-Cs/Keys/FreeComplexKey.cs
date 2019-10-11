@@ -23,29 +23,27 @@
 
 using System;
 using System.Numerics;
-using Maybe;
 
 namespace FitsCs.Keys
 {
     public sealed class FreeComplexKey : FreeFitsKey, IFitsValue<Complex>
     {
         private protected override string TypePrefix => @"[ cmplx]";
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<Complex> RawValue { get; }
+        public Complex RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x.Real.FormatDouble(17,24)}:{x.Imaginary.FormatDouble(17, 24)}", 
-                    string.Empty));
+                $"= {RawValue.Real.FormatDouble(17,24)}:{RawValue.Imaginary.FormatDouble(17, 24)}");
 
 
-        internal FreeComplexKey(string name, Maybe<Complex> value, string comment) : base(name, comment)
+        internal FreeComplexKey(string name, Complex value, string comment) : base(name, comment)
         {
             // Conservative size estimate - 24 is the total size of %+24.17e+3
             // Multiplying by 2 and 1 symbol for column separator
-            ValidateInput(name, comment, value.Match(x => 2 + 2 * 24 + 1));
+            ValidateInput(name, comment, 2 + 2 * 24 + 1);
             RawValue = value;
         }
     }

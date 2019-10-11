@@ -22,7 +22,6 @@
 
 
 using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -30,18 +29,18 @@ namespace FitsCs.Keys
     {
         private protected override string TypePrefix => @"[   int]";
 
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<int> RawValue { get; }
+        public int RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x}", string.Empty));
+                $"= {RawValue}");
 
-        internal FreeIntKey(string name, Maybe<int> value, string comment) : base(name, comment)
+        internal FreeIntKey(string name, int value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 2 + x.SignificantDigitsCount()));
+            ValidateInput(name, comment, value.SignificantDigitsCount() + 2);
             RawValue = value;
         }
     }

@@ -27,9 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using FitsCs.Keys;
 using JetBrains.Annotations;
-using Maybe;
 using TextExtensions;
-using IndexRange;
 using MemoryExtensions;
 
 namespace FitsCs
@@ -260,9 +258,9 @@ namespace FitsCs
                         ReadOnlySpan<char> innerStrSpan = contentSpan.Slice(pos + 1, quoteEnd - pos - 1);
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
-                        return innerStrSpan.TryParseRaw(out var str)
+                        return innerStrSpan.TryParseRaw(out string str)
                             ? Create(name.ToString(),
-                                str.Some(),
+                                str,
                                 commentStart < contentSpan.Length - 1 - quoteEnd
                                     ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
                                     : null,
@@ -278,7 +276,7 @@ namespace FitsCs
                         // Do bool
                         var commentStart = FindComment(contentSpan);
                         return Create(name.ToString(),
-                            (firstSymb == 'T').Some(),
+                            (firstSymb == 'T'),
                             commentStart < contentSpan.Length - 1
                                 ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
                                 : null,
@@ -291,8 +289,35 @@ namespace FitsCs
                         var commentStart = FindComment(contentSpan);
                         var innerStrSpan = ((ReadOnlySpan<char>)contentSpan.Slice(0, commentStart)).TrimEnd();
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
-                        return null;
+                        if(!isNumber)
+                            return null;
 
+                        switch (nType)
+                        {
+                                case NumericType.Integer when innerStrSpan.TryParseRaw(out int iVal):
+                                    return Create(
+                                        name.ToString(),
+                                        iVal,
+                                        commentStart < contentSpan.Length - 1
+                                            ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                                .ToString()
+                                            : null,
+                                        keyType);
+                                case NumericType.Float when innerStrSpan.TryParseRaw(out double dVal):
+                                {
+                                        //return Create(
+                                        //    name.ToString(),
+                                        //    iVal.Some(),
+                                        //    commentStart < contentSpan.Length - 1
+                                        //        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                        //            .ToString()
+                                        //        : null,
+                                        //    keyType);
+                                        return null;
+                                }
+
+                        }
+                        return null;
                     }
 
                 }
@@ -395,7 +420,7 @@ namespace FitsCs
 
         }
 
-        public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null, KeyType type = KeyType.Fixed)
+        public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed)
         {
             if(name is null)
                 throw new ArgumentNullException(nameof(name));
@@ -405,7 +430,7 @@ namespace FitsCs
                 : FixedFitsKey.Create(name, value, comment);
         }
 
-        public static IFitsValue Create(string name, Maybe.Maybe value, string comment = null,
+        public static IFitsValue Create(string name, object value, string comment = null,
             KeyType type = KeyType.Fixed)
         {
             if (name is null)

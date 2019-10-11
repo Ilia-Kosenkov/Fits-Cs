@@ -1,5 +1,4 @@
 ﻿using System;
-using Maybe;
 
 namespace FitsCs
 {
@@ -18,8 +17,8 @@ namespace FitsCs
         bool TryGetBytes(Span<byte> span);
     }
 
-    public interface IFitsValue<T> : IFitsValue
+    public interface IFitsValue<out T> : IFitsValue
     {
-        Maybe<T> RawValue { get; }
+        T RawValue { get; }
     }
 }

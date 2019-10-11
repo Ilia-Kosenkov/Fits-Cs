@@ -22,27 +22,26 @@
 
 
 using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
     public sealed class FreeFloatKey : FreeFitsKey, IFitsValue<float>
     {
         private protected override string TypePrefix => @"[ float]";
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<float> RawValue { get; }
+        public float RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x:G9}", string.Empty));
+                $"= {RawValue:G9}");
 
 
-        internal FreeFloatKey(string name, Maybe<float> value, string comment) : base(name, comment)
+        internal FreeFloatKey(string name, float value, string comment) : base(name, comment)
         {
             // Conservative size estimate - 15 is the total size of %+15.9e+2
-            ValidateInput(name, comment, value.Match(x => 2 + 15));
+            ValidateInput(name, comment, 2 + 15);
             RawValue = value;
         }
     }

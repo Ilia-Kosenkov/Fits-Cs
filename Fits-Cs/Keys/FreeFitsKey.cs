@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Numerics;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -35,43 +34,50 @@ namespace FitsCs.Keys
         //    return true;
         //}
 
-        public static IFitsValue<T> Create<T>(string name, Maybe<T> value, string comment = null)
+        public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
         {
             //ValidateType<T>();
 
             switch (value)
             {
-                case Maybe<double> dVal:
+                case double dVal:
                     return new FreeDoubleKey(name, dVal, comment) as IFitsValue<T>;
-                case Maybe<float> fVal:
+                case float fVal:
                     return new FreeFloatKey(name, fVal, comment) as IFitsValue<T>;
-                case Maybe<int> iVal:
+                case int iVal:
                     return new FreeIntKey(name, iVal, comment) as IFitsValue<T>;
-                case Maybe<bool> bVal:
+                case bool bVal:
                     return new FreeBoolKey(name, bVal, comment) as IFitsValue<T>;
-                case Maybe<Complex> cVal:
+                case Complex cVal:
                     return new FreeComplexKey(name, cVal, comment) as IFitsValue<T>;
-                case Maybe<string> sval:
-                    return new FreeStringKey(name, sval, comment) as IFitsValue<T>;
+                case string nullStr when nullStr is null:
+                    throw new ArgumentNullException(nameof(value), SR.NullArgument);
+                case string sVal:
+                    return new FreeStringKey(name, sVal, comment) as IFitsValue<T>;
             }
             throw new NotSupportedException(SR.KeyTypeNotSupported);
         }
 
-        public static IFitsValue Create(string name, Maybe.Maybe value, string comment = null)
+        public static IFitsValue Create(string name, object value, string comment = null)
         {
 
-            if (value.Is<double>())
-                return new FixedDoubleKey(name, value.As<double>(), comment);
-            if (value.Is<float>())
-                return new FixedFloatKey(name, value.As<float>(), comment);
-            if (value.Is<int>())
-                return new FixedIntKey(name, value.As<int>(), comment);
-            if (value.Is<bool>())
-                return new FixedBoolKey(name, value.As<bool>(), comment);
-            if (value.Is<Complex>())
-                return new FixedComplexKey(name, value.As<Complex>(), comment);
-            if (value.Is<string>())
-                return new FixedStringKey(name, value.As<string>(), comment);
+            switch (value)
+            {
+                case double dVal:
+                    return new FreeDoubleKey(name, dVal, comment);
+                case float fVal:
+                    return new FreeFloatKey(name, fVal, comment);
+                case int iVal:
+                    return new FreeIntKey(name, iVal, comment);
+                case bool bVal:
+                    return new FreeBoolKey(name, bVal, comment);
+                case Complex cVal:
+                    return new FreeComplexKey(name, cVal, comment);
+                case string nullStr when nullStr is null:
+                    throw new ArgumentNullException(nameof(value), SR.NullArgument);
+                case string sVal:
+                    return new FreeStringKey(name, sVal, comment);
+            }
 
             throw new NotSupportedException(SR.KeyTypeNotSupported);
         }

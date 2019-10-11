@@ -40,7 +40,7 @@ namespace Sandbox
         {
             var str = "very ''''specific'''' string y''all know";
 
-            ParsingExtensions.TryParseRaw(str.AsSpan(), out var result);
+            ParsingExtensions.TryParseRaw(str.AsSpan(), out string result);
 
         }
     }

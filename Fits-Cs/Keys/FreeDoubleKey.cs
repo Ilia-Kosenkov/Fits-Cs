@@ -22,27 +22,26 @@
 
 
 using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
     public sealed class FreeDoubleKey : FreeFitsKey, IFitsValue<double>
     {
         private protected override string TypePrefix => @"[double]";
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<double> RawValue { get; }
+        public double RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                RawValue.Match(x => $"= {x.FormatDouble(17, 24)}", string.Empty));
+                $"= {RawValue.FormatDouble(17, 24)}");
 
 
-        internal FreeDoubleKey(string name, Maybe<double> value, string comment) : base(name, comment)
+        internal FreeDoubleKey(string name, double value, string comment) : base(name, comment)
         {
             // Conservative size estimate - 24 is the total size of %+24.17e+3
-            ValidateInput(name, comment, value.Match(x => 2 + 24));
+            ValidateInput(name, comment, 2 + 24);
             RawValue = value;
         }
     }

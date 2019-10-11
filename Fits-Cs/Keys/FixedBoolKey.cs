@@ -22,7 +22,6 @@
 
 
 using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -32,19 +31,19 @@ namespace FitsCs.Keys
         private const char FalseConst = 'F';
         private protected override string TypePrefix => @"[  bool]";
 
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<bool> RawValue { get; }
+        public bool RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
-                span, 
-                RawValue.Match(x => string.Format($"= {{0,{FixedFieldSize}}}", x ? TrueConst : FalseConst), string.Empty));
+                span,
+                string.Format($"= {{0,{FixedFieldSize}}}", RawValue ? TrueConst : FalseConst));
 
 
-        internal FixedBoolKey(string name, Maybe<bool> value, string comment) : base(name, comment)
+        internal FixedBoolKey(string name, bool value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 3));
+            ValidateInput(name, comment, 3);
             RawValue = value;
         }
     }

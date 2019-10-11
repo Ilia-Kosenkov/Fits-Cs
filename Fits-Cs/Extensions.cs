@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Numerics;
 using System.Text;
 using FitsCs.Keys;
 using IndexRange;
@@ -131,9 +133,9 @@ namespace FitsCs
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
 
-        public static IFitsValue With<T>(this IFitsValue<T> @this, Action<KeyUpdater<T>> updateAction)
+        public static IFitsValue With<T>(this IFitsValue<T> @this, Action<KeyUpdater> updateAction)
         {
-            var updater = new KeyUpdater<T>()
+            var updater = new KeyUpdater()
             {
                 Name = @this.Name,
                 Comment = @this.Comment,
@@ -200,5 +202,72 @@ namespace FitsCs
 
             return false;
         }
+
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> numberString,
+            out int number) 
+            => int.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> numberString,
+            out float number)
+            => float.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> numberString,
+            out double number)
+            => double.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> numberString,
+            out Complex number,
+            KeyType type = KeyType.Fixed)
+        {
+            if (type == KeyType.Fixed)
+            {
+                var image = 0.0;
+                var result =
+                    double.TryParse(
+                        numberString.Slice(0, FixedFitsKey.FixedFieldSize).ToString(),
+                        NumberStyles.Any,
+                        NumberFormatInfo.InvariantInfo,
+                        out var real)
+                    && 
+                    double.TryParse(
+                        numberString.Slice(FixedFitsKey.FixedFieldSize).ToString(),
+                        NumberStyles.Any,
+                        NumberFormatInfo.InvariantInfo,
+                        out image);
+
+                number = new Complex(real, image);
+                return result;
+            }
+
+            {
+                number = default;
+                var trimmed = numberString.Trim();
+                var columnPos = trimmed.IndexOf(':');
+                if (columnPos == -1)
+                    return false;
+
+                var image = 0.0;
+                var result =
+                    double.TryParse(
+                        numberString.Slice(0, columnPos).ToString(),
+                        NumberStyles.Any,
+                        NumberFormatInfo.InvariantInfo,
+                        out var real)
+                    &&
+                    double.TryParse(
+                        numberString.Slice(columnPos + 1).ToString(),
+                        NumberStyles.Any,
+                        NumberFormatInfo.InvariantInfo,
+                        out image);
+
+                number = new Complex(real, image);
+                return result;
+            }
+        }
+
     }
 }

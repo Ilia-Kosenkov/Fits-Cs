@@ -1,5 +1,4 @@
 ﻿using System;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -7,14 +6,14 @@ namespace FitsCs.Keys
     {
         private protected override string TypePrefix => @"[string]";
 
-        public override object Value => RawValue.Match(x => (object)x);
-        public override bool IsEmpty => RawValue.Match(_ => true);
-        public Maybe<string> RawValue { get; }
+        public override object Value => RawValue;
+        public override bool IsEmpty => false;
+        public string RawValue { get; }
         public override bool TryFormat(Span<char> span)
         {
             var isCommentNull = string.IsNullOrWhiteSpace(Comment);
             var len = NameSize +
-                      RawValue.Match(x => x.AsSpan().StringSizeWithQuoteReplacement(0) + 2);
+                      RawValue.AsSpan().StringSizeWithQuoteReplacement(0) + 2;
 
             if (span.Length < EntrySizeInBytes)
                 return false;
@@ -23,7 +22,7 @@ namespace FitsCs.Keys
             Name.AsSpan().CopyTo(span);
             span[EqualsPos] = '=';
 
-            if (!RawValue.Match(string.Empty).AsSpan().TryGetCompatibleString(span.Slice(ValueStart), 0))
+            if (!RawValue.AsSpan().TryGetCompatibleString(span.Slice(ValueStart), 0))
             {
                 span.Slice(0, EntrySizeInBytes).Fill(' ');
                 return false;
@@ -38,11 +37,11 @@ namespace FitsCs.Keys
             return true;
         }
 
-        internal FreeStringKey(string name, Maybe<string> value, string comment) : base(name, comment)
+        internal FreeStringKey(string name, string value, string comment) : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match( x => x.AsSpan().StringSizeWithQuoteReplacement(0) + 2));
+            ValidateInput(name, comment, value.AsSpan().StringSizeWithQuoteReplacement(0) + 2);
             
-            if(value.Match(x => !x.AsSpan().IsStringHduCompatible()))
+            if(!value.AsSpan().IsStringHduCompatible())
                 throw new ArgumentException(SR.HduStringIllegal, nameof(value));
 
             RawValue = value;

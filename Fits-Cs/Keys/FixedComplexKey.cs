@@ -22,7 +22,6 @@
 
 using System;
 using System.Numerics;
-using Maybe;
 
 namespace FitsCs.Keys
 {
@@ -30,25 +29,20 @@ namespace FitsCs.Keys
     {
         private protected override string TypePrefix => @"[ cmplx]";
 
-        public override object Value => RawValue.Match(x => (object)x);
+        public override object Value => RawValue;
         public override bool IsEmpty => false;
-        public Maybe<Complex> RawValue { get; }
+        public Complex RawValue { get; }
 
 
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                //RawValue.Match(x => 
-                //    string.Format($"= {{0,{FixedFieldSize}:0.#############E+00}}{{1,{FixedFieldSize}:0.#############E+00}}",
-                //        x.Real, x.Imaginary), string.Empty));
-                RawValue.Match(x =>
-                        $"= {x.Real.FormatDouble(17, FixedFieldSize)}{x.Imaginary.FormatDouble(17, FixedFieldSize)}",
-                    string.Empty));
+            $"= {RawValue.Real.FormatDouble(17, FixedFieldSize)}{RawValue.Imaginary.FormatDouble(17, FixedFieldSize)}");
                    
 
-        internal FixedComplexKey(string name, Maybe<Complex> value, string comment = "") : base(name, comment)
+        internal FixedComplexKey(string name, Complex value, string comment = "") : base(name, comment)
         {
-            ValidateInput(name, comment, value.Match(x => 2 * FixedFieldSize + 2));
+            ValidateInput(name, comment, 2 * FixedFieldSize + 2);
             RawValue = value;
         }
 
