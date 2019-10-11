@@ -190,8 +190,9 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
+        [PublicAPI]
         [Pure]
-        private protected static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
+        public static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
                 return false;

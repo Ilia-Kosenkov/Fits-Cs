@@ -10,7 +10,7 @@ using TextExtensions;
 
 namespace FitsCs
 {
-    internal static class Extensions
+    public static class Extensions
     {
         private const int MinFixedStringSize = FixedFitsKey.FixedFieldSize - FitsKey.ValueStart;
         public static int StringSizeWithQuoteReplacement(
@@ -118,6 +118,7 @@ namespace FitsCs
             return resultStr;
         }
 
+        [PublicAPI]
         public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding enc = null)
         {
             if (enc is null)
@@ -132,8 +133,18 @@ namespace FitsCs
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
 
-        public static IFitsValue With<T>(this IFitsValue<T> @this, Action<KeyUpdater> updateAction)
+        [PublicAPI]
+        [ContractAnnotation("updateAction:null => halt")]
+        [CanBeNull]
+        public static IFitsValue With<T>(
+            [NotNull] this IFitsValue<T> @this, 
+            [NotNull] Action<KeyUpdater> updateAction)
         {
+            if(@this is null)
+                throw new ArgumentNullException(nameof(@this), SR.NullArgument);
+            if (updateAction is null)
+                throw new ArgumentNullException(nameof(updateAction), SR.NullArgument);
+
             var updater = new KeyUpdater()
             {
                 Name = @this.Name,
@@ -156,7 +167,7 @@ namespace FitsCs
         }
     }
 
-    internal static class ParsingExtensions
+    public static class ParsingExtensions
     {
         
         public static bool TryParseRaw(
