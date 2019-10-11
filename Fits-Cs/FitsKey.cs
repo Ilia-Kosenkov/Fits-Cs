@@ -388,6 +388,8 @@ namespace FitsCs
                         ReadOnlySpan<char> innerStrSpan = contentSpan.Slice(pos + 1, quoteEnd - pos - 1);
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
+                        // WATCH : debug output
+                        var debugStr = innerStrSpan.ToString();
                         return innerStrSpan.TryParseRaw(out string str)
                             ? Create(name.ToString(),
                                 str,

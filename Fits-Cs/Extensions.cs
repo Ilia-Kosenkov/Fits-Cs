@@ -192,7 +192,7 @@ namespace FitsCs
                 }
             }
 
-            if (start < trimmedInput.Length - 1 &&
+            if (start <= trimmedInput.Length - 1 &&
                 trimmedInput.Slice((start, Index.End)).TryCopyTo(resultSpan.Slice(offset)))
             {
                 @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
