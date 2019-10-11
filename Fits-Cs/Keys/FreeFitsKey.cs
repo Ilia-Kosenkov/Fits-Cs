@@ -6,8 +6,6 @@ namespace FitsCs.Keys
 {
     public abstract class FreeFitsKey : FitsKey
     {
-        private protected static readonly string EmptyString = string.Intern(new string (' ', 20));
-
         public override KeyType Type => KeyType.Free;
         private protected FreeFitsKey(string name, string comment) : base(name, comment)
         {

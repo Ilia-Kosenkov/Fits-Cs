@@ -157,6 +157,10 @@ namespace FitsCs
 
             if (isCommentNull) return true;
 
+            // Comment padding if it can be fit in the entry
+            if (len < FixedFitsKey.FixedFieldSize + ValueStart && Comment.Length <= EntrySize - FixedFitsKey.FixedFieldSize - ValueStart - 2)
+                len = ValueStart + FixedFitsKey.FixedFieldSize;
+
             Comment.AsSpan().CopyTo(span.Slice(len + 2));
             span[len + 1] = '/';
 
@@ -220,6 +224,105 @@ namespace FitsCs
             return Encoding.GetChars(input, parsed) == NameSize && IsValidKeyName(parsed, allowBlank);
         }
 
+        [Pure]
+        private protected static int FindComment(ReadOnlySpan<char> input)
+        {
+            //for(var i = input.Length - 1; i >= 0; i--)
+            for (var i = 0; i < input.Length; i++)
+                if (input[i] == '/')
+                    return i;
+
+            return input.Length;
+        }
+
+        [Pure]
+        private protected static int FindLastQuote(ReadOnlySpan<char> input)
+        {
+            var inQuotes = false;
+            for (var i = 0; i < input.Length - 1; i++)
+            {
+                if (input[i] == '\'')
+                {
+                    if (input[i + 1] != '\'')
+                    {
+                        if (inQuotes)
+                            return i;
+
+                        inQuotes = true;
+                    }
+                    else
+                        i++;
+                }
+            }
+
+            if (input.Length >= 2 && input[input.Length - 2] != '\'' && input[input.Length - 1] == '\'')
+                return input.Length - 1;
+
+            return input.Length;
+        }
+
+        [Pure]
+        private protected static bool DetectNumericFormat(
+            ReadOnlySpan<char> input,
+            out NumericType numericType,
+            out KeyType layoutType)
+        {
+            numericType = NumericType.Integer;
+            layoutType = KeyType.Free;
+
+            if (input.IsEmpty)
+                return false;
+
+            var trimmedStr = input.Trim();
+
+            if (input.Length == FixedFitsKey.FixedFieldSize)
+            {
+                layoutType = KeyType.Fixed;
+                // Check for mandatory decimal separator
+                foreach (var item in input)
+                    if (item == '.')
+                    {
+                        numericType = NumericType.Float;
+                        break;
+                    }
+            }
+            else if (input.Length == 2 * FixedFitsKey.FixedFieldSize && trimmedStr.Length >= FixedFitsKey.FixedFieldSize)
+            {
+                // Fixed-format complex number
+                layoutType = KeyType.Fixed;
+                numericType = NumericType.Complex;
+            }
+            else
+            {
+                var nDots = 0;
+                var isComplex = false;
+                foreach (var item in trimmedStr)
+                {
+                    if (item == '.')
+                        nDots++;
+                    
+                    // Cannot be more than 2 decimal separators in the whole line
+                    if (nDots > 2)
+                        return false;
+                    if (item == ':')
+                    {
+                        isComplex = true;
+                        break;
+                    }
+                }
+
+                numericType = isComplex 
+                    ? NumericType.Complex 
+                    : (nDots > 0 
+                        ? NumericType.Float 
+                        : NumericType.Integer);
+            }
+            return true;
+
+        }
+
+        
+        [PublicAPI]
         [CanBeNull]
         public static IFitsValue ParseRawData(ReadOnlySpan<byte> input)
         {
@@ -376,103 +479,7 @@ namespace FitsCs
             }
         }
 
-        [Pure]
-        private protected static int FindComment(ReadOnlySpan<char> input)
-        {
-            //for(var i = input.Length - 1; i >= 0; i--)
-            for (var i = 0; i < input.Length; i++)
-                if (input[i] == '/')
-                    return i;
-
-            return input.Length;
-        }
-
-        [Pure]
-        private protected static int FindLastQuote(ReadOnlySpan<char> input)
-        {
-            var inQuotes = false;
-            for (var i = 0; i < input.Length - 1; i++)
-            {
-                if (input[i] == '\'')
-                {
-                    if (input[i + 1] != '\'')
-                    {
-                        if (inQuotes)
-                            return i;
-
-                        inQuotes = true;
-                    }
-                    else
-                        i++;
-                }
-            }
-
-            if (input.Length >= 2 && input[input.Length - 2] != '\'' && input[input.Length - 1] == '\'')
-                return input.Length - 1;
-
-            return input.Length;
-        }
-
-        [Pure]
-        private protected static bool DetectNumericFormat(
-            ReadOnlySpan<char> input,
-            out NumericType numericType,
-            out KeyType layoutType)
-        {
-            numericType = NumericType.Integer;
-            layoutType = KeyType.Free;
-
-            if (input.IsEmpty)
-                return false;
-
-            var trimmedStr = input.Trim();
-
-            if (input.Length == FixedFitsKey.FixedFieldSize)
-            {
-                layoutType = KeyType.Fixed;
-                // Check for mandatory decimal separator
-                foreach (var item in input)
-                    if (item == '.')
-                    {
-                        numericType = NumericType.Float;
-                        break;
-                    }
-            }
-            else if (input.Length == 2 * FixedFitsKey.FixedFieldSize && trimmedStr.Length >= FixedFitsKey.FixedFieldSize)
-            {
-                // Fixed-format complex number
-                layoutType = KeyType.Fixed;
-                numericType = NumericType.Complex;
-            }
-            else
-            {
-                var nDots = 0;
-                var isComplex = false;
-                foreach (var item in trimmedStr)
-                {
-                    if (item == '.')
-                        nDots++;
-                    
-                    // Cannot be more than 2 decimal separators in the whole line
-                    if (nDots > 2)
-                        return false;
-                    if (item == ':')
-                    {
-                        isComplex = true;
-                        break;
-                    }
-                }
-
-                numericType = isComplex 
-                    ? NumericType.Complex 
-                    : (nDots > 0 
-                        ? NumericType.Float 
-                        : NumericType.Integer);
-            }
-            return true;
-
-        }
-
+        [PublicAPI]
         [NotNull]
         [ContractAnnotation("name:null => halt")]
         public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed) 
@@ -480,6 +487,7 @@ namespace FitsCs
                 ? FreeFitsKey.Create(name, value, comment) 
                 : FixedFitsKey.Create(name, value, comment);
 
+        [PublicAPI]
         [NotNull]
         [ContractAnnotation("name:null => halt;value:null => halt")]
         public static IFitsValue Create(string name, object value, string comment = null,
@@ -488,10 +496,20 @@ namespace FitsCs
                 ? FreeFitsKey.Create(name, value, comment)
                 : FixedFitsKey.Create(name, value, comment);
 
+        [PublicAPI]
+        [NotNull]
         public static IFitsValue CreateBlank() => BlankKey.Blank;
+        
+        [PublicAPI]
+        [NotNull]
+        [ContractAnnotation("content:null => halt")]
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
-        public static IFitsValue CreateComment(string comment) => new ArbitraryKey(@"COMMENT " + comment);
-        public static IFitsValue CreateHistory(string history) => new ArbitraryKey(@"HISTORY " + history);
+
+        [PublicAPI]
+        public static IFitsValue CreateComment(string comment) => throw new NotImplementedException(SR.MethodNotImplemented);
+        
+        [PublicAPI]
+        public static IFitsValue CreateHistory(string history) => throw new NotImplementedException(SR.MethodNotImplemented);
 
     }
 }

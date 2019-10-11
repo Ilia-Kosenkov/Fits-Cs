@@ -23,7 +23,7 @@ namespace Sandbox
                 {
                     var keys = new List<IFitsValue>(36 * 3);
                     var blob = await reader.ReadAsync();
-                    while (blob.GetContentType() == BlobType.FitsHeader)
+                    while (blob?.GetContentType() == BlobType.FitsHeader)
                     {
                         for (var i = 0; i < 36; i++)
                         {
@@ -33,8 +33,13 @@ namespace Sandbox
 
                         blob = await reader.ReadAsync();
                     }
-                    foreach (var key in keys.Where(x => x is object))
-                        Console.WriteLine(key.ToString(true));
+
+                    for (var i = 0; i < keys.Count; i++)
+                    {
+                        Console.WriteLine(keys[i] is null 
+                            ? $"{i:##0}    ### UNHANDLED ###" 
+                            : $"{i:##0}\t{keys[i].ToString()}");
+                    }
                 }
             }
         }
