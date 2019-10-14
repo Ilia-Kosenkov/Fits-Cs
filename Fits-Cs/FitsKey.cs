@@ -512,6 +512,9 @@ namespace FitsCs
         [ContractAnnotation("name:null => halt")]
         public static IFitsValue CreateSpecial(string name, string data) => new SpecialKey(name, data);
 
+        [PublicAPI]
+        [NotNull]
+        public static IFitsValue CreateEnd() => new SpecialKey("END", string.Empty);
 
         [PublicAPI]
         [NotNull]
