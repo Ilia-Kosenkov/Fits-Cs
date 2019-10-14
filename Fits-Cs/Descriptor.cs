@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
 namespace FitsCs
@@ -21,9 +22,30 @@ namespace FitsCs
         public ImmutableArray<int> Dimensions { get; }
         [PublicAPI]
         public int Nkeys { get; }
-        [PublicAPI] public bool IsEmpty => ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null;
+        [PublicAPI]
+        public int ParamCount { get; }
+        
+        [PublicAPI]
+        public int GroupCount { get; }
 
-        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int [] naxis)
+        [PublicAPI]
+        public bool IsEmpty =>
+            ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
+
+
+        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int[] naxis)
+        {
+            IsPrimary = isPrimary;
+            var type = Block.ConvertBitPixToType(bitpix);
+            DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
+            ItemSizeInBytes = (byte) ((bitpix < 0 ? -bitpix : bitpix) / 8);
+            Dimensions = naxis.ToImmutableArray();
+            Nkeys = nKeys;
+            ParamCount = 0;
+            GroupCount = 1;
+        }
+
+        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, int paramCount, int groupCount, params int[] naxis)
         {
             IsPrimary = isPrimary;
             var type = Block.ConvertBitPixToType(bitpix);
@@ -31,6 +53,8 @@ namespace FitsCs
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
             Dimensions = naxis.ToImmutableArray();
             Nkeys = nKeys;
+            ParamCount = paramCount;
+            GroupCount = groupCount;
         }
 
         public Descriptor(IReadOnlyList<IFitsValue> header)
@@ -55,6 +79,8 @@ namespace FitsCs
             var nAxis = -1;
             int[] builder = null;
             var count = 0;
+            var nGroups = -1;
+            var nParams = -1;
             foreach (var key in header)
             {
                 if (key.Name == @"BITPIX" && key is IFitsValue<int> bitPixKey)
@@ -87,10 +113,20 @@ namespace FitsCs
                         count++;
                     }
                 }
-
-                // If all data are retrieved
-                if(bitPix != 0 && count == nAxis)
-                    break;
+                else if (key.Name == @"PCOUNT" && key is IFitsValue<int> pCountKey)
+                {
+                    if (nParams == -1)
+                        nParams = pCountKey.RawValue;
+                    else
+                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                }
+                else if (key.Name == @"GCOUNT" && key is IFitsValue<int> gCountKey)
+                {
+                    if (nGroups == -1)
+                        nGroups = gCountKey.RawValue;
+                    else
+                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                }
 
             }
 
@@ -102,8 +138,10 @@ namespace FitsCs
             ItemSizeInBytes = (byte) ((bitPix < 0 ? -bitPix : bitPix) / 8);
             Dimensions = builder?.ToImmutableArray() ?? ImmutableArray<int>.Empty;
             Nkeys = (int)(FitsKey.KeysPerUnit * Math.Ceiling(1.0 * header.Count / FitsKey.KeysPerUnit));
+            ParamCount = nParams == -1 ? 0 : nParams;
+            GroupCount = nGroups == -1 ? 1 : nGroups;
         }
 
-        public long GetFullSize() => Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim);
+        public long GetFullSize() => (Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
     }
 }

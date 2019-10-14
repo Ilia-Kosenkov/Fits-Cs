@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 
@@ -17,13 +15,16 @@ namespace FitsCs
         public Type DataType { get; }
         public byte ItemSizeInBytes { get; }
 
+        public int ParamCount { get; }
+        public int GroupCount { get; }
+
         public abstract Span<byte> RawData { get; }
         
         public abstract bool IsPrimary { get; }
 
         public abstract void FlipEndianessIfNecessary();
 
-        public long DataCount() => Dimensions.Aggregate<long, int>(1, (prod, n) => prod * n);
+        public long DataCount() => GroupCount * (Dimensions.Aggregate<long, int>(1, (prod, n) => prod * n) + ParamCount);
         public long DataSizeInBytes() => DataCount() * ItemSizeInBytes;
 
         protected internal Block(Descriptor desc)
@@ -35,6 +36,8 @@ namespace FitsCs
             Dimensions = desc.Dimensions;
             DataType = desc.DataType;
             ItemSizeInBytes = desc.ItemSizeInBytes;
+            ParamCount = desc.ParamCount;
+            GroupCount = desc.GroupCount;
         }
 
         public static Type ConvertBitPixToType(int bitpix)
