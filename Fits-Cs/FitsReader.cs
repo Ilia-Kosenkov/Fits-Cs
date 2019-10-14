@@ -21,6 +21,8 @@
 //     SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,11 +158,29 @@ namespace FitsCs
             await _semaphore.WaitAsync(token);
             try
             {
+                var keys = new List<IFitsValue>(4 * DataBlob.SizeInBytes / FitsKey.EntrySizeInBytes);
                 var blob = new DataBlob();
-                if(!await ReadInnerAsync(blob, token , false) || blob.GetContentType() != BlobType.FitsHeader)
-                    throw new InvalidOperationException(SR.InvalidOperation);
-                
-                
+                var @continue = true;
+                var count = 0;
+                while (@continue)
+                {
+                    if (!await ReadInnerAsync(blob, token, false))
+                        throw new InvalidOperationException(SR.InvalidOperation);
+
+                    if (blob?.GetContentType() == BlobType.FitsHeader
+                        && blob.AsKeyCollection() is var tempKeyCollection)
+                    {
+                        keys.AddRange(tempKeyCollection);
+                        @continue = !tempKeyCollection.IsEnd();
+                    }
+                    count++;
+                }
+
+                // TODO: catch specific exception and rethrow 
+                var desc = new Descriptor(keys);
+
+                var block = Block.Create(desc);
+
                 return null;
             }
             finally

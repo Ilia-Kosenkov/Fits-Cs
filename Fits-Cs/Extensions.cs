@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using FitsCs.Keys;
@@ -165,6 +168,35 @@ namespace FitsCs
             {
                 return null;
             }
+        }
+
+
+        [PublicAPI]
+        [ContractAnnotation("keys:null => halt;name:null => halt")]
+        [CanBeNull]
+        public static IFitsValue GetFirstByName(this IReadOnlyList<IFitsValue> keys, string name)
+        {
+            if (keys is null)
+                throw new ArgumentNullException(nameof(keys), SR.NullArgument);
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name), SR.NullArgument);
+
+            return keys.FirstOrDefault(item => item?.Name == name);
+        }
+
+        [PublicAPI]
+        [ContractAnnotation("keys:null => halt;name:null => halt")]
+        public static bool IsEnd(this IReadOnlyList<IFitsValue> keys)
+        {
+            if (keys is null)
+                throw new ArgumentNullException(nameof(keys), SR.NullArgument);
+
+           for(var i = keys.Count - 1; i >= 0; i--)
+                if (keys[i]?.Name == @"END")
+                    return true;
+
+            return false;
         }
     }
 

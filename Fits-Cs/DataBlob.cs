@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 using System;
+using System.Collections.Immutable;
 using JetBrains.Annotations;
 
 namespace FitsCs
@@ -109,6 +110,18 @@ namespace FitsCs
             return BlobType.Data;
         }
 
+        public ImmutableArray<IFitsValue> AsKeyCollection()
+        {
+            var builder = ImmutableArray.CreateBuilder<IFitsValue>(SizeInBytes / FitsKey.EntrySizeInBytes);
+            var data = Data;
+            for (var i = 0; i < 36; i++)
+            {
+                var newKey = FitsKey.ParseRawData(data.Slice(i * FitsKey.EntrySizeInBytes));
+                builder.Add(newKey);
+            }
+
+            return builder.ToImmutable();
+        }
 
         
     }
