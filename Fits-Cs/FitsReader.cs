@@ -91,53 +91,14 @@ namespace FitsCs
         }
 
 
-
-        [PublicAPI]
-        [ItemCanBeNull]
-        public async Task<DataBlob> ReadAsync(CancellationToken token = default)
+        protected virtual async Task<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
-            // Synchronizing read access
-            await _semaphore.WaitAsync(token);
-
-            try
-            {
-
-                if (_nReadBytes < DataBlob.SizeInBytes)
-                {
-                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
-                    _nReadBytes += n;
-
-                    if (_nReadBytes < DataBlob.SizeInBytes)
-                        return null;
-                }
-                
-                var blob = new DataBlob();
-
-                if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
-                    return null;
-
-                if (Span.Length > DataBlob.SizeInBytes)
-                    Span.Slice(DataBlob.SizeInBytes).CopyTo(Span);
-
-                _nReadBytes -= DataBlob.SizeInBytes;
-
-                return blob;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        [PublicAPI]
-        public async Task<bool> ReadAsync(
-            [NotNull] DataBlob blob,
-            CancellationToken token = default)
-        {
-            if(blob is null)
+            if (blob is null)
                 throw new ArgumentException(SR.NullArgument, nameof(blob));
+            
+            if(@lock)
             // Synchronizing read access
-            await _semaphore.WaitAsync(token);
+                await _semaphore.WaitAsync(token);
 
             try
             {
@@ -150,13 +111,13 @@ namespace FitsCs
                         return false;
                 }
 
-                if(blob.IsInitialized)
+                if (blob.IsInitialized)
                     blob.Reset();
-                
+
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return false;
 
-                if (Span.Length > DataBlob.SizeInBytes) 
+                if (Span.Length > DataBlob.SizeInBytes)
                     Span.Slice(DataBlob.SizeInBytes).CopyTo(Span);
 
                 _nReadBytes -= DataBlob.SizeInBytes;
@@ -165,8 +126,27 @@ namespace FitsCs
             }
             finally
             {
-                _semaphore.Release();
+                if(@lock)
+                    _semaphore.Release();
             }
+        }
+
+        [PublicAPI]
+        [ItemCanBeNull]
+        public async Task<DataBlob> ReadAsync(CancellationToken token = default)
+        {
+           var blob = new DataBlob();
+           return await ReadInnerAsync(blob, token, true)
+               ? blob
+               : null;
+        }
+
+        [PublicAPI]
+        public Task<bool> ReadAsync(
+            [NotNull] DataBlob blob,
+            CancellationToken token = default)
+        {
+            return ReadInnerAsync(blob, token, true);
         }
 
         [PublicAPI]
@@ -177,6 +157,9 @@ namespace FitsCs
             try
             {
                 var blob = new DataBlob();
+                if(!await ReadInnerAsync(blob, token , false) || blob.GetContentType() != BlobType.FitsHeader)
+                    throw new InvalidOperationException(SR.InvalidOperation);
+                
                 
                 return null;
             }
