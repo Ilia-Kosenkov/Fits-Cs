@@ -38,9 +38,7 @@ namespace FitsCs
             Span<char> target,
             int minLength = MinFixedStringSize)
         {
-            if (source.IsEmpty)
-                return true;
-
+          
             if (target.Length < source.Length + 2)
                 return false;
 
@@ -123,6 +121,9 @@ namespace FitsCs
         {
             if (enc is null)
                 enc= Encoding.ASCII;
+            
+            if(@string.IsEmpty)
+                return true;
 
             var byteSize = enc.GetByteCount(@string);
 
@@ -177,8 +178,14 @@ namespace FitsCs
             @string = null;
             var trimmedInput = quotedString.Trim();
             // If input is empty or exceeds one entry size;
-            if (trimmedInput.IsEmpty || trimmedInput.Length > FitsKey.EntrySize)
+            if (trimmedInput.Length > FitsKey.EntrySize)
                 return false;
+
+            if (trimmedInput.IsEmpty)
+            {
+                @string = string.Empty;
+                return true;
+            }
             
 
             Span<char> resultSpan = stackalloc char[trimmedInput.Length];
