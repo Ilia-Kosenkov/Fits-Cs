@@ -40,12 +40,12 @@ namespace FitsCs.Keys
             return true;
         }
 
-        internal FixedStringKey(string name, string value, string comment) : base(name, comment)
+        internal FixedStringKey(string name, string value, string comment) 
+            : base(name, comment, value.AsSpan().StringSizeWithQuoteReplacement() + 2)
         {
             if (value is null)
                 throw new ArgumentNullException(SR.NullArgument);
             
-            ValidateInput(name, comment, value.AsSpan().StringSizeWithQuoteReplacement() + 2);
             if (!value.AsSpan().IsStringHduCompatible())
                 throw new ArgumentException(SR.HduStringIllegal, nameof(value));
             RawValue = value;

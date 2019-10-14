@@ -41,9 +41,8 @@ namespace FitsCs.Keys
                 string.Format($"= {{0,{FixedFieldSize}}}", RawValue ? TrueConst : FalseConst));
 
 
-        internal FixedBoolKey(string name, bool value, string comment) : base(name, comment)
+        internal FixedBoolKey(string name, bool value, string comment) : base(name, comment, 3)
         {
-            ValidateInput(name, comment, 3);
             RawValue = value;
         }
     }

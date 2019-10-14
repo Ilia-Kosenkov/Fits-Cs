@@ -38,10 +38,10 @@ namespace FitsCs.Keys
                 $"= {RawValue:G9}");
 
 
-        internal FreeFloatKey(string name, float value, string comment) : base(name, comment)
+        internal FreeFloatKey(string name, float value, string comment)
+            : base(name, comment, 2 + 15)
         {
             // Conservative size estimate - 15 is the total size of %+15.9e+2
-            ValidateInput(name, comment, 2 + 15);
             RawValue = value;
         }
     }

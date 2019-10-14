@@ -38,9 +38,9 @@ namespace FitsCs.Keys
                 span,
                  $"= {RawValue.FormatDouble(17, FixedFieldSize)}");
 
-        internal FixedDoubleKey(string name, double value, string comment = "") : base(name, comment)
+        internal FixedDoubleKey(string name, double value, string comment = "") 
+            : base(name, comment, FixedFieldSize + 2)
         {
-            ValidateInput(name, comment, FixedFieldSize + 2);
             RawValue = value;
         }
 

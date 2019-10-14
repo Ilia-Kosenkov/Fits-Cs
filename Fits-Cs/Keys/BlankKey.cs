@@ -5,7 +5,8 @@ namespace FitsCs.Keys
     public sealed class BlankKey : FitsKey
     {
         public static BlankKey Blank { get; } = new BlankKey();
-        internal BlankKey() : base(string.Empty, string.Empty)
+        internal BlankKey() 
+            : base(string.Empty, string.Empty, 0)
         {
         }
 

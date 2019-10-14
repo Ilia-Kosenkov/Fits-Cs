@@ -38,10 +38,10 @@ namespace FitsCs.Keys
                 $"= {RawValue.FormatDouble(17, 24)}");
 
 
-        internal FreeDoubleKey(string name, double value, string comment) : base(name, comment)
+        internal FreeDoubleKey(string name, double value, string comment)
+            : base(name, comment, 2 + 24)
         {
             // Conservative size estimate - 24 is the total size of %+24.17e+3
-            ValidateInput(name, comment, 2 + 24);
             RawValue = value;
         }
     }

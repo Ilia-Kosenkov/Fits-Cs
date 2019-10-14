@@ -38,9 +38,9 @@ namespace FitsCs.Keys
                 span,
                 string.Format($"= {{0,{FixedFieldSize}:G9}}", RawValue));
 
-        internal FixedFloatKey(string name, float value, string comment = "") : base(name, comment)
+        internal FixedFloatKey(string name, float value, string comment = "") 
+            : base(name, comment, FixedFieldSize + 2)
         {
-            ValidateInput(name, comment, FixedFieldSize + 2);
             RawValue = value;
         }
 

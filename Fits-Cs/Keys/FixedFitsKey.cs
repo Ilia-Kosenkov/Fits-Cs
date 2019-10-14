@@ -10,7 +10,7 @@ namespace FitsCs.Keys
         public override KeyType Type => KeyType.Fixed;
         public override bool IsEmpty => false;
 
-        private protected FixedFitsKey(string name, string comment) : base(name, comment)
+        private protected FixedFitsKey(string name, string comment, int size) : base(name, comment, size)
         {
         }
 

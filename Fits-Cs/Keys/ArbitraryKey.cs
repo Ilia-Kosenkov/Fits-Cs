@@ -7,7 +7,8 @@ namespace FitsCs.Keys
     {
         private readonly string _contents;
 
-        internal ArbitraryKey(string contents) : base(string.Empty, string.Empty)
+        internal ArbitraryKey(string contents) 
+            : base(string.Empty, string.Empty, 0)
         {
             if(string.IsNullOrWhiteSpace(contents) || contents.Length > EntrySize - EqualsPos)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(contents));

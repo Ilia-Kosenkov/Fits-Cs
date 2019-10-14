@@ -7,7 +7,8 @@ namespace FitsCs.Keys
     public abstract class FreeFitsKey : FitsKey
     {
         public override KeyType Type => KeyType.Free;
-        private protected FreeFitsKey(string name, string comment) : base(name, comment)
+        private protected FreeFitsKey(string name, string comment, int size) 
+            : base(name, comment, size)
         {
         }
 

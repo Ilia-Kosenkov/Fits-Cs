@@ -41,10 +41,9 @@ namespace FitsCs.Keys
             return true;
         }
 
-        internal FreeStringKey(string name, string value, string comment) : base(name, comment)
+        internal FreeStringKey(string name, string value, string comment) 
+            : base(name, comment, value.AsSpan().StringSizeWithQuoteReplacement(0) + 2)
         {
-            ValidateInput(name, comment, value.AsSpan().StringSizeWithQuoteReplacement(0) + 2);
-            
             if(!value.AsSpan().IsStringHduCompatible())
                 throw new ArgumentException(SR.HduStringIllegal, nameof(value));
 

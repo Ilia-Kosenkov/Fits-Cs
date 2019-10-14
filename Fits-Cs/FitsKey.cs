@@ -74,9 +74,10 @@ namespace FitsCs
 
         public abstract  bool IsEmpty { get; }
 
-        private protected FitsKey(string name, string comment)
+        private protected FitsKey(string name, string comment, int size)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            ValidateInput(name, comment, size);
+            Name = name;
             Comment = comment ?? string.Empty;
         }
 
@@ -175,12 +176,12 @@ namespace FitsCs
         {
             if (name is null)
                 throw new ArgumentNullException(SR.NullArgument, nameof(name));
-            if(name.Length == 0)
+            if(name.Length == 0 && valueSize != 0)
                 throw new ArgumentException(SR.KeyNameTooShort, nameof(name));
             if (name.Length > NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
 
-            if(!IsValidKeyName(name.AsSpan()))
+            if(name.Length > 0 && !IsValidKeyName(name.AsSpan()))
                 throw new ArgumentException(SR.HduStringIllegal, nameof(name));
 
             if (valueSize < 0)
@@ -334,7 +335,8 @@ namespace FitsCs
             Span<char> charRep = stackalloc char[EntrySize];
 
             // Byte array should be exactly convertible to char array, especially when default encoding is ASCII
-            if (Encoding.GetChars(input.Slice(0, EntrySizeInBytes), charRep) != EntrySize)
+            if (Encoding.GetChars(input.Slice(0, EntrySizeInBytes), charRep) != EntrySize ||
+                !((ReadOnlySpan<char>)charRep).IsStringHduCompatible(Encoding))
                 return null;
             
 
@@ -343,12 +345,11 @@ namespace FitsCs
             {
                 // If name is invalid, it can be a blank key
                 if (BlankKey.IsBlank(charRep))
-                    return BlankKey.Blank;
+                    return CreateBlank();
                 if (ArbitraryKey.Create(charRep) is IFitsValue val)
                     return val;
                 // Possible other cases?
-                else
-                    return null;
+                return null;
             }
 
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
@@ -474,11 +475,10 @@ namespace FitsCs
 
                 }
             }
-            else
-            {
-                // TODO: Keys with no value attached
-                return null;
-            }
+
+            // At this point, keyword has a valid name and HDU-compatible content
+            var content = ((ReadOnlySpan<char>)charRep).Slice(EqualsPos).Trim();
+            return CreateSpecial(name.ToString(), content.ToString());
         }
 
         [PublicAPI]
@@ -501,7 +501,7 @@ namespace FitsCs
         [PublicAPI]
         [NotNull]
         public static IFitsValue CreateBlank() => BlankKey.Blank;
-        
+
         [PublicAPI]
         [NotNull]
         [ContractAnnotation("content:null => halt")]
