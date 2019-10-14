@@ -34,7 +34,7 @@ namespace FitsCs.Keys
 
         private protected override string TypePrefix => @"spcl";
         public override object Value => null;
-        public override bool IsEmpty => true;
+        public override bool IsEmpty => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Comment);
 
         public SpecialKeyType KeyType { get; }
 

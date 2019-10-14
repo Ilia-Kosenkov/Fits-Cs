@@ -28,7 +28,6 @@ using System.Text;
 using FitsCs.Keys;
 using JetBrains.Annotations;
 using TextExtensions;
-using MemoryExtensions;
 using System.Numerics;
 
 namespace FitsCs
@@ -101,7 +100,7 @@ namespace FitsCs
         {
             if (prefixType)
             {
-                string frmtStr = null;
+                string frmtStr;
                 switch(Type)
                 {
                     case KeyType.Fixed:
