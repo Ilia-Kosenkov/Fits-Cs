@@ -22,7 +22,6 @@
 
 using System;
 using System.Buffers;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using FitsCs.Keys;
@@ -52,16 +51,7 @@ namespace FitsCs
         private protected static Encoding Encoding { get; } = Encoding.ASCII;
         public static  int CharSizeInBytes { get; } = Encoding.GetMaxCharCount(1);
         public static int EntrySizeInBytes { get; }= EntrySize * CharSizeInBytes;
-        public static IImmutableList<Type> AllowedTypes { get; } = new[]
-        {
-            typeof(double),
-            typeof(int),
-            typeof(float),
-            typeof(string),
-            typeof(bool),
-            typeof(Complex)
-        }.ToImmutableList();
-
+        
         private protected virtual string TypePrefix => @"null";
         
         private protected virtual string DebuggerDisplay => $"{TypePrefix}: {ToString()}";

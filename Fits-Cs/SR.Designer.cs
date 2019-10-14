@@ -61,6 +61,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Data type is not supported..
+        /// </summary>
+        internal static string DataTypeNotSupported {
+            get {
+                return ResourceManager.GetString("DataTypeNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to String contains characters that cannot be used in the HDU..
         /// </summary>
         internal static string HduStringIllegal {
