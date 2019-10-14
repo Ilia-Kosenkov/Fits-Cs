@@ -105,6 +105,25 @@ namespace FitsCs
             _nReadBytes -= n;
         }
 
+        protected virtual async Task<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
+        {
+            if (@lock)
+                // Synchronizing read access
+                await _semaphore.WaitAsync(token);
+
+            try
+            {
+                var n = await _stream.ReadAsync(_buffer, start, length, token);
+                _nReadBytes += n;
+                return n;
+            }
+            finally
+            {
+                if (@lock)
+                    _semaphore.Release();
+            }
+        }
+
         protected virtual async Task<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
             if (blob is null)
@@ -118,8 +137,9 @@ namespace FitsCs
             {
                 if (_nReadBytes < DataBlob.SizeInBytes)
                 {
-                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
-                    _nReadBytes += n;
+                    //var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
+                    //_nReadBytes += n;
+                    var n = await ReadIntoBuffer(_nReadBytes, _buffer.Length - _nReadBytes, token, false);
 
                     if (_nReadBytes < DataBlob.SizeInBytes)
                         return false;
@@ -155,21 +175,47 @@ namespace FitsCs
                 var len = block.RawData.Length;
                 if (len <= _nReadBytes)
                 {
-                    if (!Span.Slice(0, len).TryCopyTo(block.RawData))
+                    if (Span.Slice(0, len).TryCopyTo(block.RawData))
+                    {
+                        CompactBuffer(len);
+                        return len;
+                    }
+                    else
                         return -1;
-                    
-                    return len;
                 }
                 else
                 {
                     var count = 0;
                     if (_nReadBytes > 0)
                     {
-
+                        if (Span.Slice(0, _nReadBytes).TryCopyTo(block.RawData))
+                        {
+                            count += _nReadBytes;
+                            CompactBuffer();
+                        }
                     }
 
+                    var nReads = Math.Ceiling(1.0 * (len - count) / _buffer.Length);
+                    for (var i = 0; i < nReads - 1; i++)
+                    {
+                        if (await ReadIntoBuffer(0, _buffer.Length, token, false) != _buffer.Length)
+                            return -1;
+
+                        if (!Span.TryCopyTo(block.RawData.Slice(count)))
+                            return -1;
+                        count += _buffer.Length;
+                        CompactBuffer();
+                    }
+
+                    if (await ReadIntoBuffer(0, _buffer.Length, token, false) < (len - count)
+                        || !Span.Slice(0, len - count).TryCopyTo(block.RawData.Slice(count)))
+                        return -1;
+
+                    CompactBuffer(len - count);
+                    count += len - count;
+
+                    return count;
                 }
-                return -1;
             }
             finally
             {
@@ -229,9 +275,11 @@ namespace FitsCs
 
                 var block = Block.Create(desc);
                 block.Keys.AddRange(keys);
-                
-
-                return null;
+                var nBytesFilled = await FillDataAsync(block, token, false);
+                if(nBytesFilled != block.DataSizeInBytes())
+                    throw new IOException(SR.IOReadFailure);
+                block.FlipEndianessIfNecessary();
+                return block;
             }
             finally
             {

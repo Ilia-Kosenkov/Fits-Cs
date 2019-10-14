@@ -97,6 +97,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to read file: it may be corrupted or of unsupported format..
+        /// </summary>
+        internal static string IOReadFailure {
+            get {
+                return ResourceManager.GetString("IOReadFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Key name is too large..
         /// </summary>
         internal static string KeyNameTooLong {

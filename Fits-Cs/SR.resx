@@ -129,6 +129,9 @@
   <data name="InvalidOperation" xml:space="preserve">
     <value>Operation cannot be performed.</value>
   </data>
+  <data name="IOReadFailure" xml:space="preserve">
+    <value>Failed to read file: it may be corrupted or of unsupported format.</value>
+  </data>
   <data name="KeyNameTooLong" xml:space="preserve">
     <value>Key name is too large.</value>
   </data>

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
@@ -19,6 +20,11 @@ namespace FitsCs
         public abstract Span<byte> RawData { get; }
         
         public abstract bool IsPrimary { get; }
+
+        public abstract void FlipEndianessIfNecessary();
+
+        public long DataCount() => Dimensions.Aggregate<long, int>(1, (prod, n) => prod * n);
+        public long DataSizeInBytes() => DataCount() * ItemSizeInBytes;
 
         protected internal Block(Descriptor desc)
         {
@@ -94,6 +100,62 @@ namespace FitsCs
 
         public Span<T> Data => _data ?? Span<T>.Empty;
         public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
+
+        public override void FlipEndianessIfNecessary()
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                var span = RawData;
+                if (ItemSizeInBytes == 2)
+                {
+                    for (var i = 0; i < _data.Length; i++)
+                    {
+                        var offset = 2 * i;
+                        var temp = span[offset];
+                        span[offset] = span[offset + 1];
+                        span[offset + 1] = temp;
+                    }
+                }
+                else if (ItemSizeInBytes == 4)
+                {
+                    for (var i = 0; i < _data.Length; i++)
+                    {
+                        var offset = 4 * i;
+                        
+                        var temp = span[offset];
+                        span[offset] = span[offset + 3];
+                        span[offset + 3] = temp;
+
+                        temp = span[offset + 1];
+                        span[offset + 1] = span[offset + 2];
+                        span[offset + 2] = temp;
+                    }
+                }
+                else if (ItemSizeInBytes == 8)
+                {
+                    for (var i = 0; i < _data.Length; i++)
+                    {
+                        var offset = 8 * i;
+
+                        var temp = span[offset];
+                        span[offset] = span[offset + 7];
+                        span[offset + 7] = temp;
+
+                        temp = span[offset + 1];
+                        span[offset + 1] = span[offset + 6];
+                        span[offset + 6] = temp;
+
+                        temp = span[offset + 2];
+                        span[offset + 2] = span[offset + 5];
+                        span[offset + 5] = temp;
+
+                        temp = span[offset + 3];
+                        span[offset + 3] = span[offset + 4];
+                        span[offset + 4] = temp;
+                    }
+                }
+            }
+        }
 
         protected internal Block(Descriptor desc) : base(desc)
         {
