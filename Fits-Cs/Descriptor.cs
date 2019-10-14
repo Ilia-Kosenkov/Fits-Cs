@@ -19,9 +19,9 @@ namespace FitsCs
         public Type DataType { get; }
         [PublicAPI]
         public ImmutableArray<int> Dimensions { get; }
-
         [PublicAPI]
         public int Nkeys { get; }
+        [PublicAPI] public bool IsEmpty => ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null;
 
         public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int [] naxis)
         {

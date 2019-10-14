@@ -21,6 +21,7 @@
 //     SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -92,6 +93,17 @@ namespace FitsCs
             _nReadBytes += data.Length;
         }
 
+        protected virtual void CompactBuffer(int n = 0)
+        {
+            if (_nReadBytes <= 0 || n < 0)
+                return;
+
+            n = n == 0 ? _nReadBytes : Math.Min(n, _nReadBytes);
+            
+            if(n < Span.Length)
+                Span.Slice(n).CopyTo(Span);
+            _nReadBytes -= n;
+        }
 
         protected virtual async Task<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
@@ -106,7 +118,7 @@ namespace FitsCs
             {
                 if (_nReadBytes < DataBlob.SizeInBytes)
                 {
-                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
                     _nReadBytes += n;
 
                     if (_nReadBytes < DataBlob.SizeInBytes)
@@ -119,16 +131,49 @@ namespace FitsCs
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return false;
 
-                if (Span.Length > DataBlob.SizeInBytes)
-                    Span.Slice(DataBlob.SizeInBytes).CopyTo(Span);
-
-                _nReadBytes -= DataBlob.SizeInBytes;
-
+                CompactBuffer(DataBlob.SizeInBytes);
+                
                 return true;
             }
             finally
             {
                 if(@lock)
+                    _semaphore.Release();
+            }
+        }
+
+        protected virtual async Task<int> FillDataAsync(
+            Block block, CancellationToken token, bool @lock)
+        {
+            if (block is null)
+                throw new ArgumentNullException(nameof(block), SR.NullArgument);
+            if (@lock)
+                // Synchronizing read access
+                await _semaphore.WaitAsync(token);
+            try
+            {
+                var len = block.RawData.Length;
+                if (len <= _nReadBytes)
+                {
+                    if (!Span.Slice(0, len).TryCopyTo(block.RawData))
+                        return -1;
+                    
+                    return len;
+                }
+                else
+                {
+                    var count = 0;
+                    if (_nReadBytes > 0)
+                    {
+
+                    }
+
+                }
+                return -1;
+            }
+            finally
+            {
+                if (@lock)
                     _semaphore.Release();
             }
         }
@@ -161,25 +206,30 @@ namespace FitsCs
                 var keys = new List<IFitsValue>(4 * DataBlob.SizeInBytes / FitsKey.EntrySizeInBytes);
                 var blob = new DataBlob();
                 var @continue = true;
-                var count = 0;
                 while (@continue)
                 {
                     if (!await ReadInnerAsync(blob, token, false))
                         throw new InvalidOperationException(SR.InvalidOperation);
 
-                    if (blob?.GetContentType() == BlobType.FitsHeader
-                        && blob.AsKeyCollection() is var tempKeyCollection)
+                    if (blob?.GetContentType() == BlobType.FitsHeader &&
+                        blob.AsKeyCollection() is var tempKeyCollection)
                     {
                         keys.AddRange(tempKeyCollection);
                         @continue = !tempKeyCollection.IsEnd();
                     }
-                    count++;
+                    else
+                    {
+                        ReturnToBuffer(blob.Data);
+                        @continue = false;
+                    }
                 }
 
                 // TODO: catch specific exception and rethrow 
                 var desc = new Descriptor(keys);
 
                 var block = Block.Create(desc);
+                block.Keys.AddRange(keys);
+                
 
                 return null;
             }

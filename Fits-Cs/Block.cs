@@ -1,21 +1,34 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace FitsCs
 {
     public abstract class Block
     {
-        private protected readonly List<IFitsValue> _keys;
-        public IList<IFitsValue> Keys => _keys;
+        public List<IFitsValue> Keys { get; }
+    
+        public ImmutableArray<int> Dimensions { get; }
+        public Type DataType { get; }
+        public byte ItemSizeInBytes { get; }
 
+        public abstract Span<byte> RawData { get; }
+        
         public abstract bool IsPrimary { get; }
 
-        protected internal Block(int nKeyUnits)
+        protected internal Block(Descriptor desc)
         {
-            if (nKeyUnits <= 0)
-                throw new ArgumentException(SR.InvalidArgument, nameof(nKeyUnits));
-            _keys = new List<IFitsValue>(nKeyUnits * FitsKey.KeysPerUnit);
+            
+            if (desc.IsEmpty)
+                throw new ArgumentException(SR.InvalidArgument, nameof(desc));
+            Keys = new List<IFitsValue>(desc.Nkeys);
+            Dimensions = desc.Dimensions;
+            DataType = desc.DataType;
+            ItemSizeInBytes = desc.ItemSizeInBytes;
         }
 
         public static Type ConvertBitPixToType(int bitpix)
@@ -37,76 +50,77 @@ namespace FitsCs
             }
         }
 
+        [NotNull]
         public static Block Create(Descriptor desc)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
 
-            var nDataUnits = (int)(desc.GetFullSize() * desc.ItemSizeInBytes / DataBlob.SizeInBytes);
-            var nKeyUnits = desc.Nkeys / FitsKey.KeysPerUnit;
             if (desc.IsPrimary)
             {
                 if(desc.DataType == typeof(float))
-                    return new PrimaryBlock<float>(nKeyUnits, nDataUnits);
+                    return new PrimaryBlock<float>(desc);
                 if(desc.DataType == typeof(double))
-                    return new PrimaryBlock<double>(nKeyUnits, nDataUnits);
+                    return new PrimaryBlock<double>(desc);
                 if(desc.DataType == typeof(byte))
-                    return new PrimaryBlock<byte>(nKeyUnits, nDataUnits);
+                    return new PrimaryBlock<byte>(desc);
                 if(desc.DataType == typeof(short))
-                    return new PrimaryBlock<byte>(nKeyUnits, nDataUnits);
+                    return new PrimaryBlock<byte>(desc);
                 if(desc.DataType == typeof(int))
-                    return new PrimaryBlock<byte>(nKeyUnits, nDataUnits);
+                    return new PrimaryBlock<byte>(desc);
 
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
             }
 
             if (desc.DataType == typeof(float))
-                return new ExtensionBlock<float>(nKeyUnits, nDataUnits);
+                return new ExtensionBlock<float>(desc);
             if (desc.DataType == typeof(double))
-                return new ExtensionBlock<double>(nKeyUnits, nDataUnits);
+                return new ExtensionBlock<double>(desc);
             if (desc.DataType == typeof(byte))
-                return new ExtensionBlock<byte>(nKeyUnits, nDataUnits);
+                return new ExtensionBlock<byte>(desc);
             if (desc.DataType == typeof(short))
-                return new ExtensionBlock<byte>(nKeyUnits, nDataUnits);
+                return new ExtensionBlock<byte>(desc);
             if (desc.DataType == typeof(int))
-                return new ExtensionBlock<byte>(nKeyUnits, nDataUnits);
+                return new ExtensionBlock<byte>(desc);
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
 
         }
     }
 
-    public abstract class Block<T> : Block
+    public abstract class Block<T> : Block where T : unmanaged
     {
-        private protected T[] Data;
-        public Span<T> RawData => Data ?? Span<T>.Empty;
+        // ReSharper disable once InconsistentNaming
+        private protected T[] _data;
 
-        protected internal Block(int nKeyUnits, int nDataUnits) : base(nKeyUnits)
+        public Span<T> Data => _data ?? Span<T>.Empty;
+        public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
+
+        protected internal Block(Descriptor desc) : base(desc)
         {
             AllowedTypes.ValidateDataType<T>();
+            if (desc.IsEmpty)
+                throw new ArgumentException(SR.InvalidArgument, nameof(desc));
 
-            if (nDataUnits < 0)
-                throw new ArgumentException(SR.InvalidArgument, nameof(nDataUnits));
-
-            Data = new T[nDataUnits * DataBlob.SizeInBytes / Unsafe.SizeOf<T>()];
+            _data = new T[desc.GetFullSize()];
         }
     }
 
-    public sealed class PrimaryBlock<T> : Block<T>
+    public sealed class PrimaryBlock<T> : Block<T> where T :unmanaged
     {
         public override bool IsPrimary => true;
 
-        public PrimaryBlock(int nKeyUnits, int nDataUnits) : base(nKeyUnits, nDataUnits)
+        public PrimaryBlock(Descriptor desc) : base(desc)
         {
            
         }
 
     }
 
-    public sealed class ExtensionBlock<T> : Block<T>
+    public sealed class ExtensionBlock<T> : Block<T> where T : unmanaged
     {
         public override bool IsPrimary => false;
 
-        public ExtensionBlock(int nKeyUnits, int nDataUnits) : base(nKeyUnits, nDataUnits)
+        public ExtensionBlock(Descriptor desc) : base(desc)
         {
         }
     }
