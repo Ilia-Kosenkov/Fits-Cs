@@ -47,7 +47,7 @@ namespace FitsCs
         public const int EqualsPos = 8;
         public const int ValueStart = 10;
         public const int EntrySize = 80;
-
+        public const int KeysPerUnit = DataBlob.SizeInBytes / EntrySize;
         private protected static Encoding Encoding { get; } = Encoding.ASCII;
         public static  int CharSizeInBytes { get; } = Encoding.GetMaxCharCount(1);
         public static int EntrySizeInBytes { get; }= EntrySize * CharSizeInBytes;

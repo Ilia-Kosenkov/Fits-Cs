@@ -44,12 +44,14 @@ namespace FitsCs
 
         private Span<byte> Span => _buffer;
 
+        [PublicAPI]
         public FitsReader([NotNull] Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _buffer = new byte[DefaultBufferSize];
         }
-
+        
+        [PublicAPI]
         public FitsReader(
             [NotNull] Stream stream, 
             int bufferSize)
@@ -62,6 +64,7 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
+        [PublicAPI]
         public FitsReader(
             [NotNull] Stream stream, 
             int bufferSize, bool leaveOpen)
@@ -75,6 +78,7 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
+        [PublicAPI]
         [ItemCanBeNull]
         public async Task<DataBlob> ReadAsync(CancellationToken token = default)
         {
@@ -105,29 +109,37 @@ namespace FitsCs
             }
         }
 
+        [PublicAPI]
         public async Task<bool> ReadAsync(
             [NotNull] DataBlob blob,
             CancellationToken token = default)
         {
             if(blob is null)
                 throw new ArgumentException(SR.NullArgument, nameof(blob));
-
             // Synchronizing read access
             await _semaphore.WaitAsync(token);
 
             try
             {
-                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
-                _nReadBytes += n;
-
                 if (_nReadBytes < DataBlob.SizeInBytes)
-                    return false;
+                {
+                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                    _nReadBytes += n;
 
+                    if (_nReadBytes < DataBlob.SizeInBytes)
+                        return false;
+                }
+
+                if(blob.IsInitialized)
+                    blob.Reset();
+                
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return false;
 
-                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
-                _nReadBytes = 0;
+                if (Span.Length > DataBlob.SizeInBytes) 
+                    Span.Slice(DataBlob.SizeInBytes).CopyTo(Span);
+
+                _nReadBytes -= DataBlob.SizeInBytes;
 
                 return true;
             }
@@ -137,7 +149,41 @@ namespace FitsCs
             }
         }
 
-       protected virtual void Dispose(bool disposing)
+        [PublicAPI]
+        [ItemCanBeNull]
+        public async Task<Block> ReadBlockAsync(CancellationToken token = default)
+        {
+            await _semaphore.WaitAsync(token);
+            try
+            {
+                var blob = new DataBlob();
+
+                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                _nReadBytes += n;
+
+                if (_nReadBytes < DataBlob.SizeInBytes)
+                    return null;
+
+
+                if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
+                    return null;
+
+
+                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
+                _nReadBytes = 0;
+
+                
+
+
+                return null;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
@@ -147,13 +193,12 @@ namespace FitsCs
             }
         }
 
+        [PublicAPI]
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
-  
 
     }
 }
