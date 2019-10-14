@@ -17,7 +17,7 @@ namespace Sandbox
         private static async Task Test1()
         {
 
-            using (var fs = new FileStream("FGSf64y0106m_a1f.fits", FileMode.Open))
+            using (var fs = new FileStream("WFPC2ASSNu5780205bx.fits", FileMode.Open))
             {
                 using (var reader = new FitsReader(fs))
                 {
@@ -37,8 +37,8 @@ namespace Sandbox
                     for (var i = 0; i < keys.Count; i++)
                     {
                         Console.WriteLine(keys[i] is null 
-                            ? $"{i:##0}    ### UNHANDLED ###" 
-                            : $"{i:##0}\t{keys[i].ToString()}");
+                            ? $"{i,3}\t### UNHANDLED ###" 
+                            : $"{i,3}\t{keys[i].ToString(true)}");
                     }
                 }
             }
