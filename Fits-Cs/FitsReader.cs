@@ -78,6 +78,20 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
+
+        protected virtual void ReturnToBuffer(ReadOnlySpan<byte> data)
+        {
+            if(_buffer is null)
+                throw new NullReferenceException(SR.UnexpectedNullRef);
+
+            if (!data.TryCopyTo(Span.Slice(_nReadBytes)))
+                throw new InvalidOperationException(SR.InvalidOperation);
+
+            _nReadBytes += data.Length;
+        }
+
+
+
         [PublicAPI]
         [ItemCanBeNull]
         public async Task<DataBlob> ReadAsync(CancellationToken token = default)
@@ -87,20 +101,26 @@ namespace FitsCs
 
             try
             {
-                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
-                _nReadBytes += n;
 
                 if (_nReadBytes < DataBlob.SizeInBytes)
-                    return null;
+                {
+                    var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
+                    _nReadBytes += n;
+
+                    if (_nReadBytes < DataBlob.SizeInBytes)
+                        return null;
+                }
                 
                 var blob = new DataBlob();
 
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return null;
 
-                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
-                _nReadBytes = 0;
-                
+                if (Span.Length > DataBlob.SizeInBytes)
+                    Span.Slice(DataBlob.SizeInBytes).CopyTo(Span);
+
+                _nReadBytes -= DataBlob.SizeInBytes;
+
                 return blob;
             }
             finally
@@ -157,24 +177,7 @@ namespace FitsCs
             try
             {
                 var blob = new DataBlob();
-
-                var n = await _stream.ReadAsync(_buffer, _nReadBytes, DataBlob.SizeInBytes - _nReadBytes, token);
-                _nReadBytes += n;
-
-                if (_nReadBytes < DataBlob.SizeInBytes)
-                    return null;
-
-
-                if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
-                    return null;
-
-
-                Span.Slice(0, DataBlob.SizeInBytes).Fill(0);
-                _nReadBytes = 0;
-
                 
-
-
                 return null;
             }
             finally

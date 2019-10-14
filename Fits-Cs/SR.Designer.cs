@@ -88,6 +88,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Operation cannot be performed..
+        /// </summary>
+        internal static string InvalidOperation {
+            get {
+                return ResourceManager.GetString("InvalidOperation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Key name is too large..
         /// </summary>
         internal static string KeyNameTooLong {
@@ -138,6 +147,15 @@ namespace FitsCs {
         internal static string NullArgument {
             get {
                 return ResourceManager.GetString("NullArgument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Required object is null..
+        /// </summary>
+        internal static string UnexpectedNullRef {
+            get {
+                return ResourceManager.GetString("UnexpectedNullRef", resourceCulture);
             }
         }
     }
