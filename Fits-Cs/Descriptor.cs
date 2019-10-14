@@ -65,13 +65,14 @@ namespace FitsCs
             var first = header[0];
             switch (first.Name)
             {
-                case @"SIMPLE":
+                case @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue:
                     IsPrimary = true;
                     break;
-                case @"XTENSION":
+                case @"XTENSION" when first is IFitsValue<bool> xtensionKey && xtensionKey.RawValue:
                     IsPrimary = false;
                     break;
                 default:
+                    // TODO: Consider non-standard fits
                     throw new ArgumentException(SR.InvalidArgument, nameof(header));
             }
 
