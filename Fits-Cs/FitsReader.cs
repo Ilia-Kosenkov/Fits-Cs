@@ -48,7 +48,7 @@ namespace FitsCs
         private Span<byte> Span => _buffer;
 
         [PublicAPI]
-        public FitsReader([NotNull] Stream stream)
+        public FitsReader(Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _buffer = new byte[DefaultBufferSize];
@@ -56,7 +56,7 @@ namespace FitsCs
         
         [PublicAPI]
         public FitsReader(
-            [NotNull] Stream stream, 
+            Stream stream, 
             int bufferSize)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
@@ -69,7 +69,7 @@ namespace FitsCs
 
         [PublicAPI]
         public FitsReader(
-            [NotNull] Stream stream, 
+            Stream stream, 
             int bufferSize, bool leaveOpen)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
@@ -105,7 +105,7 @@ namespace FitsCs
             _nReadBytes -= n;
         }
 
-        protected virtual async Task<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
+        protected virtual async ValueTask<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
         {
             if (@lock)
                 // Synchronizing read access
@@ -124,7 +124,7 @@ namespace FitsCs
             }
         }
 
-        protected virtual async Task<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
+        protected virtual async ValueTask<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
             if (blob is null)
                 throw new ArgumentException(SR.NullArgument, nameof(blob));
@@ -162,7 +162,7 @@ namespace FitsCs
             }
         }
 
-        protected virtual async Task<int> FillDataAsync(
+        protected virtual async ValueTask<int> FillDataAsync(
             Block block, CancellationToken token, bool @lock)
         {
             if (block is null)
@@ -226,7 +226,7 @@ namespace FitsCs
 
         [PublicAPI]
         [ItemCanBeNull]
-        public async Task<DataBlob> ReadAsync(CancellationToken token = default)
+        public async ValueTask<DataBlob> ReadAsync(CancellationToken token = default)
         {
            var blob = new DataBlob();
            return await ReadInnerAsync(blob, token, true)
@@ -235,7 +235,7 @@ namespace FitsCs
         }
 
         [PublicAPI]
-        public Task<bool> ReadAsync(
+        public ValueTask<bool> ReadAsync(
             [NotNull] DataBlob blob,
             CancellationToken token = default)
         {
@@ -244,7 +244,7 @@ namespace FitsCs
 
         [PublicAPI]
         [ItemCanBeNull]
-        public async Task<Block> ReadBlockAsync(CancellationToken token = default)
+        public async ValueTask<Block> ReadBlockAsync(CancellationToken token = default)
         {
             await _semaphore.WaitAsync(token);
             try
@@ -278,7 +278,9 @@ namespace FitsCs
                 var nBytesFilled = await FillDataAsync(block, token, false);
                 if(nBytesFilled != block.DataSizeInBytes())
                     throw new IOException(SR.IOReadFailure);
+
                 block.FlipEndianessIfNecessary();
+
                 return block;
             }
             finally
