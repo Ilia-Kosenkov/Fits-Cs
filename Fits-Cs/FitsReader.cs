@@ -102,6 +102,8 @@ namespace FitsCs
             if(n < Span.Length)
                 Span.Slice(n).CopyTo(Span);
             _nReadBytes -= n;
+            
+            Span.Slice(_nReadBytes).Fill(0);
         }
 
         protected virtual async ValueTask<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
@@ -148,9 +150,10 @@ namespace FitsCs
 
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return false;
-
+                var temp = _nReadBytes;
                 CompactBuffer(DataBlob.SizeInBytes);
-                
+                Console.WriteLine(@$"{temp}; {_nReadBytes}; {temp-_nReadBytes}");
+
                 return true;
             }
             finally
@@ -171,11 +174,14 @@ namespace FitsCs
             try
             {
                 var len = block.RawData.Length;
-                if (len <= _nReadBytes)
+                var alignedLen = (int)(Math.Ceiling(1.0 * block.RawData.Length / DataBlob.SizeInBytes) * DataBlob.SizeInBytes);
+                if (alignedLen <= _nReadBytes)
                 {
+                   
                     if (Span.Slice(0, len).TryCopyTo(block.RawData))
                     {
-                        CompactBuffer(len);
+                        // Compacting accounting for alignment
+                        CompactBuffer(alignedLen);
                         return len;
                     }
                     else
@@ -193,7 +199,7 @@ namespace FitsCs
                         }
                     }
 
-                    var nReads = Math.Ceiling(1.0 * (len - count) / _buffer.Length);
+                    var nReads = Math.Ceiling(1.0 * (alignedLen - count) / _buffer.Length);
                     for (var i = 0; i < nReads - 1; i++)
                     {
                         if (await ReadIntoBuffer(0, _buffer.Length, token, false) != _buffer.Length)
@@ -205,11 +211,11 @@ namespace FitsCs
                         CompactBuffer();
                     }
 
-                    if (await ReadIntoBuffer(0, _buffer.Length, token, false) < (len - count)
+                    if (await ReadIntoBuffer(0, _buffer.Length, token, false) < (alignedLen - count)
                         || !Span.Slice(0, len - count).TryCopyTo(block.RawData.Slice(count)))
                         return -1;
-
-                    CompactBuffer(len - count);
+                    
+                    CompactBuffer(alignedLen - count);
                     count += len - count;
 
                     return count;
@@ -241,7 +247,6 @@ namespace FitsCs
         }
 
         [PublicAPI]
-        [ItemCanBeNull]
         public async ValueTask<Block> ReadBlockAsync(CancellationToken token = default)
         {
             await _semaphore.WaitAsync(token);
@@ -253,7 +258,7 @@ namespace FitsCs
                 while (@continue)
                 {
                     if (!await ReadInnerAsync(blob, token, false))
-                        throw new InvalidOperationException(SR.InvalidOperation);
+                        return null;//throw new InvalidOperationException(SR.InvalidOperation);
 
                     if (blob.GetContentType() == BlobType.FitsHeader &&
                         blob.AsKeyCollection() is var tempKeyCollection)
@@ -274,8 +279,9 @@ namespace FitsCs
                 var block = Block.Create(desc);
                 block.Keys.AddRange(keys);
                 var nBytesFilled = await FillDataAsync(block, token, false);
-                if(nBytesFilled != block.DataSizeInBytes())
-                    throw new IOException(SR.IOReadFailure);
+
+                if (nBytesFilled != block.DataSizeInBytes())
+                    return null;//throw new IOException(SR.IOReadFailure);
 
                 block.FlipEndianessIfNecessary();
 
@@ -289,12 +295,11 @@ namespace FitsCs
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _semaphore.Dispose();
-                if (!_leaveOpen)
-                    _stream?.Dispose();
-            }
+            if (!disposing) return;
+
+            _semaphore.Dispose();
+            if (!_leaveOpen)
+                _stream?.Dispose();
         }
 
         public void Dispose()
