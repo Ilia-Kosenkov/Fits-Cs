@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 
 namespace FitsCs.Keys
 {
@@ -15,25 +16,17 @@ namespace FitsCs.Keys
         internal SpecialKey(string name, string data) 
             : base(name, data, 0)
         {
-            switch (name.ToLower())
+            KeyType = name.ToLower() switch
             {
-                case @"end":
-                    KeyType = SpecialKeyType.End;
-                    break;
-                case @"comment":
-                    KeyType = SpecialKeyType.Comment;
-                    break;
-                case @"history":
-                    KeyType = SpecialKeyType.History;
-                    break;
-                default:
-                    KeyType = SpecialKeyType.Undefined;
-                    break;
-            }
+                @"end" => SpecialKeyType.End,
+                @"comment" => SpecialKeyType.Comment,
+                @"history" => SpecialKeyType.History,
+                _ => SpecialKeyType.Undefined
+            };
         }
 
         private protected override string TypePrefix => @"spcl";
-        public override object Value => null;
+        public override object? Value => null;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Comment);
 
         public SpecialKeyType KeyType { get; }

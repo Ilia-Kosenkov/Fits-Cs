@@ -1,4 +1,4 @@
-﻿using JetBrains.Annotations;
+﻿#nullable enable
 using System;
 
 namespace FitsCs.Keys
@@ -19,7 +19,7 @@ namespace FitsCs.Keys
         }
 
         private protected override string TypePrefix => @"arbtr";
-        public override object Value => _contents;
+        public override object? Value => _contents;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(_contents);
         public override bool TryFormat(Span<char> span)
         {
@@ -32,7 +32,6 @@ namespace FitsCs.Keys
             return true;
         }
 
-        [Pure]
         internal static bool IsArbitrary(ReadOnlySpan<char> input)
         {
             if (input.Length < EqualsPos + 1 
@@ -44,8 +43,7 @@ namespace FitsCs.Keys
             return input.Slice(EqualsPos).IsStringHduCompatible();
         }
 
-        [CanBeNull]
-        internal static IFitsValue Create(ReadOnlySpan<char> input)
+        internal static IFitsValue? Create(ReadOnlySpan<char> input)
         {
             return IsArbitrary(input)
                 ? new ArbitraryKey(input.Slice(EqualsPos).ToString())

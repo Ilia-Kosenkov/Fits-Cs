@@ -1,4 +1,6 @@
-﻿namespace FitsCs.Keys
+﻿#nullable enable
+
+namespace FitsCs.Keys
 {
     internal enum NumericType : byte
     {

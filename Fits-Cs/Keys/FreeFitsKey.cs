@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Numerics;
 using JetBrains.Annotations;
 
@@ -12,63 +13,32 @@ namespace FitsCs.Keys
         {
         }
 
-        [NotNull]
         [ContractAnnotation("name:null => halt")]
-        public static IFitsValue<T> Create<T>(string name, T value, string comment = null)
-        {
-            // Validation happens inside constructors
-            //if (name is null)
-            //    throw new ArgumentNullException(nameof(name), SR.NullArgument);
-            
-            // ReSharper disable AssignNullToNotNullAttribute
-            switch (value)
+        public static IFitsValue<T> Create<T>(string name, T value, string? comment = null) =>
+            value switch
             {
-                case double dVal:
-                    return new FreeDoubleKey(name, dVal, comment) as IFitsValue<T>;
-                case float fVal:
-                    return new FreeFloatKey(name, fVal, comment) as IFitsValue<T>;
-                case int iVal:
-                    return new FreeIntKey(name, iVal, comment) as IFitsValue<T>;
-                case bool bVal:
-                    return new FreeBoolKey(name, bVal, comment) as IFitsValue<T>;
-                case Complex cVal:
-                    return new FreeComplexKey(name, cVal, comment) as IFitsValue<T>;
-                case string sVal:
-                    return new FreeStringKey(name, sVal, comment) as IFitsValue<T>;
-            }
-            // ReSharper restore AssignNullToNotNullAttribute
-            
-            throw new NotSupportedException(SR.KeyTypeNotSupported);
-        }
+                double dVal => (new FreeDoubleKey(name, dVal, comment) as IFitsValue<T>),
+                float fVal => (new FreeFloatKey(name, fVal, comment) as IFitsValue<T>),
+                int iVal => (new FreeIntKey(name, iVal, comment) as IFitsValue<T>),
+                bool bVal => (new FreeBoolKey(name, bVal, comment) as IFitsValue<T>),
+                Complex cVal => (new FreeComplexKey(name, cVal, comment) as IFitsValue<T>),
+                string sVal => (new FreeStringKey(name, sVal, comment) as IFitsValue<T>),
+                _ => throw new NotSupportedException(SR.KeyTypeNotSupported)
+            } ?? throw new NullReferenceException(SR.UnexpectedNullRef);
 
-        [NotNull]
         [ContractAnnotation("name:null => halt;value:null => halt")]
-        public static IFitsValue Create(string name, object value, string comment = null)
-        {
-            // Validation happens inside constructors
-
-            //if (name is null)
-            //    throw new ArgumentNullException(nameof(name), SR.NullArgument);
-            if (value is null)
-                throw new ArgumentNullException(nameof(value), SR.NullArgument);
-
-            switch (value)
-            {
-                case double dVal:
-                    return new FreeDoubleKey(name, dVal, comment);
-                case float fVal:
-                    return new FreeFloatKey(name, fVal, comment);
-                case int iVal:
-                    return new FreeIntKey(name, iVal, comment);
-                case bool bVal:
-                    return new FreeBoolKey(name, bVal, comment);
-                case Complex cVal:
-                    return new FreeComplexKey(name, cVal, comment);
-                case string sVal:
-                    return new FreeStringKey(name, sVal, comment);
-            }
-
-            throw new NotSupportedException(SR.KeyTypeNotSupported);
-        }
+        public static IFitsValue Create(string name, object value, string? comment = null) =>
+            value is null
+                ? throw new ArgumentNullException(nameof(value), SR.NullArgument)
+                : value switch
+                {
+                    double dVal => (IFitsValue) new FreeDoubleKey(name, dVal, comment),
+                    float fVal => new FreeFloatKey(name, fVal, comment),
+                    int iVal => new FreeIntKey(name, iVal, comment),
+                    bool bVal => new FreeBoolKey(name, bVal, comment),
+                    Complex cVal => new FreeComplexKey(name, cVal, comment),
+                    string sVal => new FreeStringKey(name, sVal, comment),
+                    _ => throw new NotSupportedException(SR.KeyTypeNotSupported)
+                };
     }
 }

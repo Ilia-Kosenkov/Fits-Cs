@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 
 namespace FitsCs.Keys
 {
@@ -11,7 +12,7 @@ namespace FitsCs.Keys
         }
 
         private protected override string TypePrefix => @"blank";
-        public override object Value => null;
+        public override object? Value => null;
         public override bool IsEmpty => true;
         public override bool TryFormat(Span<char> span)
         {

@@ -19,7 +19,7 @@
 //     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
-
+#nullable enable
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -58,12 +58,12 @@ namespace FitsCs
 
         public string Name { get; }
         public string Comment { get; }
-        public abstract object Value { get; }
+        public abstract object? Value { get; }
         public virtual KeyType Type => KeyType.Undefined;
 
         public abstract  bool IsEmpty { get; }
 
-        private protected FitsKey(string name, string comment, int size)
+        private protected FitsKey(string name, string? comment, int size)
         {
             ValidateInput(name, comment, size);
             Name = name;
@@ -88,25 +88,16 @@ namespace FitsCs
 
         public string ToString(bool prefixType)
         {
-            if (prefixType)
+            if (!prefixType) return ToString();
+            
+            var frmtStr = Type switch
             {
-                string frmtStr;
-                switch(Type)
-                {
-                    case KeyType.Fixed:
-                        frmtStr = @"fix";
-                        break;
-                    case KeyType.Free:
-                        frmtStr = @"fre";
-                        break;
-                    default:
-                        frmtStr = @"udf";
-                        break;
-                }
-                return $"[{frmtStr,-3}|{TypePrefix, 6}]: {ToString()}";
-            }
+                KeyType.Fixed => @"fix",
+                KeyType.Free => @"fre",
+                _ => @"udf"
+            };
+            return $"[{frmtStr,-3}|{TypePrefix, 6}]: {ToString()}";
 
-            return ToString();
         }
         
         public abstract bool TryFormat(Span<char> span);
@@ -159,8 +150,8 @@ namespace FitsCs
 
         [ContractAnnotation("name:null => halt")]
         private protected static void ValidateInput(
-            [NotNull] string name,
-            [CanBeNull] string comment, 
+            string? name,
+            string? comment, 
             int valueSize)
         {
             if (name is null)
@@ -180,7 +171,6 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
-        [PublicAPI]
         [Pure]
         public static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
@@ -266,56 +256,59 @@ namespace FitsCs
 
             var trimmedStr = input.Trim();
 
-            if (input.Length == FixedFitsKey.FixedFieldSize)
+            switch (input.Length)
             {
-                layoutType = KeyType.Fixed;
-                // Check for mandatory decimal separator
-                foreach (var item in input)
-                    if (item == '.')
-                    {
-                        numericType = NumericType.Float;
-                        break;
-                    }
-            }
-            else if (input.Length == 2 * FixedFitsKey.FixedFieldSize && trimmedStr.Length >= FixedFitsKey.FixedFieldSize)
-            {
-                // Fixed-format complex number
-                layoutType = KeyType.Fixed;
-                numericType = NumericType.Complex;
-            }
-            else
-            {
-                var nDots = 0;
-                var isComplex = false;
-                foreach (var item in trimmedStr)
+                case FixedFitsKey.FixedFieldSize:
                 {
-                    if (item == '.')
-                        nDots++;
-                    
-                    // Cannot be more than 2 decimal separators in the whole line
-                    if (nDots > 2)
-                        return false;
-                    if (item == ':')
-                    {
-                        isComplex = true;
-                        break;
-                    }
-                }
+                    layoutType = KeyType.Fixed;
+                    // Check for mandatory decimal separator
+                    foreach (var item in input)
+                        if (item == '.')
+                        {
+                            numericType = NumericType.Float;
+                            break;
+                        }
 
-                numericType = isComplex 
-                    ? NumericType.Complex 
-                    : (nDots > 0 
-                        ? NumericType.Float 
-                        : NumericType.Integer);
+                    break;
+                }
+                case 2 * FixedFitsKey.FixedFieldSize when trimmedStr.Length >= FixedFitsKey.FixedFieldSize:
+                    // Fixed-format complex number
+                    layoutType = KeyType.Fixed;
+                    numericType = NumericType.Complex;
+                    break;
+                default:
+                {
+                    var nDots = 0;
+                    var isComplex = false;
+                    foreach (var item in trimmedStr)
+                    {
+                        if (item == '.')
+                            nDots++;
+                    
+                        // Cannot be more than 2 decimal separators in the whole line
+                        if (nDots > 2)
+                            return false;
+                        if (item == ':')
+                        {
+                            isComplex = true;
+                            break;
+                        }
+                    }
+
+                    numericType = isComplex 
+                        ? NumericType.Complex 
+                        : (nDots > 0 
+                            ? NumericType.Float 
+                            : NumericType.Integer);
+                    break;
+                }
             }
             return true;
 
         }
 
         
-        [PublicAPI]
-        [CanBeNull]
-        public static IFitsValue ParseRawData(ReadOnlySpan<byte> input)
+        public static IFitsValue? ParseRawData(ReadOnlySpan<byte> input)
         {
             if (input.Length < EntrySizeInBytes)
                 return null;
@@ -335,10 +328,8 @@ namespace FitsCs
                 // If name is invalid, it can be a blank key
                 if (BlankKey.IsBlank(charRep))
                     return CreateBlank();
-                if (ArbitraryKey.Create(charRep) is IFitsValue val)
-                    return val;
+                return ArbitraryKey.Create(charRep) is { } val ? val : null;
                 // Possible other cases?
-                return null;
             }
 
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
@@ -415,51 +406,47 @@ namespace FitsCs
                         if(!isNumber)
                             return null;
 
-                        switch (nType)
+                        return nType switch
                         {
-                                case NumericType.Integer when innerStrSpan.TryParseRaw(out int iVal):
-                                    return Create(
+                            NumericType.Integer when innerStrSpan.TryParseRaw(out int iVal) =>
+                                Create(
+                                    name.ToString(),
+                                    iVal,
+                                    commentStart < contentSpan.Length - 1
+                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                            .ToString()
+                                        : null,
+                                    keyType),
+                            NumericType.Float when innerStrSpan.TryParseRaw(out double dVal) =>
+                                dVal > float.MinValue && dVal < float.MaxValue
+                                    // Can be float
+                                    ? Create(
                                         name.ToString(),
-                                        iVal,
+                                        (float) dVal,
                                         commentStart < contentSpan.Length - 1
                                             ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
                                                 .ToString()
                                             : null,
-                                        keyType);
-                                case NumericType.Float when innerStrSpan.TryParseRaw(out double dVal):
-                                    {
-                                        return
-                                            dVal > float.MinValue && dVal < float.MaxValue
-                                            // Can be float
-                                            ? Create(
-                                                name.ToString(),
-                                                (float)dVal,
-                                                commentStart < contentSpan.Length - 1
-                                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                                        .ToString()
-                                                    : null,
-                                                keyType)
-                                            : Create(
-                                                name.ToString(),
-                                                dVal,
-                                                commentStart < contentSpan.Length - 1
-                                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                                        .ToString()
-                                                    : null,
-                                                keyType) as IFitsValue;
-                                    }
-                                case NumericType.Complex when innerStrSpan.TryParseRaw(out Complex cVal, keyType):
-                                    return Create(
+                                        keyType)
+                                    : Create(
                                         name.ToString(),
-                                        cVal,
+                                        dVal,
                                         commentStart < contentSpan.Length - 1
                                             ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
                                                 .ToString()
                                             : null,
-                                        keyType);
-
-                            }
-                        return null;
+                                        keyType) as IFitsValue,
+                            NumericType.Complex when innerStrSpan.TryParseRaw(out Complex cVal, keyType) =>
+                                Create(
+                                    name.ToString(),
+                                    cVal,
+                                    commentStart < contentSpan.Length - 1
+                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                            .ToString()
+                                        : null,
+                                    keyType),
+                            _ => null
+                        };
                     }
 
                 }
@@ -473,7 +460,7 @@ namespace FitsCs
         [PublicAPI]
         [NotNull]
         [ContractAnnotation("name:null => halt")]
-        public static IFitsValue<T> Create<T>(string name, T value, string comment = null, KeyType type = KeyType.Fixed) 
+        public static IFitsValue<T> Create<T>(string name, T value, string? comment = null, KeyType type = KeyType.Fixed) 
             => type == KeyType.Free 
                 ? FreeFitsKey.Create(name, value, comment) 
                 : FixedFitsKey.Create(name, value, comment);
