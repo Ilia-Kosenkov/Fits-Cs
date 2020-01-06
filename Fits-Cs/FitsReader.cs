@@ -21,9 +21,7 @@
 //     SOFTWARE.
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -138,8 +136,8 @@ namespace FitsCs
                 if (_nReadBytes < DataBlob.SizeInBytes)
                 {
                     //var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
-                    //_nReadBytes += n;
                     var n = await ReadIntoBuffer(_nReadBytes, _buffer.Length - _nReadBytes, token, false);
+                    _nReadBytes += n;
 
                     if (_nReadBytes < DataBlob.SizeInBytes)
                         return false;
