@@ -70,19 +70,13 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(header));
 
             var first = header[0];
-            switch (first.Name)
+            IsPrimary = first.Name switch
             {
-                case @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue:
-                    IsPrimary = true;
-                    break;
+                @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue => true,
                 // TODO : grab an extension type
-                case @"XTENSION" when first is IFitsValue<string>:
-                    IsPrimary = false;
-                    break;
-                default:
-                    // TODO: Consider non-standard fits
-                    throw new ArgumentException(SR.InvalidArgument, nameof(header));
-            }
+                @"XTENSION" when first is IFitsValue<string> => false,
+                _ => throw new ArgumentException(SR.InvalidArgument, nameof(header))
+            };
 
             var bitPix = 0;
             var nAxis = -1;
@@ -92,51 +86,63 @@ namespace FitsCs
             var nParams = -1;
             foreach (var key in header)
             {
-                if (key.Name == @"BITPIX" && key is IFitsValue<int> bitPixKey)
+                switch (key.Name)
                 {
-                    if (bitPix == 0)
-                        bitPix = bitPixKey.RawValue;
-                    else
-                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                }
-                else if (key.Name == @"NAXIS" && key is IFitsValue<int> nAxisKey)
-                {
-                    if (nAxis == -1 && nAxisKey.RawValue >= 0)
+                    case @"BITPIX" when key is IFitsValue<int> bitPixKey:
                     {
-                        nAxis = nAxisKey.RawValue;
-                        builder = new int[nAxis];
-                    }
-                    else
-                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                }
-                else if (key.Name.StartsWith(@"NAXIS")
-                         && count < nAxis 
-                         && key is IFitsValue<int> subNaxisKey)
-                {
-                    if (int.TryParse(key.Name.Substring(5), NumberStyles.Any, NumberFormatInfo.InvariantInfo,
-                        out var subNaxis)&& subNaxis > 0 && subNaxis <= nAxis)
-                    {
-                        if(builder is null || subNaxisKey.RawValue < 0)
+                        if (bitPix == 0)
+                            bitPix = bitPixKey.RawValue;
+                        else
                             throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                        builder[subNaxis - 1] = subNaxisKey.RawValue;
-                        count++;
+                        break;
+                    }
+                    case @"NAXIS" when key is IFitsValue<int> nAxisKey:
+                    {
+                        if (nAxis == -1 && nAxisKey.RawValue >= 0)
+                        {
+                            nAxis = nAxisKey.RawValue;
+                            builder = new int[nAxis];
+                        }
+                        else
+                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
+
+                        break;
+                    }
+                    case @"PCOUNT" when key is IFitsValue<int> pCountKey:
+                    {
+                        if (nParams == -1)
+                            nParams = pCountKey.RawValue;
+                        else
+                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                        break;
+                    }
+                    case @"GCOUNT" when key is IFitsValue<int> gCountKey:
+                    {
+                        if (nGroups == -1)
+                            nGroups = gCountKey.RawValue;
+                        else
+                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                        break;
+                    }
+                    default:
+                    {
+                        if (key.Name?.StartsWith(@"NAXIS") == true
+                            && count < nAxis 
+                            && key is IFitsValue<int> subNaxisKey)
+                        {
+                            if (int.TryParse(key.Name.Substring(5), NumberStyles.Any, NumberFormatInfo.InvariantInfo,
+                                    out var subNaxis)&& subNaxis > 0 && subNaxis <= nAxis)
+                            {
+                                if(builder is null || subNaxisKey.RawValue < 0)
+                                    throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                                builder[subNaxis - 1] = subNaxisKey.RawValue;
+                                count++;
+                            }
+                        }
+
+                        break;
                     }
                 }
-                else if (key.Name == @"PCOUNT" && key is IFitsValue<int> pCountKey)
-                {
-                    if (nParams == -1)
-                        nParams = pCountKey.RawValue;
-                    else
-                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                }
-                else if (key.Name == @"GCOUNT" && key is IFitsValue<int> gCountKey)
-                {
-                    if (nGroups == -1)
-                        nGroups = gCountKey.RawValue;
-                    else
-                        throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                }
-
             }
 
             if(nAxis < 0)
