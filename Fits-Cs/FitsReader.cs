@@ -136,8 +136,7 @@ namespace FitsCs
                 if (_nReadBytes < DataBlob.SizeInBytes)
                 {
                     //var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
-                    var n = await ReadIntoBuffer(_nReadBytes, _buffer.Length - _nReadBytes, token, false);
-                    _nReadBytes += n;
+                    await ReadIntoBuffer(_nReadBytes, _buffer.Length - _nReadBytes, token, false);
 
                     if (_nReadBytes < DataBlob.SizeInBytes)
                         return false;
