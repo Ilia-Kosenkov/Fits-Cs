@@ -10,7 +10,7 @@ namespace Sandbox
     {
         private static async Task Main(string[] args)
         {
-            await Test1();
+            await Test2();
         }
 
         private static async Task Test1()
@@ -42,9 +42,12 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("WFPC2ASSNu5780205bx.fits", FileMode.Open);
+            using var fs = new FileStream("FOCx38i0101t_c0f.fits", FileMode.Open);
             await using var reader = new FitsReader(fs);
-            var block = await reader.ReadBlockAsync();
+            await foreach (var block in reader.EnumerateBlocksAsync())
+            {
+
+            }
         }
 
     }
