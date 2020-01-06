@@ -32,7 +32,7 @@ namespace FitsCs
         public bool IsEmpty =>
             ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
 
-
+        // TODO: Review constructors
         public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int[] naxis)
         {
             IsPrimary = isPrimary;
@@ -143,6 +143,7 @@ namespace FitsCs
             GroupCount = nGroups == -1 ? 1 : nGroups;
         }
 
-        public long GetFullSize() => (Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
+        public long GetFullSize() =>
+            (Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
     }
 }
