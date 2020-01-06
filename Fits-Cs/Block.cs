@@ -73,9 +73,9 @@ namespace FitsCs
                 if(desc.DataType == typeof(byte))
                     return new PrimaryBlock<byte>(desc);
                 if(desc.DataType == typeof(short))
-                    return new PrimaryBlock<byte>(desc);
+                    return new PrimaryBlock<short>(desc);
                 if(desc.DataType == typeof(int))
-                    return new PrimaryBlock<byte>(desc);
+                    return new PrimaryBlock<int>(desc);
 
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
             }
@@ -87,9 +87,9 @@ namespace FitsCs
             if (desc.DataType == typeof(byte))
                 return new ExtensionBlock<byte>(desc);
             if (desc.DataType == typeof(short))
-                return new ExtensionBlock<byte>(desc);
+                return new ExtensionBlock<short>(desc);
             if (desc.DataType == typeof(int))
-                return new ExtensionBlock<byte>(desc);
+                return new ExtensionBlock<int>(desc);
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
 
@@ -98,15 +98,15 @@ namespace FitsCs
 
     public abstract class Block<T> : Block where T : unmanaged
     {
+        private bool _hasCorrectEndianess;
         // ReSharper disable once InconsistentNaming
         private protected T[] _data;
-
         public Span<T> Data => _data ?? Span<T>.Empty;
         public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
 
         public override void FlipEndianessIfNecessary()
         {
-            if (BitConverter.IsLittleEndian)
+            if (!_hasCorrectEndianess)
             {
                 var span = RawData;
                 if (ItemSizeInBytes == 2)
@@ -157,6 +157,8 @@ namespace FitsCs
                         span[offset + 4] = temp;
                     }
                 }
+
+                _hasCorrectEndianess = true;
             }
         }
 
@@ -167,6 +169,7 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
 
             _data = new T[desc.GetFullSize()];
+            _hasCorrectEndianess = !BitConverter.IsLittleEndian;
         }
     }
 
