@@ -150,9 +150,7 @@ namespace FitsCs
 
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
                     return false;
-                var temp = _nReadBytes;
                 CompactBuffer(DataBlob.SizeInBytes);
-                Console.WriteLine(@$"{temp}; {_nReadBytes}; {temp-_nReadBytes}");
 
                 return true;
             }
