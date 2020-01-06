@@ -30,25 +30,35 @@ namespace FitsCs
             ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
 
         // TODO: Review constructors
-        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int[] naxis)
-        {
-            IsPrimary = isPrimary;
-            var type = Block.ConvertBitPixToType(bitpix);
-            DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
-            ItemSizeInBytes = (byte) ((bitpix < 0 ? -bitpix : bitpix) / 8);
-            Dimensions = naxis.ToImmutableArray();
-            Nkeys = nKeys;
-            ParamCount = 0;
-            GroupCount = 1;
-        }
+        //public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int[] naxis)
+        //{
+        //    IsPrimary = isPrimary;
+        //    var type = Block.ConvertBitPixToType(bitpix);
+        //    DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
+        //    ItemSizeInBytes = (byte) ((bitpix < 0 ? -bitpix : bitpix) / 8);
+        //    Dimensions = naxis.ToImmutableArray();
+        //    Nkeys = nKeys;
+        //    ParamCount = 0;
+        //    GroupCount = 1;
+        //}
 
-        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, int paramCount, int groupCount, params int[] naxis)
+        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, 
+            IEnumerable<int> naxis,
+            int paramCount = 0, int groupCount = 1)
         {
+            if (nKeys < 0)
+                throw new ArgumentOutOfRangeException(nameof(nKeys));
+
+            if (paramCount < 0)
+                throw new ArgumentOutOfRangeException(nameof(paramCount));
+            if (groupCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(groupCount));
+
             IsPrimary = isPrimary;
             var type = Block.ConvertBitPixToType(bitpix);
             DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
-            Dimensions = naxis.ToImmutableArray();
+            Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
             Nkeys = nKeys;
             ParamCount = paramCount;
             GroupCount = groupCount;
