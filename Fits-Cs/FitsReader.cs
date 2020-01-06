@@ -35,7 +35,7 @@ namespace FitsCs
         // It allows to process up to 16 Fits IDUs at once
         public const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
         private readonly byte[] _buffer;
-        private int _nReadBytes;
+        private volatile int _nReadBytes;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
 
@@ -91,6 +91,7 @@ namespace FitsCs
             _nReadBytes += data.Length;
         }
 
+        // TODO : Think of concurrency
         protected virtual void CompactBuffer(int n = 0)
         {
             if (_nReadBytes <= 0 || n < 0)
@@ -112,7 +113,7 @@ namespace FitsCs
             try
             {
                 var n = await _stream.ReadAsync(_buffer, start, length, token);
-                _nReadBytes += n;
+                Interlocked.Add(ref _nReadBytes, n);
                 return n;
             }
             finally
@@ -254,7 +255,7 @@ namespace FitsCs
                     if (!await ReadInnerAsync(blob, token, false))
                         throw new InvalidOperationException(SR.InvalidOperation);
 
-                    if (blob?.GetContentType() == BlobType.FitsHeader &&
+                    if (blob.GetContentType() == BlobType.FitsHeader &&
                         blob.AsKeyCollection() is var tempKeyCollection)
                     {
                         keys.AddRange(tempKeyCollection);
