@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -289,6 +290,13 @@ namespace FitsCs
             {
                 _semaphore.Release();
             }
+        }
+
+        public async IAsyncEnumerable<Block> EnumerateBlocksAsync([EnumeratorCancellation] CancellationToken token = default)
+        {
+            Block block;
+            while ((block = await ReadBlockAsync(token)) is {})
+                yield return block;
         }
 
         protected virtual void Dispose(bool disposing)
