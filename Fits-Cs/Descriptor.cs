@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
 namespace FitsCs
@@ -24,10 +23,8 @@ namespace FitsCs
         public int Nkeys { get; }
         [PublicAPI]
         public int ParamCount { get; }
-        
         [PublicAPI]
         public int GroupCount { get; }
-
         [PublicAPI]
         public bool IsEmpty =>
             ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
@@ -143,6 +140,7 @@ namespace FitsCs
             GroupCount = nGroups == -1 ? 1 : nGroups;
         }
 
+        // TODO : Accelerate computation instead of using LINQ
         public long GetFullSize() =>
             (Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
     }
