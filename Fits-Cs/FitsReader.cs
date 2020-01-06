@@ -29,7 +29,7 @@ using JetBrains.Annotations;
 
 namespace FitsCs
 {
-    public class FitsReader : IDisposable
+    public class FitsReader : IDisposable, IAsyncDisposable
     {
         // 16 * 2880 bytes is ~ 45 KB
         // It allows to process up to 16 Fits IDUs at once
@@ -297,12 +297,23 @@ namespace FitsCs
             }
         }
 
-        [PublicAPI]
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        public ValueTask DisposeAsync()
+        {
+            try
+            {
+                Dispose();
+                return default;
+            }
+            catch (Exception e)
+            {
+                return new ValueTask(Task.FromException(e));
+            }
+        }
     }
 }
