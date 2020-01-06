@@ -65,7 +65,8 @@ namespace FitsCs
                 case @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue:
                     IsPrimary = true;
                     break;
-                case @"XTENSION" when first is IFitsValue<bool> xtensionKey && xtensionKey.RawValue:
+                // TODO : grab an extension type
+                case @"XTENSION" when first is IFitsValue<string>:
                     IsPrimary = false;
                     break;
                 default:

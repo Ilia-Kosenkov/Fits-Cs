@@ -19,8 +19,11 @@ namespace FitsCs
 
         public static ImmutableArray<Type> DataTypes { get; } = new[]
         {
+            typeof(byte),
+            typeof(short),
             typeof(int),
-            typeof(float)
+            typeof(float),
+            typeof(double)
         }.ToImmutableArray();
 
         [PublicAPI]
