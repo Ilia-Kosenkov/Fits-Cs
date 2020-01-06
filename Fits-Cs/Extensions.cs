@@ -194,11 +194,19 @@ namespace FitsCs
 
             return false;
         }
+       
     }
 
     public static class ParsingExtensions
     {
-        
+        public static ExtensionType FitsExtensionTypeFromString(string extension = null)
+            => extension?.ToLowerInvariant() switch
+            {
+                { } x when x.StartsWith(@"bintable") => ExtensionType.BinTable,
+                { } x when x.StartsWith(@"image") => ExtensionType.Image,
+                { } x when x.StartsWith(@"table") => ExtensionType.Table,
+                _ => ExtensionType.Primary,
+            };
         public static bool TryParseRaw(
             this ReadOnlySpan<char> quotedString, 
             [CanBeNull] out string @string)

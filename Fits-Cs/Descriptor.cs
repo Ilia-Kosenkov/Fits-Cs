@@ -9,41 +9,30 @@ namespace FitsCs
 {
     public readonly struct Descriptor
     {
-        [PublicAPI]
-        public bool IsPrimary { get; }
-        [PublicAPI]
+        public ExtensionType Type { get; }
+
+        public bool IsPrimary => Type == ExtensionType.Primary;
+        
         public bool IsExtension => !IsPrimary;
-        [PublicAPI]
+        
         public byte ItemSizeInBytes { get; }
-        [PublicAPI]
+        
         public Type DataType { get; }
-        [PublicAPI]
+        
         public ImmutableArray<int> Dimensions { get; }
-        [PublicAPI]
+        
         public int Nkeys { get; }
-        [PublicAPI]
+        
         public int ParamCount { get; }
-        [PublicAPI]
+        
         public int GroupCount { get; }
-        [PublicAPI]
+        
         public bool IsEmpty =>
             ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
 
-        // TODO: Review constructors
-        //public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, params int[] naxis)
-        //{
-        //    IsPrimary = isPrimary;
-        //    var type = Block.ConvertBitPixToType(bitpix);
-        //    DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
-        //    ItemSizeInBytes = (byte) ((bitpix < 0 ? -bitpix : bitpix) / 8);
-        //    Dimensions = naxis.ToImmutableArray();
-        //    Nkeys = nKeys;
-        //    ParamCount = 0;
-        //    GroupCount = 1;
-        //}
-
-        public Descriptor(bool isPrimary, sbyte bitpix, int nKeys, 
+        public Descriptor(sbyte bitpix, int nKeys, 
             IEnumerable<int> naxis,
+            ExtensionType type = ExtensionType.Primary,
             int paramCount = 0, int groupCount = 1)
         {
             if (nKeys < 0)
@@ -54,9 +43,9 @@ namespace FitsCs
             if (groupCount <= 0)
                 throw new ArgumentOutOfRangeException(nameof(groupCount));
 
-            IsPrimary = isPrimary;
-            var type = Block.ConvertBitPixToType(bitpix);
-            DataType = type ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
+            Type = type;
+            var dataType = Block.ConvertBitPixToType(bitpix);
+            DataType = dataType ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
             Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
             Nkeys = nKeys;
@@ -70,13 +59,12 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(header));
 
             var first = header[0];
-            IsPrimary = first.Name switch
+            Type = ParsingExtensions.FitsExtensionTypeFromString(first.Name switch
             {
-                @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue => true,
-                // TODO : grab an extension type
-                @"XTENSION" when first is IFitsValue<string> => false,
+                @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue => null,
+                @"XTENSION" when first is IFitsValue<string> extDesc => extDesc.RawValue,
                 _ => throw new ArgumentException(SR.InvalidArgument, nameof(header))
-            };
+            });
 
             var bitPix = 0;
             var nAxis = -1;

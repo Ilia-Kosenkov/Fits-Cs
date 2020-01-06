@@ -17,11 +17,10 @@ namespace FitsCs
 
         public int ParamCount { get; }
         public int GroupCount { get; }
+        public ExtensionType Type { get; }
 
         public abstract Span<byte> RawData { get; }
         
-        public abstract bool IsPrimary { get; }
-
         public abstract void FlipEndianessIfNecessary();
 
         public long DataCount() => GroupCount * (Dimensions.Aggregate<long, int>(1, (prod, n) => prod * n) + ParamCount);
@@ -38,6 +37,7 @@ namespace FitsCs
             ItemSizeInBytes = desc.ItemSizeInBytes;
             ParamCount = desc.ParamCount;
             GroupCount = desc.GroupCount;
+            Type = desc.Type;
         }
 
         public static Type ConvertBitPixToType(int bitpix)
@@ -175,8 +175,6 @@ namespace FitsCs
 
     public sealed class PrimaryBlock<T> : Block<T> where T :unmanaged
     {
-        public override bool IsPrimary => true;
-
         public PrimaryBlock(Descriptor desc) : base(desc)
         {
            
@@ -186,8 +184,6 @@ namespace FitsCs
 
     public sealed class ExtensionBlock<T> : Block<T> where T : unmanaged
     {
-        public override bool IsPrimary => false;
-
         public ExtensionBlock(Descriptor desc) : base(desc)
         {
         }
