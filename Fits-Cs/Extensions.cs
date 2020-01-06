@@ -119,7 +119,6 @@ namespace FitsCs
             return resultStr;
         }
 
-        [PublicAPI]
         public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding enc = null)
         {
             if (enc is null)
@@ -137,7 +136,6 @@ namespace FitsCs
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
 
-        [PublicAPI]
         [ContractAnnotation("updateAction:null => halt")]
         [CanBeNull]
         public static IFitsValue With<T>(
@@ -171,7 +169,6 @@ namespace FitsCs
         }
 
 
-        [PublicAPI]
         [ContractAnnotation("keys:null => halt;name:null => halt")]
         [CanBeNull]
         public static IFitsValue GetFirstByName(this IReadOnlyList<IFitsValue> keys, string name)
@@ -185,14 +182,13 @@ namespace FitsCs
             return keys.FirstOrDefault(item => item?.Name == name);
         }
 
-        [PublicAPI]
-        [ContractAnnotation("keys:null => halt;name:null => halt")]
+        [ContractAnnotation("keys:null => halt")]
         public static bool IsEnd(this IReadOnlyList<IFitsValue> keys)
         {
             if (keys is null)
                 throw new ArgumentNullException(nameof(keys), SR.NullArgument);
 
-           for(var i = keys.Count - 1; i >= 0; i--)
+            for(var i = keys.Count - 1; i >= 0; i--)
                 if (keys[i]?.Name == @"END")
                     return true;
 
