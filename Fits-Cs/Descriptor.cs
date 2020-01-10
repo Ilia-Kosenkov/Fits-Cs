@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq;
-using JetBrains.Annotations;
 
 namespace FitsCs
 {
@@ -72,6 +70,8 @@ namespace FitsCs
             var count = 0;
             var nGroups = -1;
             var nParams = -1;
+
+            // TODO : optimize iterations
             foreach (var key in header)
             {
                 switch (key.Name)
@@ -146,7 +146,17 @@ namespace FitsCs
         }
 
         // TODO : Accelerate computation instead of using LINQ
-        public long GetFullSize() =>
-            (Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
+        public long GetFullSize() //=>
+            //(Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
+        {
+            if (Dimensions.IsEmpty)
+                return 0;
+
+            var prod = 1L;
+            foreach (var item in Dimensions)
+                prod *= item;
+
+            return (prod + ParamCount) * GroupCount;
+        }
     }
 }
