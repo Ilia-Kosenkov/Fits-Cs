@@ -2,6 +2,10 @@
 using System;
 using System.Collections.Immutable;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+
+// WATCH : For testing purposes
+[assembly:InternalsVisibleTo("Tests")]
 
 namespace FitsCs
 {

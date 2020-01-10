@@ -20,7 +20,7 @@ namespace Tests
         [Test]
         public void Test_ByteFlipping()
         {
-            var desc = new Descriptor(32, 0, new [] {20, 36});
+            var desc = new Descriptor(32, 0, new[] { 20, 36 });
 
             var block = Block.Create(desc) as Block<int> ?? throw new Exception();
             MemoryMarshal.AsBytes<int>(_data).CopyTo(block.RawData);
@@ -33,7 +33,7 @@ namespace Tests
             var block2 = Block.Create(desc) as Block<int> ?? throw new Exception();
             block.RawData.CopyTo(block2.RawData);
             Assert.IsTrue(block.Data.SequenceEqual(block2.Data));
-            
+
             block2.FlipEndianessIfNecessary();
             Assert.IsFalse(block.Data.SequenceEqual(block2.Data));
             Assert.IsTrue(block2.Data.SequenceEqual(_data));

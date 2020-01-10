@@ -12,8 +12,62 @@ namespace FitsCs
         public Descriptor Descriptor { get; }
 
         public abstract Span<byte> RawData { get; }
-        
-        public abstract void FlipEndianessIfNecessary();
+
+        internal void FlipEndianessIfNecessary()
+        {
+            var span = RawData;
+            var itemSizeInBytes = Descriptor.ItemSizeInBytes;
+            var length = span.Length / Descriptor.ItemSizeInBytes;
+            if (itemSizeInBytes == 2)
+            {
+                for (var i = 0; i < length; i++)
+                {
+                    var offset = 2 * i;
+                    var temp = span[offset];
+                    span[offset] = span[offset + 1];
+                    span[offset + 1] = temp;
+                }
+            }
+            else if (itemSizeInBytes == 4)
+            {
+                for (var i = 0; i < length; i++)
+                {
+                    var offset = 4 * i;
+
+                    var temp = span[offset];
+                    span[offset] = span[offset + 3];
+                    span[offset + 3] = temp;
+
+                    temp = span[offset + 1];
+                    span[offset + 1] = span[offset + 2];
+                    span[offset + 2] = temp;
+                }
+            }
+            else if (itemSizeInBytes == 8)
+            {
+                for (var i = 0; i < length; i++)
+                {
+                    var offset = 8 * i;
+
+                    var temp = span[offset];
+                    span[offset] = span[offset + 7];
+                    span[offset + 7] = temp;
+
+                    temp = span[offset + 1];
+                    span[offset + 1] = span[offset + 6];
+                    span[offset + 6] = temp;
+
+                    temp = span[offset + 2];
+                    span[offset + 2] = span[offset + 5];
+                    span[offset + 5] = temp;
+
+                    temp = span[offset + 3];
+                    span[offset + 3] = span[offset + 4];
+                    span[offset + 4] = temp;
+                }
+            }
+
+        }
 
         public long DataCount() => Descriptor.GetFullSize();
         public long DataSizeInBytes() => DataCount() * Descriptor.ItemSizeInBytes;
@@ -43,103 +97,30 @@ namespace FitsCs
         public static Block Create(Descriptor desc)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
-
-            if (desc.IsPrimary)
-            {
-                if(desc.DataType == typeof(float))
-                    return new PrimaryBlock<float>(desc);
-                if(desc.DataType == typeof(double))
-                    return new PrimaryBlock<double>(desc);
-                if(desc.DataType == typeof(byte))
-                    return new PrimaryBlock<byte>(desc);
-                if(desc.DataType == typeof(short))
-                    return new PrimaryBlock<short>(desc);
-                if(desc.DataType == typeof(int))
-                    return new PrimaryBlock<int>(desc);
-
-                throw new ArgumentException(SR.InvalidArgument, nameof(desc));
-            }
-
-            if (desc.DataType == typeof(float))
-                return new ExtensionBlock<float>(desc);
-            if (desc.DataType == typeof(double))
-                return new ExtensionBlock<double>(desc);
-            if (desc.DataType == typeof(byte))
-                return new ExtensionBlock<byte>(desc);
-            if (desc.DataType == typeof(short))
-                return new ExtensionBlock<short>(desc);
-            if (desc.DataType == typeof(int))
-                return new ExtensionBlock<int>(desc);
+            
+            if(desc.DataType == typeof(float))
+                return new Block<float>(desc);
+            if(desc.DataType == typeof(double))
+                return new Block<double>(desc);
+            if(desc.DataType == typeof(byte))
+                return new Block<byte>(desc);
+            if(desc.DataType == typeof(short))
+                return new Block<short>(desc);
+            if(desc.DataType == typeof(int))
+                return new Block<int>(desc);
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
-
         }
     }
 
-    public abstract class Block<T> : Block where T : unmanaged
+    public class Block<T> : Block where T : unmanaged
     {
-        private bool _hasCorrectEndianess;
         // ReSharper disable once InconsistentNaming
         private protected T[] _data;
         public Span<T> Data => _data ?? Span<T>.Empty;
         public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
 
-        public override void FlipEndianessIfNecessary()
-        {
-            if (_hasCorrectEndianess) return;
-            var span = RawData;
-            var itemSizeInBytes = Descriptor.ItemSizeInBytes;
-            if (itemSizeInBytes == 2)
-            {
-                for (var i = 0; i < _data.Length; i++)
-                {
-                    var offset = 2 * i;
-                    var temp = span[offset];
-                    span[offset] = span[offset + 1];
-                    span[offset + 1] = temp;
-                }
-            }
-            else if (itemSizeInBytes == 4)
-            {
-                for (var i = 0; i < _data.Length; i++)
-                {
-                    var offset = 4 * i;
-                        
-                    var temp = span[offset];
-                    span[offset] = span[offset + 3];
-                    span[offset + 3] = temp;
-
-                    temp = span[offset + 1];
-                    span[offset + 1] = span[offset + 2];
-                    span[offset + 2] = temp;
-                }
-            }
-            else if (itemSizeInBytes == 8)
-            {
-                for (var i = 0; i < _data.Length; i++)
-                {
-                    var offset = 8 * i;
-
-                    var temp = span[offset];
-                    span[offset] = span[offset + 7];
-                    span[offset + 7] = temp;
-
-                    temp = span[offset + 1];
-                    span[offset + 1] = span[offset + 6];
-                    span[offset + 6] = temp;
-
-                    temp = span[offset + 2];
-                    span[offset + 2] = span[offset + 5];
-                    span[offset + 5] = temp;
-
-                    temp = span[offset + 3];
-                    span[offset + 3] = span[offset + 4];
-                    span[offset + 4] = temp;
-                }
-            }
-
-            _hasCorrectEndianess = true;
-        }
+       
 
         protected internal Block(Descriptor desc) : base(desc)
         {
@@ -148,23 +129,6 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
 
             _data = new T[desc.GetFullSize()];
-            _hasCorrectEndianess = !BitConverter.IsLittleEndian;
-        }
-    }
-
-    public sealed class PrimaryBlock<T> : Block<T> where T :unmanaged
-    {
-        public PrimaryBlock(Descriptor desc) : base(desc)
-        {
-           
-        }
-
-    }
-
-    public sealed class ExtensionBlock<T> : Block<T> where T : unmanaged
-    {
-        public ExtensionBlock(Descriptor desc) : base(desc)
-        {
         }
     }
 }

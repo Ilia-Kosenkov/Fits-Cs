@@ -53,7 +53,7 @@ namespace FitsCs
             GroupCount = groupCount;
         }
 
-        public Descriptor(IReadOnlyList<IFitsValue> header)
+        internal Descriptor(IReadOnlyList<IFitsValue> header)
         {
             if (header.Count < DataBlob.SizeInBytes / FitsKey.EntrySizeInBytes)
                 throw new ArgumentException(SR.InvalidArgument, nameof(header));
