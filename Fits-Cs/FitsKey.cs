@@ -25,7 +25,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Text;
 using FitsCs.Keys;
-using JetBrains.Annotations;
 using TextExtensions;
 using System.Numerics;
 
@@ -148,7 +147,6 @@ namespace FitsCs
             return true;
         }
 
-        [ContractAnnotation("name:null => halt")]
         private protected static void ValidateInput(
             string? name,
             string? comment, 
@@ -173,7 +171,6 @@ namespace FitsCs
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
-        [Pure]
         public static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
@@ -194,7 +191,6 @@ namespace FitsCs
             return true;
         }
 
-        [Pure]
         internal static bool IsValidKeyName(ReadOnlySpan<byte> input, bool allowBlank = false)
         {
             if (input.IsEmpty)
@@ -207,7 +203,6 @@ namespace FitsCs
             return Encoding.GetChars(input, parsed) == NameSize && IsValidKeyName(parsed, allowBlank);
         }
 
-        [Pure]
         private protected static int FindComment(ReadOnlySpan<char> input)
         {
             //for(var i = input.Length - 1; i >= 0; i--)
@@ -218,7 +213,6 @@ namespace FitsCs
             return input.Length;
         }
 
-        [Pure]
         private protected static int FindLastQuote(ReadOnlySpan<char> input)
         {
             var inQuotes = false;
@@ -244,7 +238,6 @@ namespace FitsCs
             return input.Length;
         }
 
-        [Pure]
         private protected static bool DetectNumericFormat(
             ReadOnlySpan<char> input,
             out NumericType numericType,
@@ -290,11 +283,10 @@ namespace FitsCs
                         // Cannot be more than 2 decimal separators in the whole line
                         if (nDots > 2)
                             return false;
-                        if (item == ':')
-                        {
-                            isComplex = true;
-                            break;
-                        }
+                        if (item != ':') continue;
+
+                        isComplex = true;
+                        break;
                     }
 
                     numericType = isComplex 
@@ -419,6 +411,7 @@ namespace FitsCs
                                             .ToString()
                                         : null,
                                     keyType),
+
                             NumericType.Float when innerStrSpan.TryParseRaw(out double dVal) =>
                                 dVal > float.MinValue && dVal < float.MaxValue
                                     // Can be float
@@ -438,6 +431,7 @@ namespace FitsCs
                                                 .ToString()
                                             : null,
                                         keyType) as IFitsValue,
+
                             NumericType.Complex when innerStrSpan.TryParseRaw(out Complex cVal, keyType) =>
                                 Create(
                                     name.ToString(),
@@ -447,6 +441,7 @@ namespace FitsCs
                                             .ToString()
                                         : null,
                                     keyType),
+
                             _ => null
                         };
                     }
@@ -459,47 +454,27 @@ namespace FitsCs
             return CreateSpecial(name.ToString(), content.ToString());
         }
 
-        [PublicAPI]
-        [NotNull]
-        [ContractAnnotation("name:null => halt")]
         public static IFitsValue<T> Create<T>(string name, T value, string? comment = null, KeyType type = KeyType.Fixed) 
             => type == KeyType.Free 
                 ? FreeFitsKey.Create(name, value, comment) 
                 : FixedFitsKey.Create(name, value, comment);
 
-        [PublicAPI]
-        [NotNull]
-        [ContractAnnotation("name:null => halt;value:null => halt")]
         public static IFitsValue Create(string name, object? value, string? comment = null,
             KeyType type = KeyType.Fixed) 
             => type == KeyType.Free
                 ? FreeFitsKey.Create(name, value, comment)
                 : FixedFitsKey.Create(name, value, comment);
 
-        [PublicAPI]
-        [NotNull]
         public static IFitsValue CreateBlank() => BlankKey.Blank;
 
-        [PublicAPI]
-        [NotNull]
-        [ContractAnnotation("content:null => halt")]
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
 
-        [PublicAPI]
-        [NotNull]
-        [ContractAnnotation("name:null => halt")]
         public static IFitsValue CreateSpecial(string name, string data) => new SpecialKey(name, data);
 
-        [PublicAPI]
-        [NotNull]
         public static IFitsValue CreateEnd() => new SpecialKey("END", string.Empty);
 
-        [PublicAPI]
-        [NotNull]
         public static IFitsValue CreateComment(string comment) => new SpecialKey("COMMENT", comment);
         
-        [PublicAPI]
-        [NotNull]
         public static IFitsValue CreateHistory(string history) => new SpecialKey("HISTORY", history);
 
     }
