@@ -394,15 +394,20 @@ namespace FitsCs
                     default:
                     {
                         var commentStart = FindComment(contentSpan);
-                        var innerStrSpan = ((ReadOnlySpan<char>)contentSpan.Slice(0, commentStart)).TrimEnd();
+                        var innerStrSpan = contentSpan.Slice(0, commentStart);
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
-                        
                         if(!isNumber)
                             return null;
 
+                        if(nType != NumericType.Integer)
+                            innerStrSpan.CorrectExponentSymbol();
+
+                        var roSpan = System.MemoryExtensions.TrimEnd(innerStrSpan);
+                        
+
                         return nType switch
                         {
-                            NumericType.Integer when innerStrSpan.TryParseRaw(out int iVal) =>
+                            NumericType.Integer when roSpan.TryParseRaw(out int iVal) =>
                                 Create(
                                     name.ToString(),
                                     iVal,
@@ -412,7 +417,7 @@ namespace FitsCs
                                         : null,
                                     keyType),
 
-                            NumericType.Float when innerStrSpan.TryParseRaw(out double dVal) =>
+                            NumericType.Float when roSpan.TryParseRaw(out double dVal) =>
                                 dVal > float.MinValue && dVal < float.MaxValue
                                     // Can be float
                                     ? Create(
@@ -432,7 +437,7 @@ namespace FitsCs
                                             : null,
                                         keyType) as IFitsValue,
 
-                            NumericType.Complex when innerStrSpan.TryParseRaw(out Complex cVal, keyType) =>
+                            NumericType.Complex when roSpan.TryParseRaw(out Complex cVal, keyType) =>
                                 Create(
                                     name.ToString(),
                                     cVal,
