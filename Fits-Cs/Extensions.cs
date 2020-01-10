@@ -159,7 +159,7 @@ namespace FitsCs
             {
                 return FitsKey.Create(updater.Name, updater.Value, updater.Comment, updater.Type);
             }
-            catch (Exception)
+            catch
             {
                 return null;
             }
@@ -223,20 +223,19 @@ namespace FitsCs
             var offset = 0;
             for (var i = 0; i < trimmedInput.Length - 1; i++)
             {
-                if (trimmedInput[i] == '\'')
+                if (trimmedInput[i] != '\'') continue;
+
+                if (trimmedInput[i + 1] == '\'')
                 {
-                    if (trimmedInput[i + 1] == '\'')
-                    {
-                        var len = i + 1 - start;
-                        if (!trimmedInput.Slice(start, len).TryCopyTo(resultSpan.Slice(offset)))
-                            return false;
-                        start += len + 1;
-                        offset += len;
-                        i += 1;
-                    }
-                    else
+                    var len = i + 1 - start;
+                    if (!trimmedInput.Slice(start, len).TryCopyTo(resultSpan.Slice(offset)))
                         return false;
+                    start += len + 1;
+                    offset += len;
+                    i += 1;
                 }
+                else
+                    return false;
             }
 
             if (start <= trimmedInput.Length - 1 &&
@@ -259,6 +258,8 @@ namespace FitsCs
             out float number)
             => float.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
 
+        // TODO : Include support for x.xxxD-yyy format for doubles
+        // Likely, legacy FORTRAN
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out double number)

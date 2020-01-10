@@ -42,11 +42,12 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("NICMOSn4hk12010_mos.fits", FileMode.Open);
+            using var fs = new FileStream("DDTSUVDATA.fits", FileMode.Open);
             await using var reader = new FitsReader(fs);
             await foreach (var block in reader.EnumerateBlocksAsync())
             {
-
+                foreach(var key in block.Keys)
+                    Console.WriteLine(key.ToString());
             }
         }
 

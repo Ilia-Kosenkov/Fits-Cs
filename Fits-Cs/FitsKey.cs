@@ -167,7 +167,9 @@ namespace FitsCs
             if (valueSize < 0)
                 throw new ArgumentException(SR.InvalidArgument, nameof(valueSize));
 
-            if((comment?.Length ?? 0) + valueSize + 2 > EntrySize - NameSize)
+            // It was +2 to account for `= `, but in general case it is allowed to have
+            // even larger comments if it is e.g. `HISTORY`
+            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 

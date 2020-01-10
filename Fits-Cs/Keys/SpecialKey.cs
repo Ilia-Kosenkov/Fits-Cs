@@ -43,7 +43,9 @@ namespace FitsCs.Keys
 
             if (isCommentNull) return true;
 
-            Comment.AsSpan().CopyTo(span.Slice(ValueStart));
+            //Comment.AsSpan().CopyTo(span.Slice(ValueStart));
+            // This accounts for the absence of `= ` in special keys
+            Comment.AsSpan().CopyTo(span.Slice(NameSize));
 
             return true;
         }

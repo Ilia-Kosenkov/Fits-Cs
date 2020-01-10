@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -66,7 +68,7 @@ namespace FitsCs
 
             var bitPix = 0;
             var nAxis = -1;
-            int[] builder = null;
+            int[]? builder = null;
             var count = 0;
             var nGroups = -1;
             var nParams = -1;
@@ -145,16 +147,20 @@ namespace FitsCs
             GroupCount = nGroups == -1 ? 1 : nGroups;
         }
 
-        // TODO : Accelerate computation instead of using LINQ
-        public long GetFullSize() //=>
-            //(Dimensions.Aggregate<int, long>(1, (current, dim) => current * dim) + ParamCount) * GroupCount;
+        public long GetFullSize()
         {
             if (Dimensions.IsEmpty)
                 return 0;
 
             var prod = 1L;
-            foreach (var item in Dimensions)
-                prod *= item;
+
+            // A signature of oldish random group
+            if (Dimensions.Length > 1 && Dimensions[0] == 0)
+                for (var i = 1; i < Dimensions.Length; i++)
+                    prod *= Dimensions[i];
+            else
+                foreach (var item in Dimensions)
+                    prod *= item;
 
             return (prod + ParamCount) * GroupCount;
         }

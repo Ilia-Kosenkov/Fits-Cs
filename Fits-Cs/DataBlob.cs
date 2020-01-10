@@ -20,9 +20,9 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+#nullable enable
 using System;
 using System.Collections.Immutable;
-using JetBrains.Annotations;
 
 namespace FitsCs
 {
@@ -39,7 +39,7 @@ namespace FitsCs
         public const int SizeInBytes = 2880;
         public static readonly int KeysPerBlob = SizeInBytes / FitsKey.EntrySizeInBytes;
 
-        private byte[] _data;
+        private byte[]? _data;
         public bool IsInitialized { get; private set; }
 
         public ReadOnlySpan<byte> Data =>
@@ -64,9 +64,8 @@ namespace FitsCs
         public bool TryInitialize(ReadOnlyMemory<byte> memory)
             => TryInitialize(memory.Span);
         
-        [ContractAnnotation("null => false")]
         public bool TryInitialize(
-            [CanBeNull] byte[] data)
+            byte[] data)
         {
             if (IsInitialized || data is null)
                 return false;
@@ -117,7 +116,9 @@ namespace FitsCs
             for (var i = 0; i < 36; i++)
             {
                 var newKey = FitsKey.ParseRawData(data.Slice(i * FitsKey.EntrySizeInBytes));
-                builder.Add(newKey);
+                
+                // No support for [MaybeNull] implemented, thus `!`
+                builder.Add(newKey!);
             }
 
             return builder.ToImmutable();
