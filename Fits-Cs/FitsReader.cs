@@ -167,6 +167,10 @@ namespace FitsCs
         {
             if (block is null)
                 throw new ArgumentNullException(nameof(block), SR.NullArgument);
+
+            if (block.RawData.IsEmpty)
+                return default;
+
             if (@lock)
                 // Synchronizing read access
                 await _semaphore.WaitAsync(token);
