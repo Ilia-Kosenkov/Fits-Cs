@@ -116,6 +116,9 @@
     <None Include="FOCx38i0101t_c0f.fits">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="NICMOSn4hk12010_mos.fits">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="WFPC2ASSNu5780205bx.fits">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

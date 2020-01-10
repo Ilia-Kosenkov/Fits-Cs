@@ -42,7 +42,7 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("FOCx38i0101t_c0f.fits", FileMode.Open);
+            using var fs = new FileStream("NICMOSn4hk12010_mos.fits", FileMode.Open);
             await using var reader = new FitsReader(fs);
             await foreach (var block in reader.EnumerateBlocksAsync())
             {
