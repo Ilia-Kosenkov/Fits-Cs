@@ -20,13 +20,14 @@
 //     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //     SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 
 namespace FitsCs
 {
@@ -46,14 +47,12 @@ namespace FitsCs
 
         private Span<byte> Span => _buffer;
 
-        [PublicAPI]
         public FitsReader(Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _buffer = new byte[DefaultBufferSize];
         }
         
-        [PublicAPI]
         public FitsReader(
             Stream stream, 
             int bufferSize)
@@ -66,7 +65,6 @@ namespace FitsCs
             _buffer = new byte[allowedBufferSize];
         }
 
-        [PublicAPI]
         public FitsReader(
             Stream stream, 
             int bufferSize, bool leaveOpen)
@@ -231,9 +229,7 @@ namespace FitsCs
             }
         }
 
-        [PublicAPI]
-        [ItemCanBeNull]
-        public async ValueTask<DataBlob> ReadAsync(CancellationToken token = default)
+        public async ValueTask<DataBlob?> ReadAsync(CancellationToken token = default)
         {
            var blob = new DataBlob();
            return await ReadInnerAsync(blob, token, true)
@@ -241,16 +237,14 @@ namespace FitsCs
                : null;
         }
 
-        [PublicAPI]
         public ValueTask<bool> ReadAsync(
-            [NotNull] DataBlob blob,
+            DataBlob blob,
             CancellationToken token = default)
         {
             return ReadInnerAsync(blob, token, true);
         }
 
-        [PublicAPI]
-        public async ValueTask<Block> ReadBlockAsync(CancellationToken token = default)
+        public async ValueTask<Block?> ReadBlockAsync(CancellationToken token = default)
         {
             await _semaphore.WaitAsync(token);
             try
@@ -298,7 +292,7 @@ namespace FitsCs
 
         public async IAsyncEnumerable<Block> EnumerateBlocksAsync([EnumeratorCancellation] CancellationToken token = default)
         {
-            Block block;
+            Block? block;
             while ((block = await ReadBlockAsync(token)) is {})
                 yield return block;
         }
