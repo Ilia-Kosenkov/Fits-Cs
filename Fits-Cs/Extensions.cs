@@ -192,6 +192,7 @@ namespace FitsCs
 
     public static class ParsingExtensions
     {
+        private static RecycledString _rc = new RecycledString(FitsKey.EntrySize);
         public static ExtensionType FitsExtensionTypeFromString(string? extension = null)
             => extension?.ToLowerInvariant() switch
             {
@@ -252,7 +253,8 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out int number) 
             => int.TryParse(
-                numberString.ToString(), 
+                _rc.ProxyAsString(numberString),
+                //numberString.ToString(), 
                 NumberStyles.Integer, 
                 NumberFormatInfo.InvariantInfo, out number);
 
@@ -260,7 +262,8 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out float number)
             => float.TryParse(
-                numberString.ToString(), 
+                _rc.ProxyAsString(numberString),
+                //numberString.ToString(), 
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo, 
                 out number);
@@ -271,7 +274,8 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out double number)
             => double.TryParse(
-                numberString.ToString(), 
+                _rc.ProxyAsString(numberString),
+                //numberString.ToString(), 
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo,
                 out number);
@@ -287,13 +291,15 @@ namespace FitsCs
                 var image = 0.0;
                 var result =
                     double.TryParse(
-                        numberString.Slice(0, FixedFitsKey.FixedFieldSize).ToString(),
+                        _rc.ProxyAsString(numberString.Slice(0, FixedFitsKey.FixedFieldSize)),
+                        //numberString.Slice(0, FixedFitsKey.FixedFieldSize).ToString(),
                         NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out var real)
                     && 
                     double.TryParse(
-                        numberString.Slice(FixedFitsKey.FixedFieldSize).ToString(),
+                        _rc.ProxyAsString(numberString.Slice(FixedFitsKey.FixedFieldSize)),
+                        //numberString.Slice(FixedFitsKey.FixedFieldSize).ToString(),
                         NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out image);
@@ -312,13 +318,15 @@ namespace FitsCs
                 var image = 0.0;
                 var result =
                     double.TryParse(
-                        numberString.Slice(0, columnPos).ToString(),
+                        _rc.ProxyAsString(numberString.Slice(0, columnPos)),
+                        //numberString.Slice(0, columnPos).ToString(),
                         NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out var real)
                     &&
                     double.TryParse(
-                        numberString.Slice(columnPos + 1).ToString(),
+                        _rc.ProxyAsString(numberString.Slice(columnPos + 1)),
+                        //numberString.Slice(columnPos + 1).ToString(),
                         NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out image);
