@@ -47,7 +47,7 @@ namespace Sandbox
             await foreach (var block in reader.EnumerateBlocksAsync())
             {
                 foreach(var key in block.Keys)
-                    Console.WriteLine(key.ToString());
+                    Console.WriteLine(key.ToString(true));
             }
         }
 
