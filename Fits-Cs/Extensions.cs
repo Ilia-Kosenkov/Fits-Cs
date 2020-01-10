@@ -274,7 +274,7 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out double number)
             => double.TryParse(
-                _rc.ProxyAsString(numberString),
+                ProxyDoubleWithCorrectExponent(numberString),
                 //numberString.ToString(), 
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo,
@@ -288,26 +288,13 @@ namespace FitsCs
         {
             if (type == KeyType.Fixed)
             {
-                var image = 0.0;
-                var result =
-                    double.TryParse(
-                        _rc.ProxyAsString(numberString.Slice(0, FixedFitsKey.FixedFieldSize)),
-                        //numberString.Slice(0, FixedFitsKey.FixedFieldSize).ToString(),
-                        NumberStyles.Float,
-                        NumberFormatInfo.InvariantInfo,
-                        out var real)
-                    && 
-                    double.TryParse(
-                        _rc.ProxyAsString(numberString.Slice(FixedFitsKey.FixedFieldSize)),
-                        //numberString.Slice(FixedFitsKey.FixedFieldSize).ToString(),
-                        NumberStyles.Float,
-                        NumberFormatInfo.InvariantInfo,
-                        out image);
+                var result = numberString.Slice(0, FixedFitsKey.FixedFieldSize).TryParseRaw(out double real)
+                             & numberString.Slice(FixedFitsKey.FixedFieldSize).TryParseRaw(out double image);
 
                 number = new Complex(real, image);
                 return result;
             }
-
+            else
             {
                 number = default;
                 var trimmed = numberString.Trim();
@@ -315,21 +302,9 @@ namespace FitsCs
                 if (columnPos == -1)
                     return false;
 
-                var image = 0.0;
                 var result =
-                    double.TryParse(
-                        _rc.ProxyAsString(numberString.Slice(0, columnPos)),
-                        //numberString.Slice(0, columnPos).ToString(),
-                        NumberStyles.Float,
-                        NumberFormatInfo.InvariantInfo,
-                        out var real)
-                    &&
-                    double.TryParse(
-                        _rc.ProxyAsString(numberString.Slice(columnPos + 1)),
-                        //numberString.Slice(columnPos + 1).ToString(),
-                        NumberStyles.Float,
-                        NumberFormatInfo.InvariantInfo,
-                        out image);
+                    numberString.Slice(0, columnPos).TryParseRaw(out double real)
+                    & numberString.Slice(columnPos + 1).TryParseRaw(out double image);
 
                 number = new Complex(real, image);
                 return result;
@@ -337,25 +312,22 @@ namespace FitsCs
         }
 
 
-        public static void CorrectExponentSymbol(this Span<char> data)
+        private static string ProxyDoubleWithCorrectExponent(ReadOnlySpan<char> input)
         {
-            if (data.IsEmpty)
-                return;
-
-            for (var i = data.Length - 1; i >= 0; i--)
+            var id = -1;
+            for (var i = input.Length - 1; i >= 0; i--)
             {
-                switch (data[i])
-                {
-                    case 'd':
-                    case 'D':
-                        data[i] = 'e';
-                        return;
-                    case '.':
-                        return;
-                }
+                if (input[i] != 'D' && input[i] != 'd') continue;
+                id = i;
+                break;
             }
+            
+            _rc.Clear();
+            _rc.TryCopy(input, 0);
+            if (id != -1)
+                _rc.TryCopy("E", id);
 
-            return;
+            return _rc.StringView;
         }
     }
 }

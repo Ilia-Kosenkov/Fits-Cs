@@ -398,10 +398,6 @@ namespace FitsCs
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
                         if(!isNumber)
                             return null;
-
-                        if(nType != NumericType.Integer)
-                            innerStrSpan.CorrectExponentSymbol();
-
                         var roSpan = System.MemoryExtensions.TrimEnd(innerStrSpan);
                         
 
