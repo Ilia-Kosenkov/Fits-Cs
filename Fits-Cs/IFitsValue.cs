@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 
 namespace FitsCs
 {
@@ -8,7 +9,7 @@ namespace FitsCs
         string Comment { get; }
         KeyType Type { get; }
 
-        object Value { get; }
+        object? Value { get; }
         bool IsEmpty { get; }
 
         string ToString();
