@@ -336,5 +336,26 @@ namespace FitsCs
             }
         }
 
+
+        public static void CorrectExponentSymbol(this Span<char> data)
+        {
+            if (data.IsEmpty)
+                return;
+
+            for (var i = data.Length - 1; i >= 0; i--)
+            {
+                switch (data[i])
+                {
+                    case 'd':
+                    case 'D':
+                        data[i] = 'e';
+                        return;
+                    case '.':
+                        return;
+                }
+            }
+
+            return;
+        }
     }
 }
