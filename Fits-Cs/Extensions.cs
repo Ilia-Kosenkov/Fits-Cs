@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,7 +7,6 @@ using System.Numerics;
 using System.Text;
 using FitsCs.Keys;
 using IndexRange;
-using JetBrains.Annotations;
 using MemoryExtensions;
 using TextExtensions;
 
@@ -118,7 +118,7 @@ namespace FitsCs
             return resultStr;
         }
 
-        public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding enc = null)
+        public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding? enc = null)
         {
             if (enc is null)
                 enc= Encoding.ASCII;
@@ -135,11 +135,9 @@ namespace FitsCs
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
         }
 
-        [ContractAnnotation("updateAction:null => halt")]
-        [CanBeNull]
-        public static IFitsValue With<T>(
-            [NotNull] this IFitsValue<T> @this, 
-            [NotNull] Action<KeyUpdater> updateAction)
+        public static IFitsValue? With<T>(
+            this IFitsValue<T> @this, 
+            Action<KeyUpdater> updateAction)
         {
             if(@this is null)
                 throw new ArgumentNullException(nameof(@this), SR.NullArgument);
@@ -168,8 +166,6 @@ namespace FitsCs
         }
 
 
-        [ContractAnnotation("keys:null => halt;name:null => halt")]
-        [CanBeNull]
         public static IFitsValue GetFirstByName(this IReadOnlyList<IFitsValue> keys, string name)
         {
             if (keys is null)
@@ -180,8 +176,6 @@ namespace FitsCs
 
             return keys.FirstOrDefault(item => item?.Name == name);
         }
-
-        [ContractAnnotation("keys:null => halt")]
         public static bool IsEnd(this IReadOnlyList<IFitsValue> keys)
         {
             if (keys is null)
@@ -198,7 +192,7 @@ namespace FitsCs
 
     public static class ParsingExtensions
     {
-        public static ExtensionType FitsExtensionTypeFromString(string extension = null)
+        public static ExtensionType FitsExtensionTypeFromString(string? extension = null)
             => extension?.ToLowerInvariant() switch
             {
                 { } x when x.StartsWith(@"bintable") => ExtensionType.BinTable,
@@ -208,7 +202,7 @@ namespace FitsCs
             };
         public static bool TryParseRaw(
             this ReadOnlySpan<char> quotedString, 
-            [CanBeNull] out string @string)
+            out string? @string)
         {
             @string = null;
             var trimmedInput = quotedString.Trim();

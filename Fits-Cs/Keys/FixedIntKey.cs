@@ -39,7 +39,7 @@ namespace FitsCs.Keys
                 span, 
                 string.Format($"= {{0,{FixedFieldSize}}}", RawValue));
 
-        internal FixedIntKey(string name, int value, string comment = "") 
+        internal FixedIntKey(string name, int value, string? comment = "") 
             : base(name, comment, FixedFieldSize + 2)
         {
             RawValue = value;

@@ -11,7 +11,7 @@ namespace FitsCs.Keys
         public override KeyType Type => KeyType.Fixed;
         public override bool IsEmpty => false;
 
-        private protected FixedFitsKey(string name, string comment, int size) : base(name, comment, size)
+        private protected FixedFitsKey(string name, string? comment, int size) : base(name, comment, size)
         {
         }
 
@@ -29,7 +29,7 @@ namespace FitsCs.Keys
             } ?? throw new NullReferenceException(SR.UnexpectedNullRef);
 
         [ContractAnnotation("name:null => halt;value:null => halt")]
-        public static IFitsValue Create(string name, object value, string? comment = null) =>
+        public static IFitsValue Create(string name, object? value, string? comment = null) =>
             value is null
                 ? throw new ArgumentNullException(nameof(value), SR.NullArgument)
                 : value switch

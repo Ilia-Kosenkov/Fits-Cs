@@ -1,7 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using JetBrains.Annotations;
 
 namespace FitsCs
 {
@@ -16,7 +16,6 @@ namespace FitsCs
         public abstract void FlipEndianessIfNecessary();
 
         public long DataCount() => Descriptor.GetFullSize();
-            //GroupCount * (Dimensions.Aggregate<long, int>(1, (prod, n) => prod * n) + ParamCount);
         public long DataSizeInBytes() => DataCount() * Descriptor.ItemSizeInBytes;
 
         protected internal Block(Descriptor desc)
@@ -28,26 +27,19 @@ namespace FitsCs
             Keys = new List<IFitsValue>(desc.Nkeys);
         }
 
-        public static Type ConvertBitPixToType(int bitpix)
+        public static Type? ConvertBitPixToType(int bitpix)
         {
-            switch (bitpix)
+            return bitpix switch
             {
-                case 8:
-                    return typeof(byte);
-                case 16:
-                    return typeof(short);
-                case 32:
-                    return typeof(int);
-                case -32:
-                    return typeof(float);
-                case -64:
-                    return typeof(double);
-                default:
-                    return null;
-            }
+                8 => typeof(byte),
+                16 => typeof(short),
+                32 => typeof(int),
+                -32 => typeof(float),
+                -64 => typeof(double),
+                _ => null
+            };
         }
 
-        [NotNull]
         public static Block Create(Descriptor desc)
         {
             AllowedTypes.ValidateDataType(desc.DataType);

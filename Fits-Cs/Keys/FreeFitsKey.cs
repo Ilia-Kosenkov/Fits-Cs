@@ -1,19 +1,17 @@
 ﻿#nullable enable
 using System;
 using System.Numerics;
-using JetBrains.Annotations;
 
 namespace FitsCs.Keys
 {
     public abstract class FreeFitsKey : FitsKey
     {
         public override KeyType Type => KeyType.Free;
-        private protected FreeFitsKey(string name, string comment, int size) 
+        private protected FreeFitsKey(string name, string? comment, int size) 
             : base(name, comment, size)
         {
         }
 
-        [ContractAnnotation("name:null => halt")]
         public static IFitsValue<T> Create<T>(string name, T value, string? comment = null) =>
             value switch
             {
@@ -26,8 +24,7 @@ namespace FitsCs.Keys
                 _ => throw new NotSupportedException(SR.KeyTypeNotSupported)
             } ?? throw new NullReferenceException(SR.UnexpectedNullRef);
 
-        [ContractAnnotation("name:null => halt;value:null => halt")]
-        public static IFitsValue Create(string name, object value, string? comment = null) =>
+        public static IFitsValue Create(string name, object? value, string? comment = null) =>
             value is null
                 ? throw new ArgumentNullException(nameof(value), SR.NullArgument)
                 : value switch

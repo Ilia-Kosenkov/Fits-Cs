@@ -41,7 +41,7 @@ namespace FitsCs.Keys
                 $"= {(RawValue ? TrueConst : FalseConst)}");
 
 
-        internal FreeBoolKey(string name, bool value, string comment) 
+        internal FreeBoolKey(string name, bool value, string? comment) 
             : base(name, comment, 3)
         {
             RawValue = value;

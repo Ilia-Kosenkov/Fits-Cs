@@ -39,7 +39,7 @@ namespace FitsCs.Keys
                 $"= {RawValue.Real.FormatDouble(17,24)}:{RawValue.Imaginary.FormatDouble(17, 24)}");
 
 
-        internal FreeComplexKey(string name, Complex value, string comment) 
+        internal FreeComplexKey(string name, Complex value, string? comment) 
             : base(name, comment, 2 + 2 * 24 + 1)
         {
             // Conservative size estimate - 24 is the total size of %+24.17e+3

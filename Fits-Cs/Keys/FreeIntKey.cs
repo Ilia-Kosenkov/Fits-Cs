@@ -38,7 +38,7 @@ namespace FitsCs.Keys
                 span,
                 $"= {RawValue}");
 
-        internal FreeIntKey(string name, int value, string comment) 
+        internal FreeIntKey(string name, int value, string? comment) 
             : base(name, comment, value.SignificantDigitsCount() + 2)
         {
             RawValue = value;

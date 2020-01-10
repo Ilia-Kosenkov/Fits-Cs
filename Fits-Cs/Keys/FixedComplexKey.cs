@@ -41,7 +41,7 @@ namespace FitsCs.Keys
             $"= {RawValue.Real.FormatDouble(17, FixedFieldSize)}{RawValue.Imaginary.FormatDouble(17, FixedFieldSize)}");
                    
 
-        internal FixedComplexKey(string name, Complex value, string comment = "") 
+        internal FixedComplexKey(string name, Complex value, string? comment = "") 
             : base(name, comment, 2 * FixedFieldSize + 2)
         {
             RawValue = value;

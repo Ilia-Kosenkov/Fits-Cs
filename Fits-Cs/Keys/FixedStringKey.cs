@@ -41,7 +41,7 @@ namespace FitsCs.Keys
             return true;
         }
 
-        internal FixedStringKey(string name, string value, string comment) 
+        internal FixedStringKey(string name, string value, string? comment) 
             : base(name, comment, value.AsSpan().StringSizeWithQuoteReplacement() + 2)
         {
             if (value is null)

@@ -371,7 +371,7 @@ namespace FitsCs
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
                         
-                        return innerStrSpan.TryParseRaw(out string str)
+                        return innerStrSpan.TryParseRaw(out string? str)
                             ? Create(name.ToString(),
                                 str,
                                 commentStart < contentSpan.Length - 1 - quoteEnd
@@ -468,7 +468,7 @@ namespace FitsCs
         [PublicAPI]
         [NotNull]
         [ContractAnnotation("name:null => halt;value:null => halt")]
-        public static IFitsValue Create(string name, object value, string comment = null,
+        public static IFitsValue Create(string name, object? value, string? comment = null,
             KeyType type = KeyType.Fixed) 
             => type == KeyType.Free
                 ? FreeFitsKey.Create(name, value, comment)
