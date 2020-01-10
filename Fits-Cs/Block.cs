@@ -78,7 +78,7 @@ namespace FitsCs
             if (desc.IsEmpty)
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
             Descriptor = desc;
-            Keys = new List<IFitsValue>(desc.Nkeys);
+            Keys = new List<IFitsValue>(desc.AlignedNumKeys);
         }
 
         public static Type? ConvertBitPixToType(int bitpix)

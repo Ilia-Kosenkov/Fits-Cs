@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
+using System.Linq;
 
 namespace FitsCs
 {
@@ -21,14 +21,14 @@ namespace FitsCs
         
         public ImmutableArray<int> Dimensions { get; }
         
-        public int Nkeys { get; }
+        public int AlignedNumKeys { get; }
         
         public int ParamCount { get; }
         
         public int GroupCount { get; }
         
         public bool IsEmpty =>
-            ItemSizeInBytes == 0 && Nkeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
+            ItemSizeInBytes == 0 && AlignedNumKeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
 
         public Descriptor(sbyte bitpix, int nKeys, 
             IEnumerable<int> naxis,
@@ -48,13 +48,21 @@ namespace FitsCs
             DataType = dataType ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
             Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
-            Nkeys = nKeys;
+            AlignedNumKeys = nKeys;
             ParamCount = paramCount;
             GroupCount = groupCount;
         }
 
         internal Descriptor(IReadOnlyList<IFitsValue> header)
         {
+            // Organize according to guidelines:
+            // 1) SIMPLE/XTENSION
+            // 2) BITPIX
+            // 3) NAXIS
+            // 4) NAXIS1..NAXISN
+            // ??
+            // 5) PCOUNT & GCOUNT
+
             if (header.Count < DataBlob.SizeInBytes / FitsKey.EntrySizeInBytes)
                 throw new ArgumentException(SR.InvalidArgument, nameof(header));
 
@@ -63,88 +71,73 @@ namespace FitsCs
             {
                 @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue => null,
                 @"XTENSION" when first is IFitsValue<string> extDesc => extDesc.RawValue,
-                _ => throw new ArgumentException(SR.InvalidArgument, nameof(header))
+                _ => throw new InvalidOperationException(SR.InvalidKey)
+
             });
 
-            var bitPix = 0;
-            var nAxis = -1;
-            int[]? builder = null;
-            var count = 0;
-            var nGroups = -1;
-            var nParams = -1;
+            var bitPix =
+                header[1] switch
+                {
+                    IFitsValue<int> bpxKey when bpxKey.Name == @"BITPIX" => bpxKey.RawValue,
+                    _ => throw new InvalidOperationException(SR.InvalidKey)
+                };
 
-            // TODO : optimize iterations
-            foreach (var key in header)
+            DataType = Block.ConvertBitPixToType(bitPix)
+                       ?? throw new InvalidOperationException(SR.InvalidKey);
+            ItemSizeInBytes = (byte) ((bitPix < 0 ? -bitPix : bitPix) / 8);
+
+
+            var nAxis = header[2] switch
+            {
+                IFitsValue<int> naxisKey
+                    when
+                        naxisKey.Name == @"NAXIS"
+                        && naxisKey.RawValue >= 0
+                    => naxisKey.RawValue,
+
+                _ => throw new InvalidOperationException(SR.InvalidKey)
+            };
+
+            var builder = new int[nAxis];
+
+            for (var i = 0; i < nAxis; i++)
+            {
+                builder[i] = header[3 + i] switch
+                {
+                    IFitsValue<int> naxisKey 
+                    when
+                        naxisKey.Name == $@"NAXIS{i + 1}" 
+                        && naxisKey.RawValue >= 0
+                    => naxisKey.RawValue,
+                    _ => throw new InvalidOperationException(SR.InvalidKey)
+                };
+            }
+
+
+            ParamCount = -1;
+            GroupCount = -1;
+
+            foreach (var key in header.Skip(3 + nAxis))
             {
                 switch (key.Name)
                 {
-                    case @"BITPIX" when key is IFitsValue<int> bitPixKey:
-                    {
-                        if (bitPix == 0)
-                            bitPix = bitPixKey.RawValue;
-                        else
-                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                        break;
-                    }
-                    case @"NAXIS" when key is IFitsValue<int> nAxisKey:
-                    {
-                        if (nAxis == -1 && nAxisKey.RawValue >= 0)
-                        {
-                            nAxis = nAxisKey.RawValue;
-                            builder = new int[nAxis];
-                        }
-                        else
-                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
-
-                        break;
-                    }
                     case @"PCOUNT" when key is IFitsValue<int> pCountKey:
-                    {
-                        if (nParams == -1)
-                            nParams = pCountKey.RawValue;
-                        else
-                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                        ParamCount = pCountKey.RawValue;
                         break;
-                    }
                     case @"GCOUNT" when key is IFitsValue<int> gCountKey:
-                    {
-                        if (nGroups == -1)
-                            nGroups = gCountKey.RawValue;
-                        else
-                            throw new ArgumentException(SR.InvalidArgument, nameof(header));
+                        GroupCount = gCountKey.RawValue;
                         break;
-                    }
-                    default:
-                    {
-                        if (key.Name?.StartsWith(@"NAXIS") == true
-                            && count < nAxis 
-                            && key is IFitsValue<int> subNaxisKey)
-                        {
-                            if (int.TryParse(key.Name.Substring(5), NumberStyles.Any, NumberFormatInfo.InvariantInfo,
-                                    out var subNaxis)&& subNaxis > 0 && subNaxis <= nAxis)
-                            {
-                                if(builder is null || subNaxisKey.RawValue < 0)
-                                    throw new ArgumentException(SR.InvalidArgument, nameof(header));
-                                builder[subNaxis - 1] = subNaxisKey.RawValue;
-                                count++;
-                            }
-                        }
-
-                        break;
-                    }
                 }
+
+                if (ParamCount != -1 && GroupCount != -1)
+                    break;
             }
 
-            if(nAxis < 0)
-                throw new ArgumentException(SR.InvalidArgument, nameof(header));
+            ParamCount = ParamCount == -1 ? 0 : ParamCount;
+            GroupCount = GroupCount == -1 ? 1 : GroupCount;
 
-
-            DataType = Block.ConvertBitPixToType(bitPix) ?? throw new ArgumentException(SR.InvalidArgument, nameof(header));
-            ItemSizeInBytes = (byte) ((bitPix < 0 ? -bitPix : bitPix) / 8);
-            Dimensions = builder?.ToImmutableArray() ?? ImmutableArray<int>.Empty;
-            Nkeys = (int)(FitsKey.KeysPerUnit * Math.Ceiling(1.0 * header.Count / FitsKey.KeysPerUnit));
-            ParamCount = nParams == -1 ? 0 : nParams;
-            GroupCount = nGroups == -1 ? 1 : nGroups;
+            Dimensions = builder.ToImmutableArray();
+            AlignedNumKeys = (header.Count + FitsKey.KeysPerUnit - 1) / FitsKey.KeysPerUnit;
         }
 
         public long GetFullSize()

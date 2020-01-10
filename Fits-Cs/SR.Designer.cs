@@ -88,6 +88,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unexpected FITS key..
+        /// </summary>
+        internal static string InvalidKey {
+            get {
+                return ResourceManager.GetString("InvalidKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Operation cannot be performed..
         /// </summary>
         internal static string InvalidOperation {
