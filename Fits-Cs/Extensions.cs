@@ -251,20 +251,32 @@ namespace FitsCs
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out int number) 
-            => int.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+            => int.TryParse(
+                numberString.ToString(), 
+                NumberStyles.Integer, 
+                NumberFormatInfo.InvariantInfo, out number);
 
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out float number)
-            => float.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+            => float.TryParse(
+                numberString.ToString(), 
+                NumberStyles.Float, 
+                NumberFormatInfo.InvariantInfo, 
+                out number);
 
-        // TODO : Include support for x.xxxD-yyy format for doubles
+        // TODO : Include support for +x.xxxD+yyy format for doubles
         // Likely, legacy FORTRAN
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out double number)
-            => double.TryParse(numberString.ToString(), NumberStyles.Any, NumberFormatInfo.InvariantInfo, out number);
+            => double.TryParse(
+                numberString.ToString(), 
+                NumberStyles.Float, 
+                NumberFormatInfo.InvariantInfo,
+                out number);
 
+        // TODO : Allow complex numbers to be represented in +x.xxxD+yyy format when double
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out Complex number,
@@ -276,13 +288,13 @@ namespace FitsCs
                 var result =
                     double.TryParse(
                         numberString.Slice(0, FixedFitsKey.FixedFieldSize).ToString(),
-                        NumberStyles.Any,
+                        NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out var real)
                     && 
                     double.TryParse(
                         numberString.Slice(FixedFitsKey.FixedFieldSize).ToString(),
-                        NumberStyles.Any,
+                        NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out image);
 
@@ -301,13 +313,13 @@ namespace FitsCs
                 var result =
                     double.TryParse(
                         numberString.Slice(0, columnPos).ToString(),
-                        NumberStyles.Any,
+                        NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out var real)
                     &&
                     double.TryParse(
                         numberString.Slice(columnPos + 1).ToString(),
-                        NumberStyles.Any,
+                        NumberStyles.Float,
                         NumberFormatInfo.InvariantInfo,
                         out image);
 
