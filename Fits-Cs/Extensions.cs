@@ -192,7 +192,9 @@ namespace FitsCs
 
     public static class ParsingExtensions
     {
-        private static RecycledString _rc = new RecycledString(FitsKey.EntrySize);
+        private static readonly RecycledString Rc = 
+            new RecycledString(FitsKey.EntrySize);
+
         public static ExtensionType FitsExtensionTypeFromString(string? extension = null)
             => extension?.ToLowerInvariant() switch
             {
@@ -253,8 +255,7 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out int number) 
             => int.TryParse(
-                _rc.ProxyAsString(numberString),
-                //numberString.ToString(), 
+                Rc.ProxyAsString(numberString),
                 NumberStyles.Integer, 
                 NumberFormatInfo.InvariantInfo, out number);
 
@@ -262,25 +263,20 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out float number)
             => float.TryParse(
-                _rc.ProxyAsString(numberString),
-                //numberString.ToString(), 
+                Rc.ProxyAsString(numberString),
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo, 
                 out number);
 
-        // TODO : Include support for +x.xxxD+yyy format for doubles
-        // Likely, legacy FORTRAN
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out double number)
             => double.TryParse(
                 ProxyDoubleWithCorrectExponent(numberString),
-                //numberString.ToString(), 
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo,
                 out number);
 
-        // TODO : Allow complex numbers to be represented in +x.xxxD+yyy format when double
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out Complex number,
@@ -322,12 +318,12 @@ namespace FitsCs
                 break;
             }
             
-            _rc.Clear();
-            _rc.TryCopy(input, 0);
+            Rc.Clear();
+            Rc.TryCopy(input);
             if (id != -1)
-                _rc.TryCopy("E", id);
+                Rc.TryCopy("E", id);
 
-            return _rc.StringView;
+            return Rc.StringView;
         }
     }
 }
