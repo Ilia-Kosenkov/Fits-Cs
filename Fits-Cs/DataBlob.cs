@@ -22,6 +22,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using MemoryExtensions;
 
@@ -56,7 +57,7 @@ namespace FitsCs
             if(_data is null)
                 _data = new byte[SizeInBytes];
 
-            span.Slice(0).CopyTo(_data);
+            span.CopyTo(_data);
             IsInitialized = true;
 
             return true;
@@ -67,12 +68,7 @@ namespace FitsCs
         
         public bool TryInitialize(
             byte[] data)
-        {
-            if (IsInitialized || data is null)
-                return false;
-
-            return TryInitialize(data.AsReadOnlySpan());
-        }
+            => !(data is null) && TryInitialize(data.AsReadOnlySpan());
 
         public void Reset()
         {
@@ -115,6 +111,27 @@ namespace FitsCs
 
             return builder.ToImmutable();
         }
-        
+
+        internal static IEnumerable<DataBlob> AsBlobStream(IReadOnlyList<IFitsValue> keys)
+        {
+            if(keys.Count == 0)
+                yield break;
+
+            var nRep = (keys.Count + KeysPerBlob - 1) / KeysPerBlob;
+
+            var blob = new DataBlob();
+            for (var i = 0; i < nRep; i++)
+            {
+                blob.Reset();
+                blob.TryInitialize(ReadOnlySpan<byte>.Empty);
+                for (var j = 0; i * KeysPerBlob - j < keys.Count && j < KeysPerBlob; j++)
+                {
+                    var target = blob._data.AsSpan(j * FitsKey.EntrySizeInBytes);
+                    if (!keys[i * KeysPerBlob + j].TryGetBytes(target))
+                        throw new InvalidOperationException(SR.InvalidOperation);
+                }
+                yield return blob;
+            }
+        }
     }
 }
