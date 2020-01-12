@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using FitsCs;
 using NUnit.Framework;
@@ -22,16 +23,16 @@ namespace Tests
         {
             var desc = new Descriptor(32, 0, new[] { 20, 36 });
 
-            var block = Block.Create(desc) as Block<int> ?? throw new Exception();
-            MemoryMarshal.AsBytes<int>(_data).CopyTo(block.RawData);
+            var block = Block.Create(desc, Enumerable.Empty<IFitsValue>()) as Block<int> ?? throw new Exception();
+            MemoryMarshal.AsBytes<int>(_data).CopyTo(block.RawDataInternal);
             Assert.IsTrue(block.Data.SequenceEqual(_data));
 
             block.FlipEndianessIfNecessary();
             Assert.IsFalse(block.Data.SequenceEqual(_data));
 
 
-            var block2 = Block.Create(desc) as Block<int> ?? throw new Exception();
-            block.RawData.CopyTo(block2.RawData);
+            var block2 = Block.Create(desc, Enumerable.Empty<IFitsValue>()) as Block<int> ?? throw new Exception();
+            block.RawDataInternal.CopyTo(block2.RawDataInternal);
             Assert.IsTrue(block.Data.SequenceEqual(block2.Data));
 
             block2.FlipEndianessIfNecessary();

@@ -44,11 +44,16 @@ namespace Sandbox
         {
             using var fs = new FileStream("DDTSUVDATA.fits", FileMode.Open);
             await using var reader = new FitsReader(fs);
+            using var memStr = new MemoryStream();
+            await using var memWrtr = new FitsWriter(memStr);
             await foreach (var block in reader.EnumerateBlocksAsync())
             {
                 foreach(var key in block.Keys)
                     Console.WriteLine(key.ToString(true));
+
+                await memWrtr.WriteBlockAsync(block);
             }
+
         }
 
 
