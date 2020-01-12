@@ -30,10 +30,22 @@ namespace FitsCs
         public virtual ValueTask<bool> WriteAsync(DataBlob blob, CancellationToken token = default) 
             => WriteInnerAsync(blob, token, true);
 
-        public virtual ValueTask WriteBlockAsync(Block block, CancellationToken token = default)
+        public virtual async ValueTask WriteBlockAsync(Block block, CancellationToken token = default)
         {
-            // Deconstruct block in sequence of blobs
-            throw new NotImplementedException(SR.MethodNotImplemented);
+            if (block is null)
+                throw new ArgumentNullException(nameof(block), SR.NullArgument);
+
+            await Semaphore.WaitAsync(token);
+
+            try
+            {
+                foreach (var blob in block.AsBlobStream()) 
+                    await WriteInnerAsync(blob, token, false);
+            }
+            finally
+            {
+                Semaphore.Release();
+            }
         }
 
         public virtual ValueTask Flush(CancellationToken token = default)
@@ -57,6 +69,7 @@ namespace FitsCs
             }
             finally
             {
+                Interlocked.Add(ref NBytesAvailable, DataBlob.SizeInBytes);
                 if (@lock)
                     Semaphore.Release();
             }
