@@ -31,47 +31,28 @@ using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class FitsReader : BufferManagerBase, IDisposable, IAsyncDisposable
+    public class FitsReader : BufferedStreamManager, IDisposable, IAsyncDisposable
     {
-        // 16 * 2880 bytes is ~ 45 KB
-        // It allows to process up to 16 Fits IDUs at once
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
 
-        private readonly Stream _stream;
-        private readonly bool _leaveOpen;
-
-        public FitsReader(Stream stream)
+        public FitsReader(Stream stream) : base(stream, DefaultBufferSize, false)
         {
-            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            Buffer = new byte[DefaultBufferSize];
         }
-        
+
         public FitsReader(
-            Stream stream, 
+            Stream stream,
             int bufferSize)
+            : base(stream, bufferSize, false)
         {
-            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
-                ? DefaultBufferSize
-                : bufferSize;
-
-            Buffer = new byte[allowedBufferSize];
         }
 
         public FitsReader(
-            Stream stream, 
+            Stream stream,
             int bufferSize, bool leaveOpen)
+            : base(stream, bufferSize, leaveOpen)
         {
-            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            var allowedBufferSize = bufferSize <= 0 || bufferSize < DataBlob.SizeInBytes
-                ? DefaultBufferSize
-                : bufferSize;
-            _leaveOpen = leaveOpen;
-
-            Buffer = new byte[allowedBufferSize];
         }
-        
+
         protected virtual void ReturnToBuffer(ReadOnlySpan<byte> data)
         {
             if(Buffer is null)
@@ -87,18 +68,18 @@ namespace FitsCs
         {
             if (@lock)
                 // Synchronizing read access
-                await _semaphore.WaitAsync(token);
+                await Semaphore.WaitAsync(token);
 
             try
             {
-                var n = await _stream.ReadAsync(Buffer, start, length, token);
+                var n = await Stream.ReadAsync(Buffer, start, length, token);
                 Interlocked.Add(ref NBytesAvailable, n);
                 return n;
             }
             finally
             {
                 if (@lock)
-                    _semaphore.Release();
+                    Semaphore.Release();
             }
         }
 
@@ -109,7 +90,7 @@ namespace FitsCs
             
             if(@lock)
             // Synchronizing read access
-                await _semaphore.WaitAsync(token);
+                await Semaphore.WaitAsync(token);
 
             try
             {
@@ -134,7 +115,7 @@ namespace FitsCs
             finally
             {
                 if(@lock)
-                    _semaphore.Release();
+                    Semaphore.Release();
             }
         }
 
@@ -149,7 +130,7 @@ namespace FitsCs
 
             if (@lock)
                 // Synchronizing read access
-                await _semaphore.WaitAsync(token);
+                await Semaphore.WaitAsync(token);
             try
             {
                 var len = block.RawData.Length;
@@ -203,7 +184,7 @@ namespace FitsCs
             finally
             {
                 if (@lock)
-                    _semaphore.Release();
+                    Semaphore.Release();
             }
         }
 
@@ -224,7 +205,7 @@ namespace FitsCs
 
         public async ValueTask<Block?> ReadBlockAsync(CancellationToken token = default)
         {
-            await _semaphore.WaitAsync(token);
+            await Semaphore.WaitAsync(token);
             try
             {
                 var keys = new List<IFitsValue>(4 * DataBlob.SizeInBytes / FitsKey.EntrySizeInBytes);
@@ -264,7 +245,7 @@ namespace FitsCs
             }
             finally
             {
-                _semaphore.Release();
+                Semaphore.Release();
             }
         }
 
@@ -273,15 +254,6 @@ namespace FitsCs
             Block? block;
             while ((block = await ReadBlockAsync(token)) is {})
                 yield return block;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposing) return;
-
-            _semaphore.Dispose();
-            if (!_leaveOpen)
-                _stream?.Dispose();
         }
 
         public void Dispose()
