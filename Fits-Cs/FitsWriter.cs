@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class FitsWriter : BufferedStreamManager, IDisposable, IAsyncDisposable
+    public class FitsWriter : BufferedStreamManager
     {
         // 16 * 2880 bytes is ~ 45 KB
         // It allows to process up to 16 Fits IDUs at once
@@ -27,20 +27,39 @@ namespace FitsCs
         {
         }
 
-        public virtual ValueTask WriteAsync(DataBlob blob, CancellationToken token = default) 
-            => throw  new NotImplementedException(SR.MethodNotImplemented);
+        public virtual ValueTask<bool> WriteAsync(DataBlob blob, CancellationToken token = default) 
+            => WriteInnerAsync(blob, token, true);
 
         public virtual ValueTask WriteBlockAsync(Block block, CancellationToken token = default)
-            => throw new NotImplementedException(SR.MethodNotImplemented);
+        {
+            // Deconstruct block in sequence of blobs
+            throw new NotImplementedException(SR.MethodNotImplemented);
+        }
 
         public virtual ValueTask Flush(CancellationToken token = default)
             => FlushBufferAsync(token, true);
 
-        protected virtual ValueTask WriteInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
+        protected virtual async ValueTask<bool> WriteInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
-            
+            if (blob?.IsInitialized != true)
+                return false;
 
-            throw new NotImplementedException(SR.MethodNotImplemented);
+            if (@lock)
+                await Semaphore.WaitAsync(token);
+            try
+            {
+                if (Span.Length - NBytesAvailable < blob.Data.Length)
+                    // Not enough space to write one blob
+                    await FlushBufferAsync(token, false);
+
+                // Buffer is always larger than a blob's size
+                return blob.Data.TryCopyTo(Span.Slice(NBytesAvailable));
+            }
+            finally
+            {
+                if (@lock)
+                    Semaphore.Release();
+            }
         }
 
         protected virtual async ValueTask FlushBufferAsync(CancellationToken token, bool @lock)
@@ -92,13 +111,7 @@ namespace FitsCs
             base.Dispose(true);
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public async ValueTask DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             if (NBytesAvailable > 0)
                 await FlushBufferAsync(default, false);

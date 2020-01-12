@@ -3,14 +3,15 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class BufferedStreamManager
+    public class BufferedStreamManager : IDisposable, IAsyncDisposable
     {
         // Cannot fully abstract these,
         // Streams do not have Span overloads in .NS 2.0
-        public const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
+        protected const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
         protected byte[] Buffer;
         protected volatile int NBytesAvailable;
         protected Span<byte> Span => Buffer;
@@ -56,6 +57,25 @@ namespace FitsCs
             Semaphore.Dispose();
             if (!LeaveOpen)
                 Stream?.Dispose();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public virtual ValueTask DisposeAsync()
+        {
+            try
+            {
+                Dispose();
+                return default;
+            }
+            catch (Exception e)
+            {
+                return new ValueTask(Task.FromException(e));
+            }
         }
     }
 }

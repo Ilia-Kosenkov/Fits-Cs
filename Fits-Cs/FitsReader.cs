@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class FitsReader : BufferedStreamManager, IDisposable, IAsyncDisposable
+    public class FitsReader : BufferedStreamManager
     {
 
 
@@ -254,25 +254,6 @@ namespace FitsCs
             Block? block;
             while ((block = await ReadBlockAsync(token)) is {})
                 yield return block;
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            try
-            {
-                Dispose();
-                return default;
-            }
-            catch (Exception e)
-            {
-                return new ValueTask(Task.FromException(e));
-            }
         }
     }
 }
