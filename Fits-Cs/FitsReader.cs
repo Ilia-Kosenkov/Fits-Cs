@@ -31,26 +31,20 @@ using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class FitsReader : IDisposable, IAsyncDisposable
+    public class FitsReader : BufferManagerBase, IDisposable, IAsyncDisposable
     {
         // 16 * 2880 bytes is ~ 45 KB
         // It allows to process up to 16 Fits IDUs at once
-        public const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
-        private readonly byte[] _buffer;
-        private volatile int _nReadBytes;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
 
         private readonly Stream _stream;
         private readonly bool _leaveOpen;
 
-
-        private Span<byte> Span => _buffer;
-
         public FitsReader(Stream stream)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            _buffer = new byte[DefaultBufferSize];
+            Buffer = new byte[DefaultBufferSize];
         }
         
         public FitsReader(
@@ -62,7 +56,7 @@ namespace FitsCs
                 ? DefaultBufferSize
                 : bufferSize;
 
-            _buffer = new byte[allowedBufferSize];
+            Buffer = new byte[allowedBufferSize];
         }
 
         public FitsReader(
@@ -75,34 +69,18 @@ namespace FitsCs
                 : bufferSize;
             _leaveOpen = leaveOpen;
 
-            _buffer = new byte[allowedBufferSize];
+            Buffer = new byte[allowedBufferSize];
         }
-
-
+        
         protected virtual void ReturnToBuffer(ReadOnlySpan<byte> data)
         {
-            if(_buffer is null)
+            if(Buffer is null)
                 throw new NullReferenceException(SR.UnexpectedNullRef);
 
-            if (!data.TryCopyTo(Span.Slice(_nReadBytes)))
+            if (!data.TryCopyTo(Span.Slice(NBytesAvailable)))
                 throw new InvalidOperationException(SR.InvalidOperation);
 
-            _nReadBytes += data.Length;
-        }
-
-        // TODO : Think of concurrency
-        protected virtual void CompactBuffer(int n = 0)
-        {
-            if (_nReadBytes <= 0 || n < 0)
-                return;
-
-            n = n == 0 ? _nReadBytes : Math.Min(n, _nReadBytes);
-            
-            if(n < Span.Length)
-                Span.Slice(n).CopyTo(Span);
-            _nReadBytes -= n;
-            
-            Span.Slice(_nReadBytes).Fill(0);
+            NBytesAvailable += data.Length;
         }
 
         protected virtual async ValueTask<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
@@ -113,8 +91,8 @@ namespace FitsCs
 
             try
             {
-                var n = await _stream.ReadAsync(_buffer, start, length, token);
-                Interlocked.Add(ref _nReadBytes, n);
+                var n = await _stream.ReadAsync(Buffer, start, length, token);
+                Interlocked.Add(ref NBytesAvailable, n);
                 return n;
             }
             finally
@@ -135,12 +113,12 @@ namespace FitsCs
 
             try
             {
-                if (_nReadBytes < DataBlob.SizeInBytes)
+                if (NBytesAvailable < DataBlob.SizeInBytes)
                 {
-                    //var n = await _stream.ReadAsync(_buffer, _nReadBytes, _buffer.Length - _nReadBytes, token);
-                    await ReadIntoBuffer(_nReadBytes, _buffer.Length - _nReadBytes, token, false);
+                    //var n = await _stream.ReadAsync(_buffer, _nAvailableBytes, _buffer.Length - _nAvailableBytes, token);
+                    await ReadIntoBuffer(NBytesAvailable, Buffer.Length - NBytesAvailable, token, false);
 
-                    if (_nReadBytes < DataBlob.SizeInBytes)
+                    if (NBytesAvailable < DataBlob.SizeInBytes)
                         return false;
                 }
 
@@ -176,7 +154,7 @@ namespace FitsCs
             {
                 var len = block.RawData.Length;
                 var alignedLen = (int)(Math.Ceiling(1.0 * block.RawData.Length / DataBlob.SizeInBytes) * DataBlob.SizeInBytes);
-                if (alignedLen <= _nReadBytes)
+                if (alignedLen <= NBytesAvailable)
                 {
                    
                     if (Span.Slice(0, len).TryCopyTo(block.RawData))
@@ -191,28 +169,28 @@ namespace FitsCs
                 else
                 {
                     var count = 0;
-                    if (_nReadBytes > 0)
+                    if (NBytesAvailable > 0)
                     {
-                        if (Span.Slice(0, _nReadBytes).TryCopyTo(block.RawData))
+                        if (Span.Slice(0, NBytesAvailable).TryCopyTo(block.RawData))
                         {
-                            count += _nReadBytes;
+                            count += NBytesAvailable;
                             CompactBuffer();
                         }
                     }
 
-                    var nReads = Math.Ceiling(1.0 * (alignedLen - count) / _buffer.Length);
+                    var nReads = Math.Ceiling(1.0 * (alignedLen - count) / Buffer.Length);
                     for (var i = 0; i < nReads - 1; i++)
                     {
-                        if (await ReadIntoBuffer(0, _buffer.Length, token, false) != _buffer.Length)
+                        if (await ReadIntoBuffer(0, Buffer.Length, token, false) != Buffer.Length)
                             return -1;
 
                         if (!Span.TryCopyTo(block.RawData.Slice(count)))
                             return -1;
-                        count += _buffer.Length;
+                        count += Buffer.Length;
                         CompactBuffer();
                     }
 
-                    if (await ReadIntoBuffer(0, _buffer.Length, token, false) < (alignedLen - count)
+                    if (await ReadIntoBuffer(0, Buffer.Length, token, false) < (alignedLen - count)
                         || !Span.Slice(0, len - count).TryCopyTo(block.RawData.Slice(count)))
                         return -1;
                     
