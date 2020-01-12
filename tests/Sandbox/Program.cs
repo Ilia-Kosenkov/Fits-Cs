@@ -42,16 +42,18 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("DDTSUVDATA.fits", FileMode.Open);
+            using var fs = new FileStream("WFPC2ASSNu5780205bx.fits", FileMode.Open, FileAccess.Read);
             await using var reader = new FitsReader(fs);
-            using var memStr = new MemoryStream();
-            await using var memWrtr = new FitsWriter(memStr);
+
+            using var ftarget = new FileStream("test.fits", FileMode.Create, FileAccess.Write);
+            await using var writer = new FitsWriter(ftarget);
+
             await foreach (var block in reader.EnumerateBlocksAsync())
             {
                 foreach(var key in block.Keys)
                     Console.WriteLine(key.ToString(true));
 
-                await memWrtr.WriteBlockAsync(block);
+                await writer.WriteBlockAsync(block);
             }
 
         }
