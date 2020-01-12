@@ -1,9 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace FitsCs
 {
@@ -129,7 +127,8 @@ namespace FitsCs
         public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
         public override IEnumerable<DataBlob> AsBlobStream()
         {
-            // TODO: Yield keys first
+            foreach (var b in DataBlob.AsBlobStream(Keys))
+                yield return b;
 
             var n = DataSizeInBytes();
             if(n <= 0)
