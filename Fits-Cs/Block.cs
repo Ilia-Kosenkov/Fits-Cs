@@ -1,16 +1,20 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace FitsCs
 {
     public abstract class Block
     {
+        // TODO : Make immutable
         public List<IFitsValue> Keys { get; }
     
         public Descriptor Descriptor { get; }
 
+        // TODO : Make mutable for internal use only
         public abstract Span<byte> RawData { get; }
 
         internal void FlipEndianessIfNecessary()
@@ -72,6 +76,8 @@ namespace FitsCs
         public long DataCount() => Descriptor.GetFullSize();
         public long DataSizeInBytes() => DataCount() * Descriptor.ItemSizeInBytes;
 
+        public abstract IEnumerable<DataBlob> AsBlobStream();
+
         protected internal Block(Descriptor desc)
         {
             
@@ -117,10 +123,35 @@ namespace FitsCs
     {
         // ReSharper disable once InconsistentNaming
         private protected T[] _data;
+        
+        // TODO : make mutable for internal use only
         public Span<T> Data => _data ?? Span<T>.Empty;
         public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
+        public override IEnumerable<DataBlob> AsBlobStream()
+        {
+            // TODO: Yield keys first
 
-       
+            var n = DataSizeInBytes();
+            if(n <= 0)
+                yield break;
+
+            var blob = new DataBlob();
+            var offset = 0;
+            while (offset < n)
+            {
+                // This clears out data
+                blob.Reset();
+
+                if (!blob.TryInitialize(
+                    RawData.Slice(
+                        offset,
+                        (int) Math.Min(DataBlob.SizeInBytes, n - offset))))
+                    throw new InvalidOperationException(SR.InvalidOperation);
+
+                offset += DataBlob.SizeInBytes;
+                yield return blob;
+            }
+        }
 
         protected internal Block(Descriptor desc) : base(desc)
         {
