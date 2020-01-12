@@ -125,7 +125,7 @@ namespace FitsCs
             if (block is null)
                 throw new ArgumentNullException(nameof(block), SR.NullArgument);
 
-            if (block.RawData.IsEmpty)
+            if (block.RawDataInternal.IsEmpty)
                 return default;
 
             if (@lock)
@@ -133,12 +133,12 @@ namespace FitsCs
                 await Semaphore.WaitAsync(token);
             try
             {
-                var len = block.RawData.Length;
-                var alignedLen = (int)(Math.Ceiling(1.0 * block.RawData.Length / DataBlob.SizeInBytes) * DataBlob.SizeInBytes);
+                var len = block.RawDataInternal.Length;
+                var alignedLen = (int)(Math.Ceiling(1.0 * block.RawDataInternal.Length / DataBlob.SizeInBytes) * DataBlob.SizeInBytes);
                 if (alignedLen <= NBytesAvailable)
                 {
                    
-                    if (Span.Slice(0, len).TryCopyTo(block.RawData))
+                    if (Span.Slice(0, len).TryCopyTo(block.RawDataInternal))
                     {
                         // Compacting accounting for alignment
                         CompactBuffer(alignedLen);
@@ -152,7 +152,7 @@ namespace FitsCs
                     var count = 0;
                     if (NBytesAvailable > 0)
                     {
-                        if (Span.Slice(0, NBytesAvailable).TryCopyTo(block.RawData))
+                        if (Span.Slice(0, NBytesAvailable).TryCopyTo(block.RawDataInternal))
                         {
                             count += NBytesAvailable;
                             CompactBuffer();
@@ -165,14 +165,14 @@ namespace FitsCs
                         if (await ReadIntoBuffer(0, Buffer.Length, token, false) != Buffer.Length)
                             return -1;
 
-                        if (!Span.TryCopyTo(block.RawData.Slice(count)))
+                        if (!Span.TryCopyTo(block.RawDataInternal.Slice(count)))
                             return -1;
                         count += Buffer.Length;
                         CompactBuffer();
                     }
 
                     if (await ReadIntoBuffer(0, Buffer.Length, token, false) < (alignedLen - count)
-                        || !Span.Slice(0, len - count).TryCopyTo(block.RawData.Slice(count)))
+                        || !Span.Slice(0, len - count).TryCopyTo(block.RawDataInternal.Slice(count)))
                         return -1;
                     
                     CompactBuffer(alignedLen - count);
@@ -232,8 +232,7 @@ namespace FitsCs
                 // TODO: catch specific exception and rethrow 
                 var desc = new Descriptor(keys);
 
-                var block = Block.Create(desc);
-                block.Keys.AddRange(keys);
+                var block = Block.Create(desc, keys);
                 var nBytesFilled = await FillDataAsync(block, token, false);
 
                 if (nBytesFilled != block.DataSizeInBytes())

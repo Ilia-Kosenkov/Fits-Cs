@@ -1,23 +1,25 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 
 namespace FitsCs
 {
     public abstract class Block
     {
-        // TODO : Make immutable
-        public List<IFitsValue> Keys { get; }
+        public delegate void Initializer<T>(Span<T> buffer) where T : unmanaged;
+
+        public ImmutableList<IFitsValue> Keys { get; }
     
         public Descriptor Descriptor { get; }
 
-        // TODO : Make mutable for internal use only
-        public abstract Span<byte> RawData { get; }
+        public abstract ReadOnlySpan<byte> RawData { get; }
 
+        internal abstract Span<byte> RawDataInternal { get; }
         internal void FlipEndianessIfNecessary()
         {
-            var span = RawData;
+            var span = RawDataInternal;
             var itemSizeInBytes = Descriptor.ItemSizeInBytes;
             var length = span.Length / Descriptor.ItemSizeInBytes;
             if (itemSizeInBytes == 2)
@@ -76,13 +78,13 @@ namespace FitsCs
 
         public abstract IEnumerable<DataBlob> AsBlobStream();
 
-        protected internal Block(Descriptor desc)
+        protected internal Block(Descriptor desc, IEnumerable<IFitsValue> keys)
         {
-            
             if (desc.IsEmpty)
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
             Descriptor = desc;
-            Keys = new List<IFitsValue>(desc.AlignedNumKeys);
+
+            Keys = keys?.ToImmutableList() ?? ImmutableList<IFitsValue>.Empty;
         }
 
         public static Type? ConvertBitPixToType(int bitpix)
@@ -98,20 +100,20 @@ namespace FitsCs
             };
         }
 
-        public static Block Create(Descriptor desc)
+        public static Block Create(Descriptor desc, IEnumerable<IFitsValue> keys)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
             
             if(desc.DataType == typeof(float))
-                return new Block<float>(desc);
+                return new Block<float>(desc, keys);
             if(desc.DataType == typeof(double))
-                return new Block<double>(desc);
+                return new Block<double>(desc, keys);
             if(desc.DataType == typeof(byte))
-                return new Block<byte>(desc);
+                return new Block<byte>(desc, keys);
             if(desc.DataType == typeof(short))
-                return new Block<short>(desc);
+                return new Block<short>(desc, keys);
             if(desc.DataType == typeof(int))
-                return new Block<int>(desc);
+                return new Block<int>(desc, keys);
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
         }
@@ -121,10 +123,9 @@ namespace FitsCs
     {
         // ReSharper disable once InconsistentNaming
         private protected T[] _data;
-        
-        // TODO : make mutable for internal use only
-        public Span<T> Data => _data ?? Span<T>.Empty;
-        public override Span<byte> RawData => MemoryMarshal.AsBytes(Data);
+        internal override Span<byte> RawDataInternal => MemoryMarshal.AsBytes(_data.AsSpan());
+        public ReadOnlySpan<T> Data => _data ?? Span<T>.Empty;
+        public override ReadOnlySpan<byte> RawData => RawDataInternal;
         public override IEnumerable<DataBlob> AsBlobStream()
         {
             foreach (var b in DataBlob.AsBlobStream(Keys))
@@ -138,11 +139,10 @@ namespace FitsCs
             var offset = 0;
             while (offset < n)
             {
-                // This clears out data
                 blob.Reset();
 
                 if (!blob.TryInitialize(
-                    RawData.Slice(
+                    RawDataInternal.Slice(
                         offset,
                         (int) Math.Min(DataBlob.SizeInBytes, n - offset))))
                     throw new InvalidOperationException(SR.InvalidOperation);
@@ -152,13 +152,39 @@ namespace FitsCs
             }
         }
 
-        protected internal Block(Descriptor desc) : base(desc)
+        protected internal Block(Descriptor desc, IEnumerable<IFitsValue> keys) : base(desc, keys)
         {
             AllowedTypes.ValidateDataType<T>();
-            if (desc.IsEmpty)
-                throw new ArgumentException(SR.InvalidArgument, nameof(desc));
+           
 
             _data = new T[desc.GetFullSize()];
+        }
+
+        protected internal Block(
+            Descriptor desc, 
+            IEnumerable<IFitsValue> keys,
+            Initializer<T> initializer)
+            : base(desc, keys)
+        {
+            AllowedTypes.ValidateDataType<T>();
+            if (initializer is null)
+                throw new ArgumentNullException(nameof(initializer), SR.NullArgument);
+            
+            _data = new T[desc.GetFullSize()];
+            // Initializes data using action
+            initializer(_data);
+        }
+
+        // This is for public & external use; allows to write directly into the data array
+        public static Block<T> CreateWithData(
+            Descriptor desc,
+            IEnumerable<IFitsValue> keys,
+            Initializer<T> initializer)
+        {
+            if (typeof(T) != desc.DataType)
+                throw new ArgumentException(SR.InvalidArgument, nameof(desc));
+
+            return new Block<T>(desc, keys, initializer);
         }
     }
 }
