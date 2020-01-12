@@ -23,6 +23,7 @@
 #nullable enable
 using System;
 using System.Collections.Immutable;
+using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -55,7 +56,7 @@ namespace FitsCs
             if(_data is null)
                 _data = new byte[SizeInBytes];
 
-            span.CopyTo(_data);
+            span.Slice(0).CopyTo(_data);
             IsInitialized = true;
 
             return true;
@@ -70,21 +71,14 @@ namespace FitsCs
             if (IsInitialized || data is null)
                 return false;
 
-            if (data.Length <= SizeInBytes)
-                return false;
-
-            if(_data is null)
-                _data = new byte[SizeInBytes];
-            Buffer.BlockCopy(data, 0, _data, 0, SizeInBytes);
-            IsInitialized = true;
-            return true;
+            return TryInitialize(data.AsReadOnlySpan());
         }
 
         public void Reset()
         {
+            _data?.AsSpan().Fill(0);
             IsInitialized = false;
         }
-
 
         public BlobType GetContentType()
         {
@@ -95,18 +89,16 @@ namespace FitsCs
             var size = FitsKey.NameSize * FitsKey.CharSizeInBytes;
             var span = Data;
 
-            if (FitsKey.IsValidKeyName(span.Slice(0, size), true))
-            {
-                // Now check all remaining
-                var counter = 1;
-                for (var i = 1; i < KeysPerBlob; i++)
-                    counter += FitsKey.IsValidKeyName(span.Slice(i * step, size), true) ? 1 : 0;
+            // If not a key, assume it is data
+            if (!FitsKey.IsValidKeyName(span.Slice(0, size), true)) return BlobType.Data;
 
-                return counter == KeysPerBlob ? BlobType.FitsHeader : BlobType.Corrupted;
-            }
+            // Now check all remaining keys
+            var counter = 1;
+            for (var i = 1; i < KeysPerBlob; i++)
+                counter += FitsKey.IsValidKeyName(span.Slice(i * step, size), true) ? 1 : 0;
 
-            // If its not a fits key header, assume it is data
-            return BlobType.Data;
+            return counter == KeysPerBlob ? BlobType.FitsHeader : BlobType.Corrupted;
+
         }
 
         public ImmutableArray<IFitsValue> AsKeyCollection()
@@ -123,7 +115,6 @@ namespace FitsCs
 
             return builder.ToImmutable();
         }
-
         
     }
 }
