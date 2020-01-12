@@ -114,7 +114,7 @@ namespace FitsCs
 
         internal void FlipEndianess(int itemSizeInBytes)
         {
-            if(IsInitialized)
+            if(IsInitialized && BitConverter.IsLittleEndian)
                 Extensions.FlipEndianess(_data, itemSizeInBytes);
         }
 

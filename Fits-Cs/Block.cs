@@ -20,60 +20,11 @@ namespace FitsCs
 
         internal void FlipEndianess()
         {
+            if (!BitConverter.IsLittleEndian)
+                return;
             var span = RawDataInternal;
             var itemSizeInBytes = Descriptor.ItemSizeInBytes;
             span.FlipEndianess(itemSizeInBytes);
-
-            //var length = span.Length / Descriptor.ItemSizeInBytes;
-            //if (itemSizeInBytes == 2)
-            //{
-            //    for (var i = 0; i < length; i++)
-            //    {
-            //        var offset = 2 * i;
-            //        var temp = span[offset];
-            //        span[offset] = span[offset + 1];
-            //        span[offset + 1] = temp;
-            //    }
-            //}
-            //else if (itemSizeInBytes == 4)
-            //{
-            //    for (var i = 0; i < length; i++)
-            //    {
-            //        var offset = 4 * i;
-
-            //        var temp = span[offset];
-            //        span[offset] = span[offset + 3];
-            //        span[offset + 3] = temp;
-
-            //        temp = span[offset + 1];
-            //        span[offset + 1] = span[offset + 2];
-            //        span[offset + 2] = temp;
-            //    }
-            //}
-            //else if (itemSizeInBytes == 8)
-            //{
-            //    for (var i = 0; i < length; i++)
-            //    {
-            //        var offset = 8 * i;
-
-            //        var temp = span[offset];
-            //        span[offset] = span[offset + 7];
-            //        span[offset + 7] = temp;
-
-            //        temp = span[offset + 1];
-            //        span[offset + 1] = span[offset + 6];
-            //        span[offset + 6] = temp;
-
-            //        temp = span[offset + 2];
-            //        span[offset + 2] = span[offset + 5];
-            //        span[offset + 5] = temp;
-
-            //        temp = span[offset + 3];
-            //        span[offset + 3] = span[offset + 4];
-            //        span[offset + 4] = temp;
-            //    }
-            //}
-
         }
 
         public long DataCount() => Descriptor.GetFullSize();
