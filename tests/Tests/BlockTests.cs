@@ -27,7 +27,7 @@ namespace Tests
             MemoryMarshal.AsBytes<int>(_data).CopyTo(block.RawDataInternal);
             Assert.IsTrue(block.Data.SequenceEqual(_data));
 
-            block.FlipEndianessIfNecessary();
+            block.FlipEndianess();
             Assert.IsFalse(block.Data.SequenceEqual(_data));
 
 
@@ -35,7 +35,7 @@ namespace Tests
             block.RawDataInternal.CopyTo(block2.RawDataInternal);
             Assert.IsTrue(block.Data.SequenceEqual(block2.Data));
 
-            block2.FlipEndianessIfNecessary();
+            block2.FlipEndianess();
             Assert.IsFalse(block.Data.SequenceEqual(block2.Data));
             Assert.IsTrue(block2.Data.SequenceEqual(_data));
         }

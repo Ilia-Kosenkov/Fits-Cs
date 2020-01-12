@@ -12,7 +12,7 @@ using TextExtensions;
 
 namespace FitsCs
 {
-    public static class Extensions
+    internal static class Extensions
     {
         private const int MinFixedStringSize = FixedFitsKey.FixedFieldSize - FitsKey.ValueStart;
         public static int StringSizeWithQuoteReplacement(
@@ -186,6 +186,72 @@ namespace FitsCs
                     return true;
 
             return false;
+        }
+
+        public static void FlipEndianess(this Span<byte> span, int itemSizeInBytes)
+        {
+            if(span.IsEmpty)
+                return;
+            
+            var length = span.Length / itemSizeInBytes;
+
+            switch (itemSizeInBytes)
+            {
+                case 2:
+                {
+                    for (var i = 0; i < length; i++)
+                    {
+                        var offset = 2 * i;
+                        var temp = span[offset];
+                        span[offset] = span[offset + 1];
+                        span[offset + 1] = temp;
+                    }
+
+                    break;
+                }
+                case 4:
+                {
+                    for (var i = 0; i < length; i++)
+                    {
+                        var offset = 4 * i;
+
+                        var temp = span[offset];
+                        span[offset] = span[offset + 3];
+                        span[offset + 3] = temp;
+
+                        temp = span[offset + 1];
+                        span[offset + 1] = span[offset + 2];
+                        span[offset + 2] = temp;
+                    }
+
+                    break;
+                }
+                case 8:
+                {
+                    for (var i = 0; i < length; i++)
+                    {
+                        var offset = 8 * i;
+
+                        var temp = span[offset];
+                        span[offset] = span[offset + 7];
+                        span[offset + 7] = temp;
+
+                        temp = span[offset + 1];
+                        span[offset + 1] = span[offset + 6];
+                        span[offset + 6] = temp;
+
+                        temp = span[offset + 2];
+                        span[offset + 2] = span[offset + 5];
+                        span[offset + 5] = temp;
+
+                        temp = span[offset + 3];
+                        span[offset + 3] = span[offset + 4];
+                        span[offset + 4] = temp;
+                    }
+
+                    break;
+                }
+            }
         }
        
     }

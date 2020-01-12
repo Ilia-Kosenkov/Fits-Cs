@@ -112,6 +112,12 @@ namespace FitsCs
             return builder.ToImmutable();
         }
 
+        internal void FlipEndianess(int itemSizeInBytes)
+        {
+            if(IsInitialized)
+                Extensions.FlipEndianess(_data, itemSizeInBytes);
+        }
+
         internal static IEnumerable<DataBlob> AsBlobStream(IReadOnlyList<IFitsValue> keys)
         {
             if(keys.Count == 0)
@@ -133,5 +139,7 @@ namespace FitsCs
                 yield return blob;
             }
         }
+
+      
     }
 }

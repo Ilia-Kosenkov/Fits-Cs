@@ -238,7 +238,7 @@ namespace FitsCs
                 if (nBytesFilled != block.DataSizeInBytes())
                     return null;//throw new IOException(SR.IOReadFailure);
 
-                block.FlipEndianessIfNecessary();
+                block.FlipEndianess();
 
                 return block;
             }

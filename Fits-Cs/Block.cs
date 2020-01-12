@@ -17,59 +17,62 @@ namespace FitsCs
         public abstract ReadOnlySpan<byte> RawData { get; }
 
         internal abstract Span<byte> RawDataInternal { get; }
-        internal void FlipEndianessIfNecessary()
+
+        internal void FlipEndianess()
         {
             var span = RawDataInternal;
             var itemSizeInBytes = Descriptor.ItemSizeInBytes;
-            var length = span.Length / Descriptor.ItemSizeInBytes;
-            if (itemSizeInBytes == 2)
-            {
-                for (var i = 0; i < length; i++)
-                {
-                    var offset = 2 * i;
-                    var temp = span[offset];
-                    span[offset] = span[offset + 1];
-                    span[offset + 1] = temp;
-                }
-            }
-            else if (itemSizeInBytes == 4)
-            {
-                for (var i = 0; i < length; i++)
-                {
-                    var offset = 4 * i;
+            span.FlipEndianess(itemSizeInBytes);
 
-                    var temp = span[offset];
-                    span[offset] = span[offset + 3];
-                    span[offset + 3] = temp;
+            //var length = span.Length / Descriptor.ItemSizeInBytes;
+            //if (itemSizeInBytes == 2)
+            //{
+            //    for (var i = 0; i < length; i++)
+            //    {
+            //        var offset = 2 * i;
+            //        var temp = span[offset];
+            //        span[offset] = span[offset + 1];
+            //        span[offset + 1] = temp;
+            //    }
+            //}
+            //else if (itemSizeInBytes == 4)
+            //{
+            //    for (var i = 0; i < length; i++)
+            //    {
+            //        var offset = 4 * i;
 
-                    temp = span[offset + 1];
-                    span[offset + 1] = span[offset + 2];
-                    span[offset + 2] = temp;
-                }
-            }
-            else if (itemSizeInBytes == 8)
-            {
-                for (var i = 0; i < length; i++)
-                {
-                    var offset = 8 * i;
+            //        var temp = span[offset];
+            //        span[offset] = span[offset + 3];
+            //        span[offset + 3] = temp;
 
-                    var temp = span[offset];
-                    span[offset] = span[offset + 7];
-                    span[offset + 7] = temp;
+            //        temp = span[offset + 1];
+            //        span[offset + 1] = span[offset + 2];
+            //        span[offset + 2] = temp;
+            //    }
+            //}
+            //else if (itemSizeInBytes == 8)
+            //{
+            //    for (var i = 0; i < length; i++)
+            //    {
+            //        var offset = 8 * i;
 
-                    temp = span[offset + 1];
-                    span[offset + 1] = span[offset + 6];
-                    span[offset + 6] = temp;
+            //        var temp = span[offset];
+            //        span[offset] = span[offset + 7];
+            //        span[offset + 7] = temp;
 
-                    temp = span[offset + 2];
-                    span[offset + 2] = span[offset + 5];
-                    span[offset + 5] = temp;
+            //        temp = span[offset + 1];
+            //        span[offset + 1] = span[offset + 6];
+            //        span[offset + 6] = temp;
 
-                    temp = span[offset + 3];
-                    span[offset + 3] = span[offset + 4];
-                    span[offset + 4] = temp;
-                }
-            }
+            //        temp = span[offset + 2];
+            //        span[offset + 2] = span[offset + 5];
+            //        span[offset + 5] = temp;
+
+            //        temp = span[offset + 3];
+            //        span[offset + 3] = span[offset + 4];
+            //        span[offset + 4] = temp;
+            //    }
+            //}
 
         }
 
@@ -137,6 +140,8 @@ namespace FitsCs
 
             var blob = new DataBlob();
             var offset = 0;
+            var itemSizeInBytes = Descriptor.ItemSizeInBytes;
+
             while (offset < n)
             {
                 blob.Reset();
@@ -147,6 +152,7 @@ namespace FitsCs
                         (int) Math.Min(DataBlob.SizeInBytes, n - offset))))
                     throw new InvalidOperationException(SR.InvalidOperation);
 
+                blob.FlipEndianess(itemSizeInBytes);
                 offset += DataBlob.SizeInBytes;
                 yield return blob;
             }
