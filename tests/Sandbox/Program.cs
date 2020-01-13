@@ -42,7 +42,7 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("WFPC2ASSNu5780205bx.fits", FileMode.Open, FileAccess.Read);
+            using var fs = new FileStream("test64bit1.fits", FileMode.Open, FileAccess.Read);
             await using var reader = new FitsReader(fs);
 
             using var ftarget = new FileStream("test.fits", FileMode.Create, FileAccess.Write);
