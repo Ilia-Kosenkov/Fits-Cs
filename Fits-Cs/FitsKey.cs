@@ -301,7 +301,30 @@ namespace FitsCs
 
         }
 
-        
+        private protected static IFitsValue? ParseIntoInteger(
+            ReadOnlySpan<char> value,
+            ReadOnlySpan<char> name, 
+            ReadOnlySpan<char> comment)
+        {
+            if (value.TryParseRaw(out int iVal))
+                return Create(name.ToString(), iVal, comment.IsEmpty ? null : comment.ToString());
+            if (value.TryParseRaw(out long lVal))
+                return Create(name.ToString(), lVal, comment.IsEmpty ? null : comment.ToString());
+            return null;
+        }
+
+        private protected static IFitsValue? ParseIntoFloat(
+            ReadOnlySpan<char> value, 
+            ReadOnlySpan<char> name, 
+            ReadOnlySpan<char> comment)
+        {
+            if (value.TryParseRaw(out float fVal))
+                return Create(name.ToString(), fVal, comment.IsEmpty ? null : comment.ToString());
+            if (value.TryParseRaw(out double dVal))
+                return Create(name.ToString(), dVal, comment.IsEmpty ? null : comment.ToString());
+            return null;
+        }
+
         public static IFitsValue? ParseRawData(ReadOnlySpan<byte> input)
         {
             if (input.Length < EntrySizeInBytes)
@@ -403,36 +426,16 @@ namespace FitsCs
 
                         return nType switch
                         {
-                            NumericType.Integer when roSpan.TryParseRaw(out int iVal) =>
-                                Create(
-                                    name.ToString(),
-                                    iVal,
+                            NumericType.Integer => 
+                                ParseIntoInteger(roSpan, name,
+                                    commentStart < contentSpan.Length - 1 
+                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                        : ReadOnlySpan<char>.Empty),
+                            NumericType.Float =>
+                                ParseIntoFloat(roSpan, name, 
                                     commentStart < contentSpan.Length - 1
                                         ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                            .ToString()
-                                        : null,
-                                    keyType),
-
-                            NumericType.Float when roSpan.TryParseRaw(out double dVal) =>
-                                dVal > float.MinValue && dVal < float.MaxValue
-                                    // Can be float
-                                    ? Create(
-                                        name.ToString(),
-                                        (float) dVal,
-                                        commentStart < contentSpan.Length - 1
-                                            ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                                .ToString()
-                                            : null,
-                                        keyType)
-                                    : Create(
-                                        name.ToString(),
-                                        dVal,
-                                        commentStart < contentSpan.Length - 1
-                                            ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                                .ToString()
-                                            : null,
-                                        keyType) as IFitsValue,
-
+                                        : ReadOnlySpan<char>.Empty),
                             NumericType.Complex when roSpan.TryParseRaw(out Complex cVal, keyType) =>
                                 Create(
                                     name.ToString(),

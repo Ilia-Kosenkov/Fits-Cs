@@ -109,6 +109,24 @@ namespace FitsCs
             return n;
         }
 
+        public static int SignificantDigitsCount(this long value)
+        {
+            if (value == 0)
+                return 1;
+            if (value < 0)
+                value = -value;
+
+            var n = 0;
+
+            while (value != 0)
+            {
+                n++;
+                value /= 10;
+            }
+
+            return n;
+        }
+
         public static string FormatDouble(this double value, int decPos, int maxSize)
         {
             // Using straightforward two-attempt way
@@ -319,10 +337,18 @@ namespace FitsCs
 
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
-            out int number) 
-            => int.TryParse(
+            out int number) =>
+            int.TryParse(
                 Rc.ProxyAsString(numberString),
-                NumberStyles.Integer, 
+                NumberStyles.Integer,
+                NumberFormatInfo.InvariantInfo, out number);
+
+        public static bool TryParseRaw(
+            this ReadOnlySpan<char> numberString,
+            out long number) =>
+            long.TryParse(
+                Rc.ProxyAsString(numberString),
+                NumberStyles.Integer,
                 NumberFormatInfo.InvariantInfo, out number);
 
         public static bool TryParseRaw(

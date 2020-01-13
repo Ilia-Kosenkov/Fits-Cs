@@ -48,6 +48,7 @@ namespace FitsCs
                 8 => typeof(byte),
                 16 => typeof(short),
                 32 => typeof(int),
+                64 => typeof(long),
                 -32 => typeof(float),
                 -64 => typeof(double),
                 _ => null
@@ -68,6 +69,8 @@ namespace FitsCs
                 return new Block<short>(desc, keys);
             if(desc.DataType == typeof(int))
                 return new Block<int>(desc, keys);
+            if (desc.DataType == typeof(long))
+                return new Block<long>(desc, keys);
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
         }

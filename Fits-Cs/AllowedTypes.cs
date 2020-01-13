@@ -15,6 +15,7 @@ namespace FitsCs
         {
             typeof(bool),
             typeof(int),
+            typeof(long),
             typeof(float),
             typeof(double),
             typeof(string),
@@ -26,6 +27,7 @@ namespace FitsCs
             typeof(byte),
             typeof(short),
             typeof(int),
+            typeof(long),
             typeof(float),
             typeof(double)
         }.ToImmutableArray();
