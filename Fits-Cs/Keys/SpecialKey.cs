@@ -8,19 +8,21 @@ namespace FitsCs.Keys
         Undefined = 0,
         End = 1,
         Comment = 2,
-        History = 3
+        History = 3,
+        Continue = 4
     }
 
-    public sealed class SpecialKey : FitsKey
+    public class SpecialKey : FitsKey
     {
-        internal SpecialKey(string name, string data) 
-            : base(name, data, 0)
+        internal SpecialKey(string name, string? data) 
+            : base(name, data, 2)
         {
             KeyType = name.ToLower() switch
             {
                 @"end" => SpecialKeyType.End,
                 @"comment" => SpecialKeyType.Comment,
                 @"history" => SpecialKeyType.History,
+                @"continue" => SpecialKeyType.Continue,
                 _ => SpecialKeyType.Undefined
             };
         }
@@ -45,7 +47,7 @@ namespace FitsCs.Keys
 
             //Comment.AsSpan().CopyTo(span.Slice(ValueStart));
             // This accounts for the absence of `= ` in special keys
-            Comment.AsSpan().CopyTo(span.Slice(NameSize));
+            Comment.AsSpan().CopyTo(span.Slice(ValueStart));
 
             return true;
         }

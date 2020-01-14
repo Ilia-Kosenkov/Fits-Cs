@@ -22,6 +22,7 @@
 #nullable enable
 using System;
 using System.Buffers;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using FitsCs.Keys;
@@ -64,7 +65,7 @@ namespace FitsCs
 
         private protected FitsKey(string name, string? comment, int size)
         {
-            ValidateInput(name, comment, size);
+            ValidateInput(name, size, comment?.Length ?? 0);
             Name = name;
             Comment = comment ?? string.Empty;
         }
@@ -149,8 +150,8 @@ namespace FitsCs
 
         private protected static void ValidateInput(
             string? name,
-            string? comment, 
-            int valueSize)
+            int valueSize,
+            int commentSize = 0)
         {
             if (name is null)
                 throw new ArgumentNullException(SR.NullArgument, nameof(name));
@@ -167,8 +168,38 @@ namespace FitsCs
 
             // It was +2 to account for `= `, but in general case it is allowed to have
             // even larger comments if it is e.g. `HISTORY`
-            if((comment?.Length ?? 0) + valueSize > EntrySize - NameSize)
+            if(commentSize + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
+        }
+
+        private protected static bool TryValidateInput(
+            string? name,
+            int valueSize,
+            int commentSize = 0)
+        {
+            if (name is null)
+                return false;
+            if (name.Length == 0 && valueSize != 0)
+                return false;
+
+            if (name.Length > NameSize)
+                return false;
+
+
+            if (name.Length > 0 && !IsValidKeyName(name.AsSpan()))
+                return false;
+
+
+            if (valueSize < 0)
+                return false;
+
+            // It was +2 to account for `= `, but in general case it is allowed to have
+            // even larger comments if it is e.g. `HISTORY`
+            if (commentSize + valueSize > EntrySize - NameSize)
+                return false;
+
+            return true;
+
         }
 
         public static bool IsValidKeyName(ReadOnlySpan<char> input, bool allowBlank = false)
@@ -325,6 +356,32 @@ namespace FitsCs
             return null;
         }
 
+
+        private protected static IFitsValue? ParseIntoSpecial(
+            ReadOnlySpan<char> name,
+            ReadOnlySpan<char> content)
+        {
+            if (name.StartsWith(@"CONTINUE".AsSpan()))
+            {
+                var ind = FindLastQuote(content);
+                if (ind <= 0)
+                    return null;
+
+                var commentStart = FindComment(content.Slice(ind + 1));
+                if (content.Slice(1, ind - 1).TryParseRaw(out string? strRep))
+                {
+                    return new ContinueSpecialKey(name.ToString(), strRep!,
+                        commentStart < content.Length - ind - 1
+                            ? content.Slice(commentStart + 2 + ind).TrimEnd().ToString()
+                            : null);
+                }
+
+                return null;
+            }
+
+            return CreateSpecial(name.ToString(), content.ToString());
+        }
+
         public static IFitsValue? ParseRawData(ReadOnlySpan<byte> input)
         {
             if (input.Length < EntrySizeInBytes)
@@ -455,7 +512,8 @@ namespace FitsCs
 
             // At this point, keyword has a valid name and HDU-compatible content
             var content = ((ReadOnlySpan<char>)charRep).Slice(EqualsPos).Trim();
-            return CreateSpecial(name.ToString(), content.ToString());
+            //return CreateSpecial(name.ToString(), content.ToString());
+            return ParseIntoSpecial(name, content);
         }
 
         public static IFitsValue<T> Create<T>(string name, T value, string? comment = null, KeyType type = KeyType.Fixed) 
@@ -480,6 +538,100 @@ namespace FitsCs
         public static IFitsValue CreateComment(string comment) => new SpecialKey("COMMENT", comment);
         
         public static IFitsValue CreateHistory(string history) => new SpecialKey("HISTORY", history);
+
+        public static ImmutableArray<IFitsValue> ToComments(ReadOnlySpan<char> text)
+        {
+            if(text.IsEmpty || !text.IsStringHduCompatible())
+                return ImmutableArray<IFitsValue>.Empty;
+
+
+            var maxCommentSize = EntrySize - ValueStart;
+
+            var n = (text!.Length + maxCommentSize - 1) / maxCommentSize;
+
+            var builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
+
+            var i = 0;
+            for (; i < n - 1; i++)
+                builder.Add(CreateComment(text.Slice(i * maxCommentSize, maxCommentSize).ToString()));
+
+            builder.Add(CreateComment(text.Slice(i * maxCommentSize).ToString()));
+
+            return builder.ToImmutable();
+        }
+
+        public static ImmutableArray<IFitsValue> ToComments(string? text)
+            => ToComments(string.IsNullOrEmpty(text) ? ReadOnlySpan<char>.Empty : text.AsSpan());
+
+
+        public static ImmutableArray<IFitsValue> ToContinuedString(
+            ReadOnlySpan<char> text, 
+            ReadOnlySpan<char> comment,
+            string keyName)
+        {
+            if(!IsValidKeyName((keyName ?? string.Empty).AsSpan()))
+                throw new ArgumentException(SR.InvalidArgument, nameof(keyName));
+
+            if (text.IsEmpty || !text.IsStringHduCompatible())
+                return ImmutableArray<IFitsValue>.Empty;
+
+            var strLen = text.StringSizeWithQuoteReplacement();
+
+            // Accounting for `&` symbol
+            var singleStrSize = EntrySize - ValueStart - 3;
+
+            char[]? buffer = null;
+
+            ImmutableArray<IFitsValue>.Builder builder;
+
+            try
+            {
+                ReadOnlySpan<char> actualString;
+                if (strLen == text.Length)
+                    actualString = text;
+                else
+                {
+                    buffer = ArrayPool<char>.Shared.Rent(strLen);
+                    var tempSpan = buffer.AsSpan(0, strLen);
+                    // INFO : Possibly not required
+                    tempSpan.Fill('\0');
+                    
+                    if (!text.TryGetCompatibleString(tempSpan))
+                        throw new InvalidOperationException(SR.InvalidOperation);
+
+                    actualString = tempSpan;
+                }
+
+                if (TryValidateInput(keyName, strLen, comment.Length))
+                {
+                    // Input is small enough to fit into one key
+                    return new IFitsValue[]
+                        {
+                            Create(keyName!, actualString.ToString(),
+                                comment.IsEmpty ? null : comment.ToString())
+                        }
+                        .ToImmutableArray();
+                }
+
+
+                var n = (strLen + 2 * singleStrSize - 1) / singleStrSize;
+
+                builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
+
+                Span<char> localStr = stackalloc char[singleStrSize + 1];
+
+
+
+            }
+            finally
+            {
+                if(buffer is { })
+                    ArrayPool<char>.Shared.Return(buffer, true);
+            }
+
+
+            return builder.ToImmutable();
+        }
 
     }
 }
