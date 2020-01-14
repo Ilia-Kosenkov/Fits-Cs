@@ -146,7 +146,7 @@ namespace FitsCs
 
             var byteSize = enc.GetByteCount(@string);
 
-            Span<byte> buff = stackalloc byte[byteSize];
+            var buff = @string.Length < 512 ? stackalloc byte[byteSize] : new byte[byteSize];
 
             var n = enc.GetBytes(@string, buff);
             
