@@ -22,15 +22,13 @@
 #nullable enable
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using FitsCs.Keys;
 using TextExtensions;
 using System.Numerics;
-using System.Xml;
-using System.Xml.Serialization;
-using IndexRangeExtensions;
 using MemoryExtensions;
 
 namespace FitsCs
@@ -558,7 +556,6 @@ namespace FitsCs
         public static ImmutableArray<IFitsValue> ToComments(string? text)
             => ToComments(string.IsNullOrEmpty(text) ? ReadOnlySpan<char>.Empty : text.AsSpan());
 
-
         public static ImmutableArray<IFitsValue> ToContinuedString(
             ReadOnlySpan<char> text,
             ReadOnlySpan<char> comment,
@@ -710,6 +707,31 @@ namespace FitsCs
                 : new ContinueSpecialKey(lastKeyStr, lastCommentStr));
 
             return builder.ToImmutable();
+        }
+
+        
+        public static void ParseContinuedString(IEnumerable<IFitsValue> keys)
+        {
+            var textSb = new SimpleStringBuilder(4 * EntrySize);
+            var commSb = new SimpleStringBuilder(4 * EntrySize);
+
+            throw new NotImplementedException(SR.MethodNotImplemented);
+            //var index = 0;
+            //foreach (var key in keys)
+            //{
+            //    if (index++ == 0)
+            //    {
+            //        if (key is IFitsValue<string> firstKey)
+            //        {
+            //            textSb.Append(firstKey.RawValue);
+            //            commSb.Append(firstKey.Comment);
+            //        }
+            //        else
+            //        {
+            //            throw new InvalidOperationException(SR.InvalidOperation);
+            //        }
+            //    }
+            //}
         }
 
     }
