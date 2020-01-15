@@ -5,15 +5,13 @@ namespace FitsCs.Keys
 {
     public class ContinueSpecialKey : SpecialKey, IFitsValue<string>
     {
-        internal ContinueSpecialKey(string name, string data, string? comment) : base(name, comment)
+        internal ContinueSpecialKey(string data, string? comment) : base(@"CONTINUE", comment)
         {
-            ValidateInput(name, data.AsSpan().StringSizeWithQuoteReplacement(0) + 2, comment?.Length ?? 0);
+            var strSize = data.AsSpan().StringSizeWithQuoteReplacement(0);
+            ValidateInput(@"CONTINUE", strSize + 2, comment?.Length ?? 0);
 
             if(!data.AsSpan().IsStringHduCompatible())
                 throw new ArgumentException(SR.HduStringIllegal, nameof(data));
-
-            if (!name.StartsWith(@"CONTINUE"))
-                throw new ArgumentException(SR.InvalidArgument, nameof(name));
 
             RawValue = data;
         }

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using FitsCs.Keys;
-using IndexRange;
 using MemoryExtensions;
 using TextExtensions;
 
@@ -52,7 +51,7 @@ namespace FitsCs
             {
                 if (source[i] == '\'')
                 {
-                    if (!source.Slice((srcInd, i + 1)).TryCopyTo(target.Slice(targetInd)))
+                    if (!source.Slice(srcInd..(i + 1)).TryCopyTo(target.Slice(targetInd)))
                         return false;
                     targetInd += i - srcInd + 1;
                     target[targetInd++] = '\'';
@@ -60,7 +59,7 @@ namespace FitsCs
                 }
                 else if (source[i] == '"')
                 {
-                    if (!source.Slice((srcInd, i)).TryCopyTo(target.Slice(targetInd)))
+                    if (!source.Slice(srcInd..i).TryCopyTo(target.Slice(targetInd)))
                         return false;
                     targetInd += i - srcInd;
                     target.Slice(targetInd, 4).Fill('\'');
@@ -82,13 +81,37 @@ namespace FitsCs
 
             if (targetInd < minLength - 1)
             {
-                target.Slice((targetInd, minLength - 1)).Fill(' ');
+                target.Slice(targetInd..(minLength - 1)).Fill(' ');
                 targetInd = minLength - 1;
             }
 
             target[targetInd] = '\'';
 
             return true;
+        }
+
+        public static (int NumSrcSymb, int NumConvSymb) MaxCompatibleStringSize(
+            this ReadOnlySpan<char> source,
+            int length)
+        {
+            if (length <= 1)
+                return (source.Length, 0);
+
+            var srcId = 0;
+            var numConvSymb = 2;
+            for(; numConvSymb < length & srcId < source.Length; srcId++)
+            {
+                // Regular character 1-to-1
+                numConvSymb += 1;
+                // Single quote 2-to-1
+                if (source[srcId] == '\'')
+                    numConvSymb += 1;
+                // Double quote replaced by 4 single quotes
+                if (source[srcId] == '"')
+                    numConvSymb += 3;
+            }
+
+            return (srcId, numConvSymb);
         }
 
         public static int SignificantDigitsCount(this int value)
@@ -326,7 +349,7 @@ namespace FitsCs
             }
 
             if (start <= trimmedInput.Length - 1 &&
-                trimmedInput.Slice((start, Index.End)).TryCopyTo(resultSpan.Slice(offset)))
+                trimmedInput.Slice(start..).TryCopyTo(resultSpan.Slice(offset)))
             {
                 @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
                 return true;

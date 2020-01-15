@@ -28,6 +28,9 @@ using System.Text;
 using FitsCs.Keys;
 using TextExtensions;
 using System.Numerics;
+using System.Xml;
+using IndexRangeExtensions;
+using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -361,25 +364,24 @@ namespace FitsCs
             ReadOnlySpan<char> name,
             ReadOnlySpan<char> content)
         {
-            if (name.StartsWith(@"CONTINUE".AsSpan()))
-            {
-                var ind = FindLastQuote(content);
-                if (ind <= 0)
-                    return null;
-
-                var commentStart = FindComment(content.Slice(ind + 1));
-                if (content.Slice(1, ind - 1).TryParseRaw(out string? strRep))
-                {
-                    return new ContinueSpecialKey(name.ToString(), strRep!,
-                        commentStart < content.Length - ind - 1
-                            ? content.Slice(commentStart + 2 + ind).TrimEnd().ToString()
-                            : null);
-                }
-
+            if (!name.StartsWith(@"CONTINUE".AsSpan())) 
+                return CreateSpecial(name.ToString(), content.ToString());
+            var ind = FindLastQuote(content);
+            if (ind <= 0)
                 return null;
+
+            var commentStart = FindComment(content.Slice(ind + 1));
+            if (content.Slice(1, ind - 1).TryParseRaw(out string? strRep))
+            {
+                return new ContinueSpecialKey(
+                    strRep!,
+                    commentStart < content.Length - ind - 1
+                        ? content.Slice(commentStart + 2 + ind).TrimEnd().ToString()
+                        : null);
             }
 
-            return CreateSpecial(name.ToString(), content.ToString());
+            return null;
+
         }
 
         public static IFitsValue? ParseRawData(ReadOnlySpan<byte> input)
@@ -569,6 +571,7 @@ namespace FitsCs
             ReadOnlySpan<char> comment,
             string keyName)
         {
+
             if(!IsValidKeyName((keyName ?? string.Empty).AsSpan()))
                 throw new ArgumentException(SR.InvalidArgument, nameof(keyName));
 
@@ -580,35 +583,29 @@ namespace FitsCs
             // Accounting for `&` symbol
             var singleStrSize = EntrySize - ValueStart - 3;
 
-            char[]? buffer = null;
+            //char[]? buffer = null;
 
             ImmutableArray<IFitsValue>.Builder builder;
 
             try
             {
-                ReadOnlySpan<char> actualString;
-                if (strLen == text.Length)
-                    actualString = text;
-                else
-                {
-                    buffer = ArrayPool<char>.Shared.Rent(strLen);
-                    var tempSpan = buffer.AsSpan(0, strLen);
-                    // INFO : Possibly not required
-                    tempSpan.Fill('\0');
-                    
-                    if (!text.TryGetCompatibleString(tempSpan))
-                        throw new InvalidOperationException(SR.InvalidOperation);
-
-                    actualString = tempSpan;
-                }
-
                 if (TryValidateInput(keyName, strLen, comment.Length))
                 {
+
+                    string? commentStr = null;
+                    if (!comment.IsEmpty)
+                    {
+                        commentStr = comment[0] != ' ' && strLen + comment.Length < EntrySize - ValueStart - 1
+                            ? ' ' + comment.ToString()
+                            : comment.ToString();
+                    }
                     // Input is small enough to fit into one key
                     return new IFitsValue[]
                         {
-                            Create(keyName!, actualString.ToString(),
-                                comment.IsEmpty ? null : comment.ToString())
+                            Create(
+                                keyName!, 
+                                text.ToString(),
+                                commentStr)
                         }
                         .ToImmutableArray();
                 }
@@ -618,15 +615,58 @@ namespace FitsCs
 
                 builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
 
-                Span<char> localStr = stackalloc char[singleStrSize + 1];
+                var offset = 0;
+                string? lastKeyStr = null;
+
+                for(var i = 0; ; i++)
+                {
+                    var currentChunk = text.Slice(offset..);
+                    var maxLen = currentChunk.MaxCompatibleStringSize(singleStrSize);
+                    if (i != 0)
+                    {
+                        builder.Add(i == 1
+                            ? Create(keyName!, lastKeyStr + "&")
+                            : new ContinueSpecialKey(lastKeyStr + "&", null));
+                    }
+
+                    lastKeyStr = currentChunk.Slice(..maxLen.NumSrcSymb).ToString();
+                    Console.WriteLine(lastKeyStr);
+                    offset += maxLen.NumSrcSymb;
+                    if (offset >= text.Length)
+                        break;
+
+                }
+
+                //while(offset < text.Length - )
+
+
+                //if (maxLen.NumSrcSymb == text.Length)
+                //{
+
+                //    string? localComment = null;
+                //    var commentSpace = singleStrSize - maxLen.NumConvSymb - 3;
+
+                //    if (!comment.IsEmpty && commentSpace > 2)
+                //    {
+                //        localComment = comment.Slice(..commentSpace).ToString();
+                //    }
+
+                //    builder.Add(
+                //        Create(
+                //            keyName!, 
+                //            text.Slice(..maxLen.NumSrcSymb).ToString(),
+                //            localComment));
+
+
+                //}
 
 
 
             }
             finally
             {
-                if(buffer is { })
-                    ArrayPool<char>.Shared.Return(buffer, true);
+                //if(buffer is { })
+                //    ArrayPool<char>.Shared.Return(buffer, true);
             }
 
 
