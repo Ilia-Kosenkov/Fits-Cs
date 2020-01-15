@@ -29,6 +29,7 @@ using FitsCs.Keys;
 using TextExtensions;
 using System.Numerics;
 using System.Xml;
+using System.Xml.Serialization;
 using IndexRangeExtensions;
 using MemoryExtensions;
 
@@ -567,108 +568,149 @@ namespace FitsCs
 
 
         public static ImmutableArray<IFitsValue> ToContinuedString(
-            ReadOnlySpan<char> text, 
+            ReadOnlySpan<char> text,
             ReadOnlySpan<char> comment,
             string keyName)
         {
 
-            if(!IsValidKeyName((keyName ?? string.Empty).AsSpan()))
+            if (!IsValidKeyName((keyName ?? string.Empty).AsSpan()))
                 throw new ArgumentException(SR.InvalidArgument, nameof(keyName));
 
-            if (text.IsEmpty || !text.IsStringHduCompatible())
-                return ImmutableArray<IFitsValue>.Empty;
+            if (!text.IsStringHduCompatible()
+                || !comment.IsStringHduCompatible()
+                || (text.IsEmpty && comment.IsEmpty))
+                throw new ArgumentException(SR.InvalidArgument);
 
             var strLen = text.StringSizeWithQuoteReplacement();
 
             // Accounting for `&` symbol
-            var singleStrSize = EntrySize - ValueStart - 3;
+            var singleStrSize = EntrySize - ValueStart - 1;
 
             //char[]? buffer = null;
 
             ImmutableArray<IFitsValue>.Builder builder;
 
-            try
-            {
-                if (TryValidateInput(keyName, strLen, comment.Length))
-                {
 
-                    string? commentStr = null;
-                    if (!comment.IsEmpty)
+            if (TryValidateInput(keyName, strLen, comment.Length))
+            {
+
+                string? commentStr = null;
+                if (!comment.IsEmpty)
+                {
+                    commentStr = comment[0] != ' ' && strLen + comment.Length < EntrySize - ValueStart - 1
+                        ? ' ' + comment.ToString()
+                        : comment.ToString();
+                }
+
+                // Input is small enough to fit into one key
+                return new IFitsValue[]
                     {
-                        commentStr = comment[0] != ' ' && strLen + comment.Length < EntrySize - ValueStart - 1
-                            ? ' ' + comment.ToString()
-                            : comment.ToString();
+                        Create(
+                            keyName!,
+                            text.ToString(),
+                            commentStr,
+                            KeyType.Free)
                     }
-                    // Input is small enough to fit into one key
-                    return new IFitsValue[]
+                    .ToImmutableArray();
+            }
+
+
+            var n = (strLen + 2 * singleStrSize - 1) / singleStrSize;
+
+            builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
+
+            var offset = 0;
+            string? lastKeyStr = null;
+            
+
+            for (var i = 0;; i++)
+            {
+                var currentChunk = text.Slice(offset..);
+                var (numSrcSymb, _) = currentChunk.MaxCompatibleStringSize(singleStrSize);
+                if (i != 0)
+                {
+                    builder.Add(i == 1
+                        ? Create(keyName!, lastKeyStr + "&", null, KeyType.Free)
+                        : new ContinueSpecialKey(lastKeyStr + "&", null));
+                }
+
+                if(numSrcSymb > 0)
+                    lastKeyStr = currentChunk.Slice(..numSrcSymb).ToString();
+                
+                offset += numSrcSymb;
+                if (offset >= text.Length)
+                    break;
+            }
+
+            // At this point, `lastKeyStr` can be null if source text is empty
+            // If it is null, there is a non-null comment, but this check is still needed
+
+            string? lastCommentStr = null;
+            if (!comment.IsEmpty)
+            {
+                // Comments are not "escaped" so we can copy as-is, fixed-length
+                // CONTINUE=_'&' / *rest of the comment*
+                // Size of *rest of the comment*
+                var maxCommentLength = singleStrSize - 5;
+                offset = 0;
+                for (var i = 0;; i++)
+                {
+                    var currentChunk = comment.Slice(offset..);
+
+                    if (i == 0)
+                    {
+                        if (lastKeyStr is { })
                         {
-                            Create(
-                                keyName!, 
-                                text.ToString(),
-                                commentStr)
+                            // The content is enough to fill only one keyword, which has not been added yet
+                            var strSize = lastKeyStr.AsSpan().StringSizeWithQuoteReplacement(0);
+                            if (strSize < singleStrSize - 5)
+                            {
+                                // Room for some comment
+                                var commSize = Math.Min(singleStrSize - strSize - 3, currentChunk.Length);
+
+                                lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
+                                offset += commSize;
+                            }
                         }
-                        .ToImmutableArray();
-                }
+                        else
+                        {
+                            var commSize = Math.Min(currentChunk.Length, maxCommentLength);
+                            lastKeyStr = string.Empty;
+                            lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
 
-
-                var n = (strLen + 2 * singleStrSize - 1) / singleStrSize;
-
-                builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
-
-                var offset = 0;
-                string? lastKeyStr = null;
-
-                for(var i = 0; ; i++)
-                {
-                    var currentChunk = text.Slice(offset..);
-                    var maxLen = currentChunk.MaxCompatibleStringSize(singleStrSize);
-                    if (i != 0)
-                    {
-                        builder.Add(i == 1
-                            ? Create(keyName!, lastKeyStr + "&")
-                            : new ContinueSpecialKey(lastKeyStr + "&", null));
+                              
+                            offset += commSize;
+                        }
                     }
+                    else
+                    {
+                        builder.Add(builder.Count == 0
+                                    ? Create(keyName!, 
+                                        lastKeyStr + "&",
+                                        lastCommentStr,
+                                        KeyType.Free)
+                                    : new ContinueSpecialKey(
+                                        lastKeyStr + "&",
+                                        lastCommentStr));
+                        var commSize = Math.Min(currentChunk.Length, maxCommentLength);
+                        lastKeyStr = string.Empty;
+                        lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
+                        offset += commSize;
+                    }
+                  
 
-                    lastKeyStr = currentChunk.Slice(..maxLen.NumSrcSymb).ToString();
-                    Console.WriteLine(lastKeyStr);
-                    offset += maxLen.NumSrcSymb;
-                    if (offset >= text.Length)
+                    if (offset >= comment.Length)
                         break;
-
                 }
 
-                //while(offset < text.Length - )
-
-
-                //if (maxLen.NumSrcSymb == text.Length)
-                //{
-
-                //    string? localComment = null;
-                //    var commentSpace = singleStrSize - maxLen.NumConvSymb - 3;
-
-                //    if (!comment.IsEmpty && commentSpace > 2)
-                //    {
-                //        localComment = comment.Slice(..commentSpace).ToString();
-                //    }
-
-                //    builder.Add(
-                //        Create(
-                //            keyName!, 
-                //            text.Slice(..maxLen.NumSrcSymb).ToString(),
-                //            localComment));
-
-
-                //}
-
-
-
             }
-            finally
-            {
-                //if(buffer is { })
-                //    ArrayPool<char>.Shared.Return(buffer, true);
-            }
+            if (lastKeyStr is null)
+                throw new InvalidOperationException(SR.InvalidOperation);
 
+            builder.Add(
+                builder.Count == 0
+                ? Create(keyName!, lastKeyStr, lastCommentStr, KeyType.Free)
+                : new ContinueSpecialKey(lastKeyStr, lastCommentStr));
 
             return builder.ToImmutable();
         }
