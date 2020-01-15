@@ -76,18 +76,10 @@ namespace FitsCs
 
         public override string ToString()
         {
-            var pool = ArrayPool<char>.Shared.Rent(EntrySize);
-            try
-            {
-                var span = pool.AsSpan(0, EntrySize);
-                return TryFormat(span)
-                    ? span.Slice(0, EntrySize).ToString()
-                    : base.ToString();
-            }
-            finally
-            {
-                ArrayPool<char>.Shared.Return(pool, true);
-            }
+            Span<char> span = stackalloc char[EntrySize];
+            return TryFormat(span)
+                ? span.ToString()
+                : base.ToString();
         }
 
         public string ToString(bool prefixType)
