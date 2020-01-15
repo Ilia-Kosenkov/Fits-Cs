@@ -569,18 +569,18 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(keyName));
 
             if (!text.IsStringHduCompatible()
-                || !comment.IsStringHduCompatible()
-                || (text.IsEmpty && comment.IsEmpty))
+                || !comment.IsStringHduCompatible())
                 throw new ArgumentException(SR.InvalidArgument);
+
+            if(text.IsEmpty && comment.IsEmpty)
+                return ImmutableArray<IFitsValue>.Empty;
 
             var strLen = text.StringSizeWithQuoteReplacement();
 
             // Accounting for `&` symbol
-            var singleStrSize = EntrySize - ValueStart - 1;
-
-            //char[]? buffer = null;
-
-            ImmutableArray<IFitsValue>.Builder builder;
+            const int singleStrSize = EntrySize - ValueStart - 1;
+            // Accounting for two single-quotes, space, '/', space
+            const int maxCommentLength = singleStrSize - 5;
 
 
             if (TryValidateInput(keyName, strLen, comment.Length))
@@ -607,9 +607,15 @@ namespace FitsCs
             }
 
 
-            var n = (strLen + 2 * singleStrSize - 1) / singleStrSize;
+            var n = 
+                // Extra space for convenience
+                2
+                // Predicting number of text keys
+                + (strLen + singleStrSize - 1) / singleStrSize 
+                // And number of comment keys
+                + (comment.Length + maxCommentLength - 1) / maxCommentLength;
 
-            builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
+            var builder = ImmutableArray.CreateBuilder<IFitsValue>(n);
 
             var offset = 0;
             string? lastKeyStr = null;
@@ -643,7 +649,6 @@ namespace FitsCs
                 // Comments are not "escaped" so we can copy as-is, fixed-length
                 // CONTINUE=_'&' / *rest of the comment*
                 // Size of *rest of the comment*
-                var maxCommentLength = singleStrSize - 5;
                 offset = 0;
                 for (var i = 0;; i++)
                 {
