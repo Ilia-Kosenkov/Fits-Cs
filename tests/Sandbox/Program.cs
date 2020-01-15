@@ -3,6 +3,7 @@ using FitsCs;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using MemoryExtensions;
 
 namespace Sandbox
 {
@@ -61,17 +62,45 @@ namespace Sandbox
 
         private static void Test3()
         {
-            var keys = FitsKey.ToContinuedString(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".AsSpan(), 
-                "Some comment".AsSpan(),
-                @"TESTKEY");
+            static ReadOnlySpan<char> LoremIpsum() =>
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                    .AsSpan();
 
+            var keys = FitsKey.ToContinuedString(
+                LoremIpsum(),
+                LoremIpsum(),
+                @"BOTH");
+
+            Console.WriteLine();
             foreach (var key in keys)
                 Console.WriteLine(key.ToString(true));
-            //var keys2 = FitsKey.ToContinuedString(
-            //    "Lorem ipsum dolor sit amet".AsSpan(),
-            //    "consectetur adipiscing elit, sed".AsSpan(),
-            //    @"TESTKEY");
+
+            keys = FitsKey.ToContinuedString(
+                LoremIpsum(),
+                ReadOnlySpan<char>.Empty,
+                @"TEXTONLY");
+
+            Console.WriteLine();
+            foreach (var key in keys)
+                Console.WriteLine(key.ToString(true));
+
+            keys = FitsKey.ToContinuedString(
+                ReadOnlySpan<char>.Empty, 
+                LoremIpsum(),
+                @"COMMONLY");
+
+            Console.WriteLine();
+            foreach (var key in keys)
+                Console.WriteLine(key.ToString(true));
+
+            keys = FitsKey.ToContinuedString(
+                LoremIpsum().Slice(..67),
+                LoremIpsum(),
+                @"BOUNDARY");
+
+            Console.WriteLine();
+            foreach (var key in keys)
+                Console.WriteLine(key.ToString(true));
 
         }
 
