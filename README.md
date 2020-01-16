@@ -15,7 +15,7 @@ In order to make this library as fast and versatile as I can, I utilize the late
 
 ## The concept
 `Fits-Cs` is built around `FitsReader`/`FitsWriter` classes, which mimic the role of `System.IO.StreamReader/StreamWriter`.
-The stream is read as a sequence of 2880-bytes **blobs**, and a valid sequence of blobs can be converted into a **data block**, which stores header key collection, information about the data types and size of the data array and a buffer containing all the data corresponding to this unit. Another library will be used to parse this segmented data blocks into images/tables/other formats.
+The stream is read as a sequence of 2880-bytes [**blobs**](Fits-Cs/DataBlob.cs), and a valid sequence of blobs can be converted into a [**data block**](Fits-Cs/Block.cs), which stores header key collection, information about the data types and size of the data array and a buffer containing all the data corresponding to this unit. Another library will be used to parse this segmented data blocks into images/tables/other formats.
 
 To send data to a stream, it should be first converted to correct **data blocks**, which represent one valid `FITS` unit, which are then written as as sequence of 2880-bytes blobs.
 
