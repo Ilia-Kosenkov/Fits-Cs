@@ -6,13 +6,13 @@
     <RootNamespace>FitsCs</RootNamespace>
     <Platforms>AnyCPU;x64</Platforms>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Ilia Kosenkov</Authors>
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <AssemblyVersion>0.1.2.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -162,7 +162,7 @@ namespace FitsCs
 
             // It was +2 to account for `= `, but in general case it is allowed to have
             // even larger comments if it is e.g. `HISTORY`
-            if(commentSize + valueSize > EntrySize - NameSize)
+            if (commentSize + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
