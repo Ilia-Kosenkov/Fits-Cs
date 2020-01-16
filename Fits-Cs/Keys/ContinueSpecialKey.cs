@@ -3,7 +3,13 @@ using System;
 
 namespace FitsCs.Keys
 {
-    public class ContinueSpecialKey : SpecialKey, IFitsValue<string>
+    public interface IStringLikeValue : IFitsValue
+    { 
+        string RawValue { get; }
+
+    }
+
+    public class ContinueSpecialKey : SpecialKey, IStringLikeValue
     {
         internal ContinueSpecialKey(string data, string? comment) : base(@"CONTINUE", comment)
         {

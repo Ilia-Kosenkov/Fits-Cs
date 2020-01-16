@@ -520,6 +520,8 @@ namespace FitsCs
                 ? FreeFitsKey.Create(name, value, comment)
                 : FixedFitsKey.Create(name, value, comment);
 
+        public static IFitsValue CreateContinuation(string data, string? comment) => new ContinueSpecialKey(data, comment);
+
         public static IFitsValue CreateBlank() => BlankKey.Blank;
 
         public static IFitsValue Create(string content) => new ArbitraryKey(content);
@@ -626,7 +628,7 @@ namespace FitsCs
                 {
                     builder.Add(i == 1
                         ? Create(keyName!, lastKeyStr + "&", null, KeyType.Free)
-                        : new ContinueSpecialKey(lastKeyStr + "&", null));
+                        : CreateContinuation(lastKeyStr + "&", null));
                 }
 
                 if(numSrcSymb > 0)
@@ -683,7 +685,7 @@ namespace FitsCs
                                         lastKeyStr + "&",
                                         lastCommentStr,
                                         KeyType.Free)
-                                    : new ContinueSpecialKey(
+                                    : CreateContinuation(
                                         lastKeyStr + "&",
                                         lastCommentStr));
                         var commSize = Math.Min(currentChunk.Length, maxCommentLength);
@@ -704,34 +706,22 @@ namespace FitsCs
             builder.Add(
                 builder.Count == 0
                 ? Create(keyName!, lastKeyStr, lastCommentStr, KeyType.Free)
-                : new ContinueSpecialKey(lastKeyStr, lastCommentStr));
+                : CreateContinuation(lastKeyStr, lastCommentStr));
 
             return builder.ToImmutable();
         }
 
         
-        public static void ParseContinuedString(IEnumerable<IFitsValue> keys)
+        public static void ParseContinuedString(IEnumerable<IFitsValue> keys, bool commentSpacePrefixed = false)
         {
             var textSb = new SimpleStringBuilder(4 * EntrySize);
             var commSb = new SimpleStringBuilder(4 * EntrySize);
 
-            throw new NotImplementedException(SR.MethodNotImplemented);
-            //var index = 0;
-            //foreach (var key in keys)
-            //{
-            //    if (index++ == 0)
-            //    {
-            //        if (key is IFitsValue<string> firstKey)
-            //        {
-            //            textSb.Append(firstKey.RawValue);
-            //            commSb.Append(firstKey.Comment);
-            //        }
-            //        else
-            //        {
-            //            throw new InvalidOperationException(SR.InvalidOperation);
-            //        }
-            //    }
-            //}
+            var index = 0;
+            foreach (var key in keys)
+            {
+                throw new NotImplementedException();
+            }
         }
 
     }

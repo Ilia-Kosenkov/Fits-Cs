@@ -11,7 +11,7 @@
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</RepositoryUrl>
-    <FileVersion>0.1.2.1</FileVersion>
+    <FileVersion>0.1.2.3</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
