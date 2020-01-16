@@ -6,11 +6,12 @@
     <RootNamespace>FitsCs</RootNamespace>
     <Platforms>AnyCPU;x64</Platforms>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.0</Version>
+    <Version>0.1.2</Version>
     <Authors>Ilia Kosenkov</Authors>
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</RepositoryUrl>
+    <FileVersion>0.1.2.1</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -23,13 +24,24 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ShouldCreateLogs>True</ShouldCreateLogs>
+    <AdvancedSettingsExpanded>False</AdvancedSettingsExpanded>
+    <UpdateAssemblyVersion>False</UpdateAssemblyVersion>
+    <UpdateAssemblyFileVersion>True</UpdateAssemblyFileVersion>
+    <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
+    <UpdatePackageVersion>False</UpdatePackageVersion>
+    <AssemblyInfoVersionType>SettingsVersion</AssemblyInfoVersionType>
+    <InheritWinAppVersionFrom>None</InheritWinAppVersionFrom>
+    <AssemblyFileVersionSettings>IncrementOnDemand.IncrementOnDemand.IncrementOnDemand.IncrementWithResetOnIncrease</AssemblyFileVersionSettings>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(TargetFramewrok)'=='netstandard2.0'">
     <PackageReference Include="IndexRange" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="IndexRangeExtensions" Version="1.2.1" />
-    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
     <PackageReference Include="MemoryExtensions" Version="2.0.0" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
