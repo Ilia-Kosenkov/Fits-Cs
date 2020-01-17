@@ -15,7 +15,7 @@ namespace FitsCs.Keys
     public class SpecialKey : FitsKey
     {
         internal SpecialKey(string name, string? data) 
-            : base(name, data, 2)
+            : base(name, data, 1)
         {
             KeyType = name.ToLower() switch
             {
@@ -47,7 +47,7 @@ namespace FitsCs.Keys
 
             //Comment.AsSpan().CopyTo(span.Slice(ValueStart));
             // This accounts for the absence of `= ` in special keys
-            Comment.AsSpan().CopyTo(span.Slice(ValueStart));
+            Comment.AsSpan().CopyTo(span.Slice(ValueStart - 1));
 
             return true;
         }
