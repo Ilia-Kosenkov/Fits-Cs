@@ -735,7 +735,12 @@ namespace FitsCs
                     if (key is IFitsValue<string> firstKey)
                     {
                         textSb.Append(firstKey.RawValue);
-                        commSb.Append(firstKey.Comment);
+                        if (commentSpacePrefixed
+                            && !string.IsNullOrEmpty(firstKey.Comment)
+                            && firstKey.Comment[0] == ' ')
+                            commSb.Append(firstKey.Comment.AsSpan(1));
+                        else
+                            commSb.Append(firstKey.Comment);
 
                         textWritten = firstKey.RawValue.Length;
                     }
