@@ -17,7 +17,7 @@ namespace FitsCs.Keys
         internal SpecialKey(string name, string? data) 
             : base(name, data, 1)
         {
-            KeyType = name.ToLower() switch
+            SpecialKeyType = name.ToLower() switch
             {
                 @"end" => SpecialKeyType.End,
                 @"comment" => SpecialKeyType.Comment,
@@ -31,7 +31,7 @@ namespace FitsCs.Keys
         public override object? Value => null;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Comment);
 
-        public SpecialKeyType KeyType { get; }
+        public SpecialKeyType SpecialKeyType { get; }
 
         public override bool TryFormat(Span<char> span)
         {
