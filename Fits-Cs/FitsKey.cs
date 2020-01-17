@@ -566,7 +566,7 @@ namespace FitsCs
         public static ImmutableArray<IFitsValue> ToComments(string? text)
             => ToComments(string.IsNullOrEmpty(text) ? ReadOnlySpan<char>.Empty : text.AsSpan());
 
-        public static ImmutableArray<IFitsValue> ToContinuedString(
+        public static ImmutableArray<IFitsValue> ToContinueKeys(
             ReadOnlySpan<char> text,
             ReadOnlySpan<char> comment,
             string keyName)
