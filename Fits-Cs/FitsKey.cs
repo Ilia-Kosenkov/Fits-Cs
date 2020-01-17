@@ -25,6 +25,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using FitsCs.Keys;
 using TextExtensions;
@@ -51,11 +52,11 @@ namespace FitsCs
         public const int EntrySize = 80;
         public const int KeysPerUnit = DataBlob.SizeInBytes / EntrySize;
         private protected static Encoding Encoding { get; } = Encoding.ASCII;
-        public static  int CharSizeInBytes { get; } = Encoding.GetMaxCharCount(1);
-        public static int EntrySizeInBytes { get; }= EntrySize * CharSizeInBytes;
-        
+        public static int CharSizeInBytes { get; } = Encoding.GetMaxCharCount(1);
+        public static int EntrySizeInBytes { get; } = EntrySize * CharSizeInBytes;
+
         private protected virtual string TypePrefix => @"null";
-        
+
         private protected virtual string DebuggerDisplay => $"{TypePrefix}: {ToString()}";
 
         public string Name { get; }
@@ -63,7 +64,7 @@ namespace FitsCs
         public abstract object? Value { get; }
         public virtual KeyType Type => KeyType.Undefined;
 
-        public abstract  bool IsEmpty { get; }
+        public abstract bool IsEmpty { get; }
 
         private protected FitsKey(string name, string? comment, int size)
         {
@@ -83,17 +84,17 @@ namespace FitsCs
         public string ToString(bool prefixType)
         {
             if (!prefixType) return ToString();
-            
+
             var frmtStr = Type switch
             {
                 KeyType.Fixed => @"fix",
                 KeyType.Free => @"fre",
                 _ => @"udf"
             };
-            return $"[{frmtStr,-3}|{TypePrefix, 6}]: {ToString()}";
+            return $"[{frmtStr,-3}|{TypePrefix,6}]: {ToString()}";
 
         }
-        
+
         public abstract bool TryFormat(Span<char> span);
 
         public bool TryGetBytes(Span<byte> span)
@@ -133,7 +134,8 @@ namespace FitsCs
             if (isCommentNull) return true;
 
             // Comment padding if it can be fit in the entry
-            if (len < FixedFitsKey.FixedFieldSize + ValueStart && Comment.Length <= EntrySize - FixedFitsKey.FixedFieldSize - ValueStart - 2)
+            if (len < FixedFitsKey.FixedFieldSize + ValueStart &&
+                Comment.Length <= EntrySize - FixedFitsKey.FixedFieldSize - ValueStart - 2)
                 len = ValueStart + FixedFitsKey.FixedFieldSize;
 
             Comment.AsSpan().CopyTo(span.Slice(len + 2));
@@ -149,12 +151,12 @@ namespace FitsCs
         {
             if (name is null)
                 throw new ArgumentNullException(SR.NullArgument, nameof(name));
-            if(name.Length == 0 && valueSize != 0)
+            if (name.Length == 0 && valueSize != 0)
                 throw new ArgumentException(SR.KeyNameTooShort, nameof(name));
             if (name.Length > NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge, nameof(name));
 
-            if(name.Length > 0 && !IsValidKeyName(name.AsSpan()))
+            if (name.Length > 0 && !IsValidKeyName(name.AsSpan()))
                 throw new ArgumentException(SR.HduStringIllegal, nameof(name));
 
             if (valueSize < 0)
@@ -162,7 +164,7 @@ namespace FitsCs
 
             // It was +2 to account for `= `, but in general case it is allowed to have
             // even larger comments if it is e.g. `HISTORY`
-            if(commentSize + valueSize > EntrySize - NameSize)
+            if (commentSize + valueSize > EntrySize - NameSize)
                 throw new ArgumentException(SR.KeyValueTooLarge);
         }
 
@@ -206,10 +208,10 @@ namespace FitsCs
 
             foreach (var @char in input.TrimEnd())
             {
-                if (!char.IsUpper(@char) 
-                    && !char.IsDigit(@char) 
+                if (!char.IsUpper(@char)
+                    && !char.IsDigit(@char)
                     && @char != '-' && @char != '_'
-                    && !(allowBlank && @char == ' ')) 
+                    && !(allowBlank && @char == ' '))
                     return false;
             }
 
@@ -224,7 +226,7 @@ namespace FitsCs
                 return false;
 
             Span<char> parsed = stackalloc char[NameSize * CharSizeInBytes];
-            
+
             return Encoding.GetChars(input, parsed) == NameSize && IsValidKeyName(parsed, allowBlank);
         }
 
@@ -304,7 +306,7 @@ namespace FitsCs
                     {
                         if (item == '.')
                             nDots++;
-                    
+
                         // Cannot be more than 2 decimal separators in the whole line
                         if (nDots > 2)
                             return false;
@@ -314,21 +316,22 @@ namespace FitsCs
                         break;
                     }
 
-                    numericType = isComplex 
-                        ? NumericType.Complex 
-                        : (nDots > 0 
-                            ? NumericType.Float 
+                    numericType = isComplex
+                        ? NumericType.Complex
+                        : (nDots > 0
+                            ? NumericType.Float
                             : NumericType.Integer);
                     break;
                 }
             }
+
             return true;
 
         }
 
         private protected static IFitsValue? ParseIntoInteger(
             ReadOnlySpan<char> value,
-            ReadOnlySpan<char> name, 
+            ReadOnlySpan<char> name,
             ReadOnlySpan<char> comment)
         {
             if (value.TryParseRaw(out int iVal))
@@ -339,8 +342,8 @@ namespace FitsCs
         }
 
         private protected static IFitsValue? ParseIntoFloat(
-            ReadOnlySpan<char> value, 
-            ReadOnlySpan<char> name, 
+            ReadOnlySpan<char> value,
+            ReadOnlySpan<char> name,
             ReadOnlySpan<char> comment)
         {
             if (value.TryParseRaw(out float fVal))
@@ -355,7 +358,7 @@ namespace FitsCs
             ReadOnlySpan<char> name,
             ReadOnlySpan<char> content)
         {
-            if (!name.StartsWith(@"CONTINUE".AsSpan())) 
+            if (!name.StartsWith(@"CONTINUE".AsSpan()))
                 return CreateSpecial(name.ToString(), content.ToString());
             var ind = FindLastQuote(content);
             if (ind <= 0)
@@ -385,9 +388,9 @@ namespace FitsCs
 
             // Byte array should be exactly convertible to char array, especially when default encoding is ASCII
             if (Encoding.GetChars(input.Slice(0, EntrySizeInBytes), charRep) != EntrySize ||
-                !((ReadOnlySpan<char>)charRep).IsStringHduCompatible(Encoding))
+                !((ReadOnlySpan<char>) charRep).IsStringHduCompatible(Encoding))
                 return null;
-            
+
 
             var name = ((ReadOnlySpan<char>) charRep.Slice(0, NameSize)).TrimEnd();
             if (!IsValidKeyName(name, true))
@@ -404,7 +407,7 @@ namespace FitsCs
             {
                 // Keyword has value
                 var contentSpan = charRep.Slice(EqualsPos + 2);
-                
+
                 // Look for first non-space symbol. The scheme is smth. like this:
                 // Quote -> string
                 //      Look for last quote then comment
@@ -413,17 +416,18 @@ namespace FitsCs
 
                 var firstSymb = '\0';
                 var pos = 0;
-                foreach(var symb in contentSpan)
-                { 
+                foreach (var symb in contentSpan)
+                {
                     if (symb != ' ')
                     {
                         firstSymb = char.ToUpperInvariant(symb);
                         break;
                     }
+
                     pos++;
                 }
 
-                
+
                 switch (firstSymb)
                 {
                     case '\'':
@@ -433,20 +437,21 @@ namespace FitsCs
                         // Incorrectly formed keyword
                         if (quoteEnd == contentSpan.Length)
                             return null;
-                        
+
                         ReadOnlySpan<char> innerStrSpan = contentSpan.Slice(pos + 1, quoteEnd - pos - 1);
 
                         var commentStart = FindComment(contentSpan.Slice(quoteEnd + 1));
-                        
+
                         return innerStrSpan.TryParseRaw(out string? str)
                             ? Create(name.ToString(),
                                 str,
                                 commentStart < contentSpan.Length - 1 - quoteEnd
-                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd)).ToString()
+                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd))
+                                        .ToString()
                                     : null,
                                 quoteEnd <= FixedFitsKey.FixedFieldSize
-                                ? KeyType.Free
-                                : KeyType.Fixed)
+                                    ? KeyType.Free
+                                    : KeyType.Fixed)
                             // Returns null if cannot parse string
                             : null;
                     }
@@ -469,32 +474,32 @@ namespace FitsCs
                         var commentStart = FindComment(contentSpan);
                         var innerStrSpan = contentSpan.Slice(0, commentStart);
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
-                        if(!isNumber)
+                        if (!isNumber)
                             return null;
                         var roSpan = System.MemoryExtensions.TrimEnd(innerStrSpan);
-                        
+
 
                         return nType switch
                         {
-                            NumericType.Integer => 
-                                ParseIntoInteger(roSpan, name,
-                                    commentStart < contentSpan.Length - 1 
-                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                        : ReadOnlySpan<char>.Empty),
+                            NumericType.Integer =>
+                            ParseIntoInteger(roSpan, name,
+                                commentStart < contentSpan.Length - 1
+                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                    : ReadOnlySpan<char>.Empty),
                             NumericType.Float =>
-                                ParseIntoFloat(roSpan, name, 
-                                    commentStart < contentSpan.Length - 1
-                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                        : ReadOnlySpan<char>.Empty),
+                            ParseIntoFloat(roSpan, name,
+                                commentStart < contentSpan.Length - 1
+                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                    : ReadOnlySpan<char>.Empty),
                             NumericType.Complex when roSpan.TryParseRaw(out Complex cVal, keyType) =>
-                                Create(
-                                    name.ToString(),
-                                    cVal,
-                                    commentStart < contentSpan.Length - 1
-                                        ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
-                                            .ToString()
-                                        : null,
-                                    keyType),
+                            Create(
+                                name.ToString(),
+                                cVal,
+                                commentStart < contentSpan.Length - 1
+                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                        .ToString()
+                                    : null,
+                                keyType),
 
                             _ => null
                         };
@@ -504,23 +509,25 @@ namespace FitsCs
             }
 
             // At this point, keyword has a valid name and HDU-compatible content
-            var content = ((ReadOnlySpan<char>)charRep).Slice(EqualsPos).Trim();
+            var content = ((ReadOnlySpan<char>) charRep).Slice(EqualsPos).Trim();
             //return CreateSpecial(name.ToString(), content.ToString());
             return ParseIntoSpecial(name, content);
         }
 
-        public static IFitsValue<T> Create<T>(string name, T value, string? comment = null, KeyType type = KeyType.Fixed) 
-            => type == KeyType.Free 
-                ? FreeFitsKey.Create(name, value, comment) 
-                : FixedFitsKey.Create(name, value, comment);
-
-        public static IFitsValue Create(string name, object? value, string? comment = null,
-            KeyType type = KeyType.Fixed) 
+        public static IFitsValue<T> Create<T>(string name, T value, string? comment = null,
+            KeyType type = KeyType.Fixed)
             => type == KeyType.Free
                 ? FreeFitsKey.Create(name, value, comment)
                 : FixedFitsKey.Create(name, value, comment);
 
-        public static IFitsValue CreateContinuation(string data, string? comment) => new ContinueSpecialKey(data, comment);
+        public static IFitsValue Create(string name, object? value, string? comment = null,
+            KeyType type = KeyType.Fixed)
+            => type == KeyType.Free
+                ? FreeFitsKey.Create(name, value, comment)
+                : FixedFitsKey.Create(name, value, comment);
+
+        public static IFitsValue CreateContinuation(string data, string? comment) =>
+            new ContinueSpecialKey(data, comment);
 
         public static IFitsValue CreateBlank() => BlankKey.Blank;
 
@@ -531,12 +538,12 @@ namespace FitsCs
         public static IFitsValue CreateEnd() => new SpecialKey("END", string.Empty);
 
         public static IFitsValue CreateComment(string comment) => new SpecialKey("COMMENT", comment);
-        
+
         public static IFitsValue CreateHistory(string history) => new SpecialKey("HISTORY", history);
 
         public static ImmutableArray<IFitsValue> ToComments(ReadOnlySpan<char> text)
         {
-            if(text.IsEmpty || !text.IsStringHduCompatible())
+            if (text.IsEmpty || !text.IsStringHduCompatible())
                 return ImmutableArray<IFitsValue>.Empty;
 
 
@@ -571,7 +578,7 @@ namespace FitsCs
                 || !comment.IsStringHduCompatible())
                 throw new ArgumentException(SR.InvalidArgument);
 
-            if(text.IsEmpty && comment.IsEmpty)
+            if (text.IsEmpty && comment.IsEmpty)
                 return ImmutableArray<IFitsValue>.Empty;
 
             var strLen = text.StringSizeWithQuoteReplacement();
@@ -606,11 +613,11 @@ namespace FitsCs
             }
 
 
-            var n = 
+            var n =
                 // Extra space for convenience
                 2
                 // Predicting number of text keys
-                + (strLen + singleStrSize - 1) / singleStrSize 
+                + (strLen + singleStrSize - 1) / singleStrSize
                 // And number of comment keys
                 + (comment.Length + maxCommentLength - 1) / maxCommentLength;
 
@@ -618,7 +625,7 @@ namespace FitsCs
 
             var offset = 0;
             string? lastKeyStr = null;
-            
+
 
             for (var i = 0;; i++)
             {
@@ -631,9 +638,9 @@ namespace FitsCs
                         : CreateContinuation(lastKeyStr + "&", null));
                 }
 
-                if(numSrcSymb > 0)
+                if (numSrcSymb > 0)
                     lastKeyStr = currentChunk.Slice(..numSrcSymb).ToString();
-                
+
                 offset += numSrcSymb;
                 if (offset >= text.Length)
                     break;
@@ -674,55 +681,74 @@ namespace FitsCs
                             lastKeyStr = string.Empty;
                             lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
 
-                              
+
                             offset += commSize;
                         }
                     }
                     else
                     {
                         builder.Add(builder.Count == 0
-                                    ? Create(keyName!, 
-                                        lastKeyStr + "&",
-                                        lastCommentStr,
-                                        KeyType.Free)
-                                    : CreateContinuation(
-                                        lastKeyStr + "&",
-                                        lastCommentStr));
+                            ? Create(keyName!,
+                                lastKeyStr + "&",
+                                lastCommentStr,
+                                KeyType.Free)
+                            : CreateContinuation(
+                                lastKeyStr + "&",
+                                lastCommentStr));
                         var commSize = Math.Min(currentChunk.Length, maxCommentLength);
                         lastKeyStr = string.Empty;
                         lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
                         offset += commSize;
                     }
-                  
+
 
                     if (offset >= comment.Length)
                         break;
                 }
 
             }
+
             if (lastKeyStr is null)
                 throw new InvalidOperationException(SR.InvalidOperation);
 
             builder.Add(
                 builder.Count == 0
-                ? Create(keyName!, lastKeyStr, lastCommentStr, KeyType.Free)
-                : CreateContinuation(lastKeyStr, lastCommentStr));
+                    ? Create(keyName!, lastKeyStr, lastCommentStr, KeyType.Free)
+                    : CreateContinuation(lastKeyStr, lastCommentStr));
 
             return builder.ToImmutable();
         }
 
-        
-        public static void ParseContinuedString(IEnumerable<IFitsValue> keys, bool commentSpacePrefixed = false)
+
+        [SuppressMessage("ReSharper", "PossiblyImpureMethodCallOnReadonlyVariable")]
+        public static (string Text, string Comment) ParseContinuedString(IEnumerable<IFitsValue> keys, bool commentSpacePrefixed = false)
         {
-            var textSb = new SimpleStringBuilder(4 * EntrySize);
-            var commSb = new SimpleStringBuilder(4 * EntrySize);
+            using var textSb = new SimpleStringBuilder(4 * EntrySize);
+            using var commSb = new SimpleStringBuilder(4 * EntrySize);
 
             var index = 0;
             foreach (var key in keys)
             {
-                throw new NotImplementedException();
+                if (index++ == 0)
+                {
+                    if (key is IFitsValue<string> firstKey)
+                    {
+                        textSb.Append(firstKey.RawValue);
+                        commSb.Append(firstKey.Comment);
+                    }
+                    else
+                        throw new InvalidOperationException(SR.InvalidOperation);
+                }
+                else if (key is IStringLikeValue continueKey)
+                {
+                    textSb.Append(continueKey.RawValue);
+                    commSb.Append(continueKey.Comment);
+                }
+                else
+                    break;
             }
-        }
 
+            return (Text: textSb.ToString(), Comment: commSb.ToString());
+        }
     }
 }

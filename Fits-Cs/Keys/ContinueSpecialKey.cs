@@ -4,9 +4,8 @@ using System;
 namespace FitsCs.Keys
 {
     public interface IStringLikeValue : IFitsValue
-    { 
+    {
         string RawValue { get; }
-
     }
 
     public class ContinueSpecialKey : SpecialKey, IStringLikeValue
