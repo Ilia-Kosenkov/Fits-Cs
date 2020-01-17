@@ -44,7 +44,7 @@ namespace Sandbox
 
         private static async Task Test2()
         {
-            using var fs = new FileStream("testkeys.fits", FileMode.Open, FileAccess.Read);
+            using var fs = new FileStream("DDTSUVDATA.fits", FileMode.Open, FileAccess.Read);
             await using var reader = new FitsReader(fs);
 
             using var ftarget = new FileStream("test.fits", FileMode.Create, FileAccess.Write);
