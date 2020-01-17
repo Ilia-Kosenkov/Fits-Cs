@@ -727,6 +727,7 @@ namespace FitsCs
             using var commSb = new SimpleStringBuilder(4 * EntrySize);
 
             var index = 0;
+            var textWritten = 0;
             foreach (var key in keys)
             {
                 if (index++ == 0)
@@ -735,14 +736,27 @@ namespace FitsCs
                     {
                         textSb.Append(firstKey.RawValue);
                         commSb.Append(firstKey.Comment);
+
+                        textWritten = firstKey.RawValue.Length;
                     }
                     else
                         throw new InvalidOperationException(SR.InvalidOperation);
                 }
                 else if (key is IStringLikeValue continueKey)
                 {
+                    if(textWritten > 0 && textSb.View().Get(^1) == '&')
+                        textSb.DeleteBack();
+                    
                     textSb.Append(continueKey.RawValue);
-                    commSb.Append(continueKey.Comment);
+
+                    if(commentSpacePrefixed 
+                       && !string.IsNullOrEmpty(continueKey.Comment) 
+                       && continueKey.Comment[0] == ' ')
+                        commSb.Append(continueKey.Comment.AsSpan(1));
+                    else 
+                        commSb.Append(continueKey.Comment);
+
+                    textWritten = continueKey.RawValue.Length;
                 }
                 else
                     break;
