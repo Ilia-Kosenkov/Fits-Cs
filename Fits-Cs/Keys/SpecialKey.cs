@@ -12,7 +12,12 @@ namespace FitsCs.Keys
         Continue = 4
     }
 
-    public class SpecialKey : FitsKey
+    public interface ISpecialKey : IFitsValue
+    {
+        SpecialKeyType SpecialKeyType { get; }
+    }
+
+    public class SpecialKey : FitsKey, ISpecialKey
     {
         internal SpecialKey(string name, string? data) 
             : base(name, data, 1)
