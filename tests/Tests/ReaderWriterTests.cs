@@ -1,0 +1,89 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using FitsCs;
+using NUnit.Framework;
+
+namespace Tests
+{
+    public struct FitsFileInfo
+    { 
+        public string Name { get; }
+        public int NumUnits => NumKeywordsPerUnit.Length;
+        public int[] NumKeywordsPerUnit { get; }
+
+        public FitsFileInfo(string name, params int[] keysPerUnit)
+        {
+            Name = name;
+
+            NumKeywordsPerUnit = keysPerUnit;
+        }
+    }
+
+    public class ReaderWriter_TestCaseDataProvider
+    {
+        public static string TestDataDirectory { get; } = "TestData";
+
+        private static IEnumerable<FitsFileInfo> Test_FitsReader_Data()
+        {
+            yield return new FitsFileInfo(
+                @"testkeys.fits",
+                180);
+
+            yield return new FitsFileInfo(
+                @"test64bit1.fits",
+                36, 36, 36);
+
+            yield return new FitsFileInfo(
+                @"DDTSUVDATA.fits",
+                180, 72);
+
+            yield return new FitsFileInfo(
+                @"FGSf64y0106m_a1f.fits",
+                252, 72);
+
+            yield return new FitsFileInfo(
+                @"FOCx38i0101t_c0f.fits",
+                144, 108);
+
+            yield return new FitsFileInfo(
+                @"NICMOSn4hk12010_mos.fits",
+                252, 144, 72, 72, 72, 72);
+        }
+
+        public static IEnumerable Test_FitsReader_Provider =>
+            Test_FitsReader_Data()
+                .Select(x => new TestCaseData(x).SetName(
+                    $"Test_FitsReader_{Path.GetFileNameWithoutExtension(x.Name)}"));
+
+    }
+
+    [TestFixture]
+    public class ReaderWriterTests
+    {
+        [Theory]
+        [TestCaseSource(
+            typeof(ReaderWriter_TestCaseDataProvider),
+            nameof(ReaderWriter_TestCaseDataProvider.Test_FitsReader_Provider))]
+        public async Task Test_FitsReader(FitsFileInfo testCaseData)
+        {
+            var path = Path.Combine(ReaderWriter_TestCaseDataProvider.TestDataDirectory, testCaseData.Name);
+            Assume.That(File.Exists(path));
+            await using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            await using var fitsReader = new FitsReader(fileStream, 0, true);
+            var counter = 0;
+
+            await foreach (var block in fitsReader.EnumerateBlocksAsync())
+            {
+                Assume.That(counter, Is.LessThan(testCaseData.NumUnits));
+                Assert.That(block.Keys.Count, Is.EqualTo(testCaseData.NumKeywordsPerUnit[counter++]));
+                TestContext.Out.WriteLine((counter, block.Keys.Count));
+            }
+
+            Assert.That(counter, Is.EqualTo(testCaseData.NumUnits));
+        }
+    }
+}
