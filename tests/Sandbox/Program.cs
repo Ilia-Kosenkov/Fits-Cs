@@ -71,36 +71,7 @@ namespace Sandbox
                 LoremIpsum(),
                 @"BOTH");
 
-            Console.WriteLine();
-            foreach (var key in keys)
-                Console.WriteLine(key.ToString(true));
-
-            keys = FitsKey.ToContinuedString(
-                LoremIpsum(),
-                ReadOnlySpan<char>.Empty,
-                @"TEXTONLY");
-
-            Console.WriteLine();
-            foreach (var key in keys)
-                Console.WriteLine(key.ToString(true));
-
-            keys = FitsKey.ToContinuedString(
-                ReadOnlySpan<char>.Empty, 
-                LoremIpsum(),
-                @"COMMONLY");
-
-            Console.WriteLine();
-            foreach (var key in keys)
-                Console.WriteLine(key.ToString(true));
-
-            keys = FitsKey.ToContinuedString(
-                LoremIpsum().Slice(..67),
-                LoremIpsum(),
-                @"BOUNDARY");
-
-            Console.WriteLine();
-            foreach (var key in keys)
-                Console.WriteLine(key.ToString(true));
+            var rec = FitsKey.ParseContinuedString(keys, true);
 
         }
 
