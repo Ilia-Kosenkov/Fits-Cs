@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using FitsCs.Keys;
 using TextExtensions;
@@ -721,7 +722,9 @@ namespace FitsCs
 
 
         [SuppressMessage("ReSharper", "PossiblyImpureMethodCallOnReadonlyVariable")]
-        public static (string Text, string Comment) ParseContinuedString(IEnumerable<IFitsValue> keys, bool commentSpacePrefixed = false)
+        public static (string Text, string Comment) ParseContinuedString(
+            IEnumerable<IFitsValue> keys, 
+            bool commentSpacePrefixed = false)
         {
             using var textSb = new SimpleStringBuilder(4 * EntrySize);
             using var commSb = new SimpleStringBuilder(4 * EntrySize);
@@ -735,7 +738,12 @@ namespace FitsCs
                     if (key is IFitsValue<string> firstKey)
                     {
                         textSb.Append(firstKey.RawValue);
-                        commSb.Append(firstKey.Comment);
+                        if (commentSpacePrefixed
+                            && !string.IsNullOrEmpty(firstKey.Comment)
+                            && firstKey.Comment[0] == ' ')
+                            commSb.Append(firstKey.Comment.AsSpan(1));
+                        else
+                            commSb.Append(firstKey.Comment);
 
                         textWritten = firstKey.RawValue.Length;
                     }
@@ -763,6 +771,22 @@ namespace FitsCs
             }
 
             return (Text: textSb.ToString(), Comment: commSb.ToString());
+        }
+
+        [SuppressMessage("ReSharper", "PossiblyImpureMethodCallOnReadonlyVariable")]
+        public static string ParseCommentString(
+            IEnumerable<IFitsValue> keys)
+        {
+            using var textSb = new SimpleStringBuilder(4 * EntrySize);
+
+            foreach (var key in keys)
+            {
+                if (key is ISpecialKey specKey && specKey.Name == @"COMMENT")
+                    textSb.Append(key.Comment);
+                else break;
+            }
+
+            return textSb.ToString();
         }
     }
 }
