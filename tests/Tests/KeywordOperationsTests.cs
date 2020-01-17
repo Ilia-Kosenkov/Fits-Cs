@@ -14,7 +14,7 @@ namespace Tests
         [Test]
         public void Test_Continue_Text_Roundtrips()
         {
-            var keys = FitsKey.ToContinuedString(LoremIpsum(), ReadOnlySpan<char>.Empty, @"LOREM");
+            var keys = FitsKey.ToContinueKeys(LoremIpsum(), ReadOnlySpan<char>.Empty, @"LOREM");
             Assert.That(keys.Length, Is.EqualTo(7));
             Assert.That(keys[0] is IFitsValue<string> key && key.Name == @"LOREM");
 
@@ -26,7 +26,7 @@ namespace Tests
         [Test]
         public void Test_Continue_Comment_Roundtrips()
         {
-            var keys = FitsKey.ToContinuedString(ReadOnlySpan<char>.Empty, LoremIpsum(), @"LOREM");
+            var keys = FitsKey.ToContinueKeys(ReadOnlySpan<char>.Empty, LoremIpsum(), @"LOREM");
             Assert.That(keys.Length, Is.EqualTo(7));
             Assert.That(keys[0] is IFitsValue<string> key && key.Name == @"LOREM");
 
@@ -38,7 +38,7 @@ namespace Tests
         [Test]
         public void Test_Continue_TextComment_Roundtrips()
         {
-            var keys = FitsKey.ToContinuedString(LoremIpsum(), LoremIpsum(), @"LOREM");
+            var keys = FitsKey.ToContinueKeys(LoremIpsum(), LoremIpsum(), @"LOREM");
             Assert.That(keys.Length, Is.EqualTo(14));
             Assert.That(keys[0] is IFitsValue<string> key && key.Name == @"LOREM");
 
