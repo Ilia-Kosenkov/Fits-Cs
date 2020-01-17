@@ -46,5 +46,14 @@ namespace Tests
             Assert.That(roundTrip.Text.AsSpan().SequenceEqual(LoremIpsum()));
             Assert.That(roundTrip.Comment.AsSpan().SequenceEqual(LoremIpsum()));
         }
+
+        [Test]
+        public void Test_CommentKeys_Text_Roundtrips()
+        {
+            var keys = FitsKey.ToComments(LoremIpsum());
+            Assert.That(keys.Length, Is.EqualTo(7));
+            var roundTrip = FitsKey.ParseCommentString(keys);
+            Assert.That(roundTrip.AsSpan().SequenceEqual(roundTrip.AsSpan()));
+        }
     }
 }
