@@ -264,7 +264,7 @@ namespace FitsCs
                 }
             }
 
-            if (input.Length >= 2 && input[^2] != '\'' && input[^1] == '\'')
+            if (input.Length >= 2 && input.Get(^2) != '\'' && input.Get(^1) == '\'')
                 return input.Length - 1;
 
             //return input.Length;
