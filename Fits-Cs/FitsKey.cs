@@ -408,6 +408,9 @@ namespace FitsCs
                 // Possible other cases?
             }
 
+            // WATCH : FOR DEBUG
+            var tmpName = name.Trim().ToString();
+
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
             if (charRep[EqualsPos] == '=' && charRep[EqualsPos + 1] == ' ')
             {
@@ -797,7 +800,7 @@ namespace FitsCs
         public virtual bool Equals(IFitsValue? other)
             => other is { }
                && Name == other.Name
-               && Type == other.Type
+               //&& Type == other.Type
                && Comment == other.Comment;
 
         public override bool Equals(object? obj)

@@ -27,7 +27,7 @@ namespace FitsCs
             out string? @string)
         {
             @string = null;
-            var trimmedInput = quotedString.Trim();
+            var trimmedInput = quotedString.TrimEnd();
             // If input is empty or exceeds one entry size;
             if (trimmedInput.Length > FitsKey.EntrySize)
                 return false;
