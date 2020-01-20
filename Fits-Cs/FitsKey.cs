@@ -243,10 +243,12 @@ namespace FitsCs
         private protected static int FindLastQuote(ReadOnlySpan<char> input)
         {
             var inQuotes = false;
+            var lastQuotePos = 0;
             for (var i = 0; i < input.Length - 1; i++)
             {
                 if (input[i] == '\'')
                 {
+                    lastQuotePos = i;
                     if (input[i + 1] != '\'')
                     {
                         if (inQuotes)
@@ -255,14 +257,18 @@ namespace FitsCs
                         inQuotes = true;
                     }
                     else
+                    {
                         i++;
+                        lastQuotePos = i;
+                    }
                 }
             }
 
-            if (input.Length >= 2 && input[input.Length - 2] != '\'' && input[input.Length - 1] == '\'')
+            if (input.Length >= 2 && input[^2] != '\'' && input[^1] == '\'')
                 return input.Length - 1;
 
-            return input.Length;
+            //return input.Length;
+            return lastQuotePos;
         }
 
         private protected static bool DetectNumericFormat(
