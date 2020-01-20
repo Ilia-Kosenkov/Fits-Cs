@@ -352,11 +352,16 @@ namespace FitsCs
             ReadOnlySpan<char> name,
             ReadOnlySpan<char> comment)
         {
-            if (value.TryParseRaw(out float fVal))
+
+            if (!value.TryParseRaw(out double dVal))
+                return null;
+
+            var fVal = (float) dVal;
+
+            if (dVal.CorrectEquals(fVal))
                 return Create(name.ToString(), fVal, comment.IsEmpty ? null : comment.ToString());
-            if (value.TryParseRaw(out double dVal))
-                return Create(name.ToString(), dVal, comment.IsEmpty ? null : comment.ToString());
-            return null;
+            
+            return Create(name.ToString(), dVal, comment.IsEmpty ? null : comment.ToString());
         }
 
 
@@ -407,9 +412,6 @@ namespace FitsCs
                 return ArbitraryKey.Create(charRep) is { } val ? val : null;
                 // Possible other cases?
             }
-
-            // WATCH : FOR DEBUG
-            var tmpName = name.Trim().ToString();
 
             // If keyword has value, it has an '=' symbol at 8 and ' ' at 9
             if (charRep[EqualsPos] == '=' && charRep[EqualsPos + 1] == ' ')
