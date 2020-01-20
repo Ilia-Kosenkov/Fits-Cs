@@ -391,7 +391,8 @@ namespace FitsCs
 
             if (trimmedInput.IsEmpty)
             {
-                @string = string.Empty;
+                // Preserves spaces-only strings
+                @string = quotedString.Length > 0 ? quotedString.ToString() : string.Empty;
                 return true;
             }
             
