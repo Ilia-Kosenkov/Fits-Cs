@@ -51,5 +51,17 @@ namespace FitsCs.Keys
                 throw new ArgumentException(SR.HduStringIllegal, nameof(value));
             RawValue = value;
         }
+
+        public bool Equals(IFitsValue<string>? other)
+            => other is { }
+               && base.Equals(other)
+               && RawValue == other.RawValue;
+
+        public override bool Equals(IFitsValue? other)
+            => other is IFitsValue<string> key
+               && Equals(key);
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ RawValue.GetHashCode());
     }
 }

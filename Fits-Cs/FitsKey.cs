@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text;
 using FitsCs.Keys;
 using TextExtensions;
@@ -723,7 +722,7 @@ namespace FitsCs
 
         [SuppressMessage("ReSharper", "PossiblyImpureMethodCallOnReadonlyVariable")]
         public static (string Text, string Comment) ParseContinuedString(
-            IEnumerable<IFitsValue> keys, 
+            IEnumerable<IFitsValue> keys,
             bool commentSpacePrefixed = false)
         {
             using var textSb = new SimpleStringBuilder(4 * EntrySize);
@@ -752,16 +751,16 @@ namespace FitsCs
                 }
                 else if (key is IStringLikeValue continueKey)
                 {
-                    if(textWritten > 0 && textSb.View().Get(^1) == '&')
+                    if (textWritten > 0 && textSb.View().Get(^1) == '&')
                         textSb.DeleteBack();
-                    
+
                     textSb.Append(continueKey.RawValue);
 
-                    if(commentSpacePrefixed 
-                       && !string.IsNullOrEmpty(continueKey.Comment) 
-                       && continueKey.Comment[0] == ' ')
+                    if (commentSpacePrefixed
+                        && !string.IsNullOrEmpty(continueKey.Comment)
+                        && continueKey.Comment[0] == ' ')
                         commSb.Append(continueKey.Comment.AsSpan(1));
-                    else 
+                    else
                         commSb.Append(continueKey.Comment);
 
                     textWritten = continueKey.RawValue.Length;
@@ -788,5 +787,21 @@ namespace FitsCs
 
             return textSb.ToString();
         }
+
+        public virtual bool Equals(IFitsValue? other)
+            => other is { }
+               && Name == other.Name
+               && Type == other.Type
+               && Comment == other.Comment;
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj is IFitsValue other && Equals(other);
+        }
+
+        public override int GetHashCode()
+            => unchecked((Name.GetHashCode() * 397) ^ Comment.GetHashCode());
     }
 }

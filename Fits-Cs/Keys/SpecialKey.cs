@@ -56,5 +56,14 @@ namespace FitsCs.Keys
 
             return true;
         }
+
+        public override bool Equals(IFitsValue? other)
+            => other is ISpecialKey key
+               && base.Equals(key)
+               && SpecialKeyType == key.SpecialKeyType;
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ SpecialKeyType.GetHashCode());
+
     }
 }

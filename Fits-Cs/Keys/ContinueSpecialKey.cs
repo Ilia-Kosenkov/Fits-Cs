@@ -5,11 +5,12 @@ namespace FitsCs.Keys
 {
     public interface IStringLikeValue : IFitsValue
     {
-        string RawValue { get; }
+        string? RawValue { get; }
     }
 
     public class ContinueSpecialKey : SpecialKey, IStringLikeValue
     {
+        public string? RawValue { get; }
         internal ContinueSpecialKey(string data, string? comment) : base(@"CONTINUE", comment)
         {
             var strSize = data.AsSpan().StringSizeWithQuoteReplacement(0);
@@ -51,6 +52,12 @@ namespace FitsCs.Keys
             return true;
         }
 
-        public string RawValue { get; }
+        public override bool Equals(IFitsValue? other)
+            =>  other is IStringLikeValue key
+                && base.Equals(key)
+                && RawValue == key.RawValue;
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ (RawValue?.GetHashCode() ?? 1));
     }
 }

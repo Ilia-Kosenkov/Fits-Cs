@@ -45,5 +45,17 @@ namespace FitsCs.Keys
         {
             RawValue = value;
         }
+
+        public bool Equals(IFitsValue<bool>? other)
+            => other is {}
+               && base.Equals(other)
+               && RawValue == other.RawValue;
+
+        public override bool Equals(IFitsValue? other)
+            => other is IFitsValue<bool> key
+               && Equals(key);
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ RawValue.GetHashCode());
     }
 }

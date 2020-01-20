@@ -44,5 +44,17 @@ namespace FitsCs.Keys
             // Conservative size estimate - 24 is the total size of %+24.17e+3
             RawValue = value;
         }
+
+        public bool Equals(IFitsValue<double>? other)
+            => other is { }
+               && base.Equals(other)
+               && RawValue.CorrectEquals(other.RawValue);
+
+        public override bool Equals(IFitsValue? other)
+            => other is IFitsValue<double> key
+               && Equals(key);
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ RawValue.GetHashCode());
     }
 }

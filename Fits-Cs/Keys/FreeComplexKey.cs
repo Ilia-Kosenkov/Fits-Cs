@@ -46,5 +46,17 @@ namespace FitsCs.Keys
             // Multiplying by 2 and 1 symbol for column separator
             RawValue = value;
         }
+
+        public bool Equals(IFitsValue<Complex>? other)
+            => other is { }
+               && base.Equals(other)
+               && RawValue.CorrectEquals(other.RawValue);
+
+        public override bool Equals(IFitsValue? other)
+            => other is IFitsValue<Complex> key
+               && Equals(key);
+
+        public override int GetHashCode()
+            => unchecked((base.GetHashCode() * 397) ^ RawValue.GetHashCode());
     }
 }

@@ -23,6 +23,9 @@ namespace FitsCs.Keys
             return true;
         }
 
+        public override bool Equals(IFitsValue? other)
+            => other is BlankKey;
+
         public static bool IsBlank(ReadOnlySpan<char> input)
         {
             foreach (var item in input)
