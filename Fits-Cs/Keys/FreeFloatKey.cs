@@ -25,7 +25,8 @@ using System;
 
 namespace FitsCs.Keys
 {
-    public sealed class FreeFloatKey : FreeFitsKey, IFitsValue<float>
+    public sealed class FreeFloatKey : 
+        FreeFitsKey, IFitsValue<float>, IEquatable<IFitsValue<double>>
     {
         private protected override string TypePrefix => @"float";
         public override object Value => RawValue;
@@ -50,9 +51,14 @@ namespace FitsCs.Keys
                && base.Equals(other)
                && RawValue.CorrectEquals(other.RawValue);
 
+        public bool Equals(IFitsValue<double>? other)
+            => other is { }
+               && base.Equals(other)
+               && RawValue.CorrectEquals(other.RawValue);
+
         public override bool Equals(IFitsValue? other)
-            => other is IFitsValue<float> key
-               && Equals(key);
+            => other is IFitsValue<float> fKey && Equals(fKey)
+               || other is IFitsValue<double> dKey && Equals(dKey);
 
         public override int GetHashCode()
             => unchecked((base.GetHashCode() * 397) ^ RawValue.GetHashCode());
