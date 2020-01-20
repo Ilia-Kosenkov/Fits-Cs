@@ -760,7 +760,7 @@ namespace FitsCs
                     if (textWritten > 0 && textSb.View().Get(^1) == '&')
                         textSb.DeleteBack();
 
-                    textSb.Append(continueKey.RawValue);
+                    textSb.Append(continueKey.RawValue ?? string.Empty);
 
                     if (commentSpacePrefixed
                         && !string.IsNullOrEmpty(continueKey.Comment)
@@ -769,7 +769,7 @@ namespace FitsCs
                     else
                         commSb.Append(continueKey.Comment);
 
-                    textWritten = continueKey.RawValue.Length;
+                    textWritten = continueKey.RawValue?.Length ?? 0;
                 }
                 else
                     break;
