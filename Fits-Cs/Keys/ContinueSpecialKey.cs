@@ -35,7 +35,7 @@ namespace FitsCs.Keys
 
             span.Slice(0, EntrySizeInBytes).Fill(' ');
             Name.AsSpan().CopyTo(span);
-            span[EqualsPos] = '=';
+            //span[EqualsPos] = '=';
 
             if (!RawValue.AsSpan().TryGetCompatibleString(span.Slice(ValueStart), 0))
             {

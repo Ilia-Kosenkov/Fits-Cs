@@ -11,7 +11,7 @@
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</RepositoryUrl>
-    <FileVersion>0.1.3.36</FileVersion>
+    <FileVersion>0.1.3.76</FileVersion>
     <AssemblyVersion>0.1.3.0</AssemblyVersion>
   </PropertyGroup>
 

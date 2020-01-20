@@ -36,7 +36,7 @@ namespace FitsCs.Keys
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                string.Format($"= {{0,{FixedFieldSize}:G9}}", RawValue));
+                $"= {RawValue.FormatFloat(9, FixedFieldSize)}");
 
         internal FixedFloatKey(string name, float value, string? comment = "") 
             : base(name, comment, FixedFieldSize + 2)

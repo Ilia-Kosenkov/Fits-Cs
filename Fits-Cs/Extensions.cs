@@ -1,10 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using FitsCs.Keys;
 using MemoryExtensions;
@@ -156,6 +153,45 @@ namespace FitsCs
         {
             // Using straightforward two-attempt way
             var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
+
+
+            if (!resultStr.Contains('.') 
+                && !resultStr.Contains('E'))
+            {
+                Span<char> buff = stackalloc char[maxSize + 2];
+                resultStr.AsSpan().CopyTo(buff);
+                buff[^2] = '.';
+                buff[^1] = '0';
+                if (buff[0] == ' ' && buff[1] == ' ')
+                    resultStr = buff.Slice(2).ToString();
+                else
+                    resultStr = buff.ToString();
+            }
+
+            if (resultStr.Length > maxSize)
+                resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
+            return resultStr;
+        }
+
+        public static string FormatFloat(this float value, int decPos, int maxSize)
+        {
+            // Using straightforward two-attempt way
+            var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
+
+
+            if (!resultStr.Contains('.')
+                && !resultStr.Contains('E'))
+            {
+                Span<char> buff = stackalloc char[maxSize + 2];
+                resultStr.AsSpan().CopyTo(buff);
+                buff[^2] = '.';
+                buff[^1] = '0';
+                if (buff[0] == ' ' && buff[1] == ' ')
+                    resultStr = buff.Slice(2).ToString();
+                else
+                    resultStr = buff.ToString();
+            }
+
             if (resultStr.Length > maxSize)
                 resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
             return resultStr;

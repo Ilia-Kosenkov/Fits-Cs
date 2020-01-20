@@ -35,7 +35,7 @@ namespace FitsCs.Keys
         public override bool TryFormat(Span<char> span)
             => TryFormat(
                 span,
-                $"= {RawValue:G9}");
+                $"= {RawValue.FormatFloat(9, 15)}");
 
 
         internal FreeFloatKey(string name, float value, string? comment)
