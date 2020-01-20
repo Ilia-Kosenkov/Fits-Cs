@@ -3,7 +3,7 @@ using System;
 
 namespace FitsCs
 {
-    public interface IFitsValue
+    public interface IFitsValue : IEquatable<IFitsValue>
     {
         string Name { get; }
         string Comment { get; }
@@ -19,7 +19,7 @@ namespace FitsCs
         bool TryGetBytes(Span<byte> span);
     }
 
-    public interface IFitsValue<out T> : IFitsValue
+    public interface IFitsValue<T> : IFitsValue, IEquatable<IFitsValue<T>>
     {
         T RawValue { get; }
     }

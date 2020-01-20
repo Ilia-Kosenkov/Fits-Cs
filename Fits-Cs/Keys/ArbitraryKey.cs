@@ -32,6 +32,15 @@ namespace FitsCs.Keys
             return true;
         }
 
+        public override bool Equals(IFitsValue? other)
+            => other is ArbitraryKey key
+               && Name == key.Name
+               && (Value?.Equals(key.Value) ?? false)
+               && Comment == key.Comment;
+
+        public override int GetHashCode()
+            => Value?.GetHashCode() ?? 1;
+
         internal static bool IsArbitrary(ReadOnlySpan<char> input)
         {
             if (input.Length < EqualsPos + 1 
