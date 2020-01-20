@@ -332,7 +332,7 @@ namespace FitsCs
         }
 
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
-        public static bool CorrectEquals(this float @this, float that, float eps = 1.0)
+        public static bool CorrectEquals(this float @this, float that, float eps = 1.0f)
         {
             if (double.IsNaN(@this) || double.IsNaN(that))
                 return false;
