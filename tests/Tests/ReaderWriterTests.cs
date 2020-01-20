@@ -58,6 +58,10 @@ namespace Tests
             Test_FitsReader_Data()
                 .Select(x => new TestCaseData(x).SetName(
                     $"Test_FitsReader_{Path.GetFileNameWithoutExtension(x.Name)}"));
+        public static IEnumerable Test_FitsReader_FitsWriter_Provider =>
+            Test_FitsReader_Data()
+                .Select(x => new TestCaseData(x).SetName(
+                    $"Test_FitsReader_FitsWriter_{Path.GetFileNameWithoutExtension(x.Name)}"));
 
     }
 
@@ -84,6 +88,45 @@ namespace Tests
             }
 
             Assert.That(counter, Is.EqualTo(testCaseData.NumUnits));
+        }
+
+        [Theory]
+        [TestCaseSource(
+            typeof(ReaderWriter_TestCaseDataProvider),
+            nameof(ReaderWriter_TestCaseDataProvider.Test_FitsReader_FitsWriter_Provider))]
+        public async Task Test_FitsReader_FitsWrite(FitsFileInfo testCaseData)
+        {
+            var path = Path.Combine(ReaderWriter_TestCaseDataProvider.TestDataDirectory, testCaseData.Name);
+            Assume.That(File.Exists(path));
+            List<Block> content;
+            List<Block> reReadContent;
+
+            await using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+            {
+                await using var reader = new FitsReader(fileStream);
+                content = await reader.EnumerateBlocksAsync().ToListAsync();
+            }
+
+            await using var memStr = new MemoryStream();
+            {
+                await using(var writer = new FitsWriter(memStr))
+                    foreach (var block in content)
+                        await writer.WriteBlockAsync(block);
+                
+                memStr.Seek(0, SeekOrigin.Begin);
+
+                await using var reader = new FitsReader(memStr);
+
+                reReadContent = await reader.EnumerateBlocksAsync().ToListAsync();
+            }
+
+            Assert.AreEqual(content.Count, reReadContent.Count);
+            for (var i = 0; i < content.Count; i++)
+            {
+                CollectionAssert.AreEqual(content[i].Keys, reReadContent[i].Keys);
+                Assert.IsTrue(content[i].RawData.SequenceEqual(reReadContent[i].RawData));
+            }
+
         }
     }
 }
