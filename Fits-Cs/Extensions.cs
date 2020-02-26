@@ -25,9 +25,10 @@ namespace FitsCs
                 // Single quote 2-to-1
                 if(item == '\'')
                     sum += 1;
-                // Double quote replaced by 4 single quotes
-                if (item == '"')
-                    sum += 3;
+                // >>> Double quotes are treated as a single character, according to the standard
+                //// Double quote replaced by 4 single quotes
+                //if (item == '"')
+                //    sum += 3;
             }
 
             return sum < minLength ? minLength : sum;
@@ -56,15 +57,16 @@ namespace FitsCs
                     target[targetInd++] = '\'';
                     srcInd = i + 1;
                 }
-                else if (source[i] == '"')
-                {
-                    if (!source.Slice(srcInd..i).TryCopyTo(target.Slice(targetInd)))
-                        return false;
-                    targetInd += i - srcInd;
-                    target.Slice(targetInd, 4).Fill('\'');
-                    targetInd += 4;
-                    srcInd = i + 1;
-                }
+                // >>> No replacement of double quotes
+                //else if (source[i] == '"')
+                //{
+                //    if (!source.Slice(srcInd..i).TryCopyTo(target.Slice(targetInd)))
+                //        return false;
+                //    targetInd += i - srcInd;
+                //    target.Slice(targetInd, 4).Fill('\'');
+                //    targetInd += 4;
+                //    srcInd = i + 1;
+                //}
 
             }
 
@@ -105,9 +107,10 @@ namespace FitsCs
                 // Single quote 2-to-1
                 if (source[srcId] == '\'')
                     numConvSymb += 1;
-                // Double quote replaced by 4 single quotes
-                if (source[srcId] == '"')
-                    numConvSymb += 3;
+                // >>> No replacement of double quotes
+                //// Double quote replaced by 4 single quotes
+                //if (source[srcId] == '"')
+                //    numConvSymb += 3;
             }
 
             return (srcId, numConvSymb);
