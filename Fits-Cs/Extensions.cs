@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using FitsCs.Keys;
 using MemoryExtensions;
@@ -9,11 +11,11 @@ using TextExtensions;
 
 namespace FitsCs
 {
-    internal static class Extensions
+    public static class Extensions
     {
 
         private const int MinFixedStringSize = FixedFitsKey.FixedFieldSize - FitsKey.ValueStart;
-        public static int StringSizeWithQuoteReplacement(
+        internal static int StringSizeWithQuoteReplacement(
             this ReadOnlySpan<char> s,
             int minLength = MinFixedStringSize)
         {
@@ -34,7 +36,7 @@ namespace FitsCs
             return sum < minLength ? minLength : sum;
         }
 
-        public static bool TryGetCompatibleString(
+        internal static bool TryGetCompatibleString(
             this ReadOnlySpan<char> source, 
             Span<char> target,
             int minLength = MinFixedStringSize)
@@ -91,7 +93,7 @@ namespace FitsCs
             return true;
         }
 
-        public static (int NumSrcSymb, int NumConvSymb) MaxCompatibleStringSize(
+        internal static (int NumSrcSymb, int NumConvSymb) MaxCompatibleStringSize(
             this ReadOnlySpan<char> source,
             int length)
         {
@@ -116,7 +118,7 @@ namespace FitsCs
             return (srcId, numConvSymb);
         }
 
-        public static int SignificantDigitsCount(this int value)
+        internal static int SignificantDigitsCount(this int value)
         {
             if (value == 0)
                 return 1;
@@ -134,7 +136,7 @@ namespace FitsCs
             return n;
         }
 
-        public static int SignificantDigitsCount(this long value)
+        internal static int SignificantDigitsCount(this long value)
         {
             if (value == 0)
                 return 1;
@@ -152,7 +154,7 @@ namespace FitsCs
             return n;
         }
 
-        public static string FormatDouble(this double value, int decPos, int maxSize)
+        internal static string FormatDouble(this double value, int decPos, int maxSize)
         {
             // Using straightforward two-attempt way
             var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
@@ -176,7 +178,7 @@ namespace FitsCs
             return resultStr;
         }
 
-        public static string FormatFloat(this float value, int decPos, int maxSize)
+        internal static string FormatFloat(this float value, int decPos, int maxSize)
         {
             // Using straightforward two-attempt way
             var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
@@ -200,7 +202,7 @@ namespace FitsCs
             return resultStr;
         }
 
-        public static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding? enc = null)
+        internal static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding? enc = null)
         {
             if (enc is null)
                 enc= Encoding.ASCII;
@@ -258,6 +260,7 @@ namespace FitsCs
 
             return keys.FirstOrDefault(item => item?.Name == name);
         }
+
         public static bool IsEnd(this IReadOnlyList<IFitsValue> keys)
         {
             if (keys is null)
@@ -335,5 +338,44 @@ namespace FitsCs
                 }
             }
         }
+
+
+        public static Type? ConvertBitPixToType(int bitpix)
+        {
+            return bitpix switch
+            {
+                8 => typeof(byte),
+                16 => typeof(short),
+                32 => typeof(int),
+                64 => typeof(long),
+                -32 => typeof(float),
+                -64 => typeof(double),
+                _ => null
+            };
+        }
+
+        public static sbyte? ConvertTypeToBitPix(Type type)
+            => AllowedTypes.CanBeDataType(type)
+                ? (sbyte?) (type switch
+                {
+                    _ when type == typeof(float) => sizeof(float) * -8,
+                    _ when type == typeof(double) => sizeof(double) * -8,
+                    _ => Marshal.SizeOf(type) * 8
+                })
+                : null;
+
+        public static sbyte? ConvertTypeToBitPix<T>()
+            where T : unmanaged
+            => AllowedTypes.CanBeDataType<T>()
+                ? (sbyte?)(default(T) switch
+                {
+                    float _ => sizeof(float) * -8,
+                    double _ => sizeof(double) * -8,
+                    _ => Unsafe.SizeOf<T>() * 8
+                })
+                : null;
+
+        public static long PadData(long size) 
+            => DataBlob.SizeInBytes * ((size + DataBlob.SizeInBytes - 1) / DataBlob.SizeInBytes);
     }
 }

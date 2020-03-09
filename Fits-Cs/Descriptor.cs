@@ -44,7 +44,7 @@ namespace FitsCs
                 throw new ArgumentOutOfRangeException(nameof(groupCount));
 
             Type = type;
-            var dataType = Block.ConvertBitPixToType(bitpix);
+            var dataType = Extensions.ConvertBitPixToType(bitpix);
             DataType = dataType ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
             Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
@@ -82,7 +82,7 @@ namespace FitsCs
                     _ => throw new InvalidOperationException(SR.InvalidKey)
                 };
 
-            DataType = Block.ConvertBitPixToType(bitPix)
+            DataType = Extensions.ConvertBitPixToType(bitPix)
                        ?? throw new InvalidOperationException(SR.InvalidKey);
             ItemSizeInBytes = (byte) ((bitPix < 0 ? -bitPix : bitPix) / 8);
 

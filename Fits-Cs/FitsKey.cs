@@ -70,7 +70,13 @@ namespace FitsCs
         {
             ValidateInput(name, size, comment?.Length ?? 0);
             Name = name;
-            Comment = comment ?? string.Empty;
+            Comment = comment switch
+            {
+                { } when comment.Length >0 && comment[0] != ' ' && TryValidateInput(name, size, comment.Length + 1)
+                => " " + comment,
+                { } => comment,
+                _ => string.Empty
+            };
         }
 
         public override string ToString()

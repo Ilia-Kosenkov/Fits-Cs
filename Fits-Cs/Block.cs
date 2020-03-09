@@ -41,20 +41,6 @@ namespace FitsCs
             Keys = keys?.ToImmutableList() ?? ImmutableList<IFitsValue>.Empty;
         }
 
-        public static Type? ConvertBitPixToType(int bitpix)
-        {
-            return bitpix switch
-            {
-                8 => typeof(byte),
-                16 => typeof(short),
-                32 => typeof(int),
-                64 => typeof(long),
-                -32 => typeof(float),
-                -64 => typeof(double),
-                _ => null
-            };
-        }
-
         public static Block Create(Descriptor desc, IEnumerable<IFitsValue> keys)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
@@ -74,6 +60,27 @@ namespace FitsCs
 
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
         }
+
+        public static Block Create(Descriptor desc, IEnumerable<IFitsValue> keys, Initializer<byte> initializer)
+        {
+            AllowedTypes.ValidateDataType(desc.DataType);
+            _ = initializer ?? throw new ArgumentNullException(nameof(initializer));
+
+            if (desc.DataType == typeof(float))
+                return new Block<float>(desc, keys, initializer);
+            if (desc.DataType == typeof(double))
+                return new Block<double>(desc, keys, initializer);
+            if (desc.DataType == typeof(byte))
+                return new Block<byte>(desc, keys, initializer);
+            if (desc.DataType == typeof(short))
+                return new Block<short>(desc, keys, initializer);
+            if (desc.DataType == typeof(int))
+                return new Block<int>(desc, keys, initializer);
+            if (desc.DataType == typeof(long))
+                return new Block<long>(desc, keys, initializer);
+
+            throw new ArgumentException(SR.InvalidArgument, nameof(desc));
+        }
     }
 
     public class Block<T> : Block where T : unmanaged
@@ -81,7 +88,7 @@ namespace FitsCs
         // ReSharper disable once InconsistentNaming
         private protected T[] _data;
         internal override Span<byte> RawDataInternal => MemoryMarshal.AsBytes(_data.AsSpan());
-        public ReadOnlySpan<T> Data => _data ?? Span<T>.Empty;
+        public ReadOnlySpan<T> Data => _data;
         public override ReadOnlySpan<byte> RawData => RawDataInternal;
         public override IEnumerable<DataBlob> AsBlobStream()
         {
@@ -134,6 +141,23 @@ namespace FitsCs
             // Initializes data using action
             initializer(_data);
         }
+
+        // This is for generic byte-initialization
+        public Block(
+            Descriptor desc,
+            IEnumerable<IFitsValue> keys,
+            Initializer<byte> initializer)
+            : base(desc, keys)
+        {
+            AllowedTypes.ValidateDataType<T>();
+            if (initializer is null)
+                throw new ArgumentNullException(nameof(initializer), SR.NullArgument);
+
+            _data = new T[desc.GetFullSize()];
+            // Initializes data using action
+            initializer(MemoryMarshal.AsBytes(_data.AsSpan()));
+        }
+
 
         // This is for public & external use; allows to write directly into the data array
         public static Block<T> CreateWithData(

@@ -22,8 +22,10 @@
 
 #nullable enable
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Drawing;
 using MemoryExtensions;
 
 namespace FitsCs
@@ -68,7 +70,7 @@ namespace FitsCs
         
         public bool TryInitialize(
             byte[] data)
-            => !(data is null) && TryInitialize(data.AsReadOnlySpan());
+            => TryInitialize(data.AsReadOnlySpan());
 
         public void Reset()
         {
@@ -125,18 +127,30 @@ namespace FitsCs
 
             var nRep = (keys.Count + KeysPerBlob - 1) / KeysPerBlob;
 
-            var blob = new DataBlob();
-            for (var i = 0; i < nRep; i++)
+            var emptyBlob = ArrayPool<byte>.Shared.Rent(SizeInBytes);
+            emptyBlob.AsSpan().Fill(32);
+            try
             {
-                blob.Reset();
-                blob.TryInitialize(ReadOnlySpan<byte>.Empty);
-                for (var j = 0; i * KeysPerBlob - j < keys.Count && j < KeysPerBlob; j++)
+                var blob = new DataBlob();
+
+                for (var i = 0; i < nRep; i++)
                 {
-                    var target = blob._data.AsSpan(j * FitsKey.EntrySizeInBytes);
-                    if (!keys[i * KeysPerBlob + j].TryGetBytes(target))
-                        throw new InvalidOperationException(SR.InvalidOperation);
+                    // Fills with (char)' '
+                    blob.TryInitialize(emptyBlob.AsSpan(0, SizeInBytes));
+
+                    for (var j = 0; i * KeysPerBlob + j < keys.Count && j < KeysPerBlob; j++)
+                    {
+                        var target = blob._data.AsSpan(j * FitsKey.EntrySizeInBytes);
+                        if (!keys[i * KeysPerBlob + j].TryGetBytes(target))
+                            throw new InvalidOperationException(SR.InvalidOperation);
+                    }
+
+                    yield return blob;
                 }
-                yield return blob;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(emptyBlob, true);
             }
         }
 
