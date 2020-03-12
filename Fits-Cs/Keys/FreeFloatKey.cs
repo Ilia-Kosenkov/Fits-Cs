@@ -28,15 +28,21 @@ namespace FitsCs.Keys
     public sealed class FreeFloatKey : 
         FreeFitsKey, IFitsValue<float>, IEquatable<IFitsValue<double>>
     {
-        private protected override string TypePrefix => @"float";
+        private protected override string TypePrefix => @"flt";
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public float RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue.FormatFloat(9, 15)}");
+        {
+            Span<char> buff = stackalloc char[15 + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            if (!RawValue.TryFormatFloat(9, 15, buff[2..]))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff);
+        }
 
 
         internal FreeFloatKey(string name, float value, string? comment)

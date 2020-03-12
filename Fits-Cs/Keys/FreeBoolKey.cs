@@ -29,16 +29,17 @@ namespace FitsCs.Keys
     {
         private const char TrueConst = 'T';
         private const char FalseConst = 'F';
-        private protected override string TypePrefix => @"bool";
+        private protected override string TypePrefix => @"lgl";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public bool RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {(RawValue ? TrueConst : FalseConst)}");
+        {
+            Span<char> buff = stackalloc char[3] {'=', ' ', RawValue ? TrueConst : FalseConst};
+            return TryFormat(span, buff);
+        }
 
 
         internal FreeBoolKey(string name, bool value, string? comment) 

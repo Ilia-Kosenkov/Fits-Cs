@@ -27,7 +27,7 @@ namespace FitsCs.Keys
     public sealed class FixedFloatKey : 
         FixedFitsKey, IFitsValue<float>, IEquatable<IFitsValue<double>>
     {
-        private protected override string TypePrefix => @"float";
+        private protected override string TypePrefix => @"flt";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
@@ -35,9 +35,15 @@ namespace FitsCs.Keys
 
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue.FormatFloat(9, FixedFieldSize)}");
+        {
+            Span<char> buff = stackalloc char[FixedFieldSize + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            if(!RawValue.TryFormatFloat(9, FixedFieldSize, buff[2..]))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff);
+        }
 
         internal FixedFloatKey(string name, float value, string? comment = "") 
             : base(name, comment, FixedFieldSize + 2)

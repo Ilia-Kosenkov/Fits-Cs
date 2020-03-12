@@ -153,6 +153,9 @@
   <data name="NullArgument" xml:space="preserve">
     <value>Argument cannot be null.</value>
   </data>
+  <data name="ShouldNotHappen" xml:space="preserve">
+    <value>This exception should not happen. If you see this, there is a bug in the library.</value>
+  </data>
   <data name="UnexpectedNullRef" xml:space="preserve">
     <value>Required object is null.</value>
   </data>

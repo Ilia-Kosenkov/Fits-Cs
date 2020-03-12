@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <RootNamespace>FitsCs</RootNamespace>
     <Platforms>AnyCPU;x64</Platforms>
@@ -11,7 +11,7 @@
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</RepositoryUrl>
-    <FileVersion>0.1.4.33</FileVersion>
+    <FileVersion>0.1.4.69</FileVersion>
     <AssemblyVersion>0.1.4.0</AssemblyVersion>
   </PropertyGroup>
 

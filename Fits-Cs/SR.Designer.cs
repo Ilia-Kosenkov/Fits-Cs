@@ -169,6 +169,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This exception should not happen. If you see this, there is a bug in the library..
+        /// </summary>
+        internal static string ShouldNotHappen {
+            get {
+                return ResourceManager.GetString("ShouldNotHappen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Required object is null..
         /// </summary>
         internal static string UnexpectedNullRef {

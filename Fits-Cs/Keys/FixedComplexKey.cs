@@ -28,7 +28,7 @@ namespace FitsCs.Keys
 {
     public sealed class FixedComplexKey : FixedFitsKey, IFitsValue<Complex>
     {
-        private protected override string TypePrefix => @"cmplx";
+        private protected override string TypePrefix => @"cmp";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
@@ -36,10 +36,20 @@ namespace FitsCs.Keys
 
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-            $"= {RawValue.Real.FormatDouble(17, FixedFieldSize)}{RawValue.Imaginary.FormatDouble(17, FixedFieldSize)}");
-                   
+        {
+            Span<char> buff = stackalloc char[2 * FixedFieldSize + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            
+            if(!RawValue.Real.TryFormatDouble(17, FixedFieldSize, buff.Slice(2, FixedFieldSize)))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            if (!RawValue.Imaginary.TryFormatDouble(17, FixedFieldSize, buff.Slice(2 + FixedFieldSize, FixedFieldSize)))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff);
+        }
+
 
         internal FixedComplexKey(string name, Complex value, string? comment = "") 
             : base(name, comment, 2 * FixedFieldSize + 2)

@@ -5,40 +5,27 @@ namespace FitsCs.Keys
 {
     public sealed class FixedStringKey : FixedFitsKey, IFitsValue<string>
     {
-        private protected override string TypePrefix => @"string";
+        private protected override string TypePrefix => @"str";
 
 
         public override object Value => RawValue;
         public string RawValue { get; }
         public override bool TryFormat(Span<char> span)
         {
-            var isCommentNull = string.IsNullOrWhiteSpace(Comment);
-            var len = NameSize +
-                      RawValue.AsSpan().StringSizeWithQuoteReplacement() + 2;
+            var rawVal = RawValue.AsSpan();
+            var n = rawVal.StringSizeWithQuoteReplacement() + 2;
 
-            if (span.Length < EntrySizeInBytes)
+            if (n > EntrySize)
                 return false;
 
-            span.Slice(0, EntrySizeInBytes).Fill(' ');
-            Name.AsSpan().CopyTo(span);
-            span[EqualsPos] = '=';
-            
-            if (!RawValue.AsSpan().TryGetCompatibleString(span.Slice(ValueStart)))
-            {
-                span.Slice(0, EntrySizeInBytes).Fill(' ');
-                return false;
-            }
+            Span<char> buff = stackalloc char[n];
+            buff.Fill(' ');
+            buff[0] = '=';
 
+            if(!rawVal.TryGetCompatibleString(buff[2..]))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
 
-            if (isCommentNull) return true;
-
-            // Comment padding if it can be fit in the entry
-            if (len < FixedFieldSize + ValueStart && Comment.Length <= EntrySize - FixedFieldSize - ValueStart - 2)
-                len = ValueStart + FixedFieldSize;
-            Comment.AsSpan().CopyTo(span.Slice(len + 2));
-            span[len + 1] = '/';
-
-            return true;
+            return TryFormat(span, buff);
         }
 
         internal FixedStringKey(string name, string value, string? comment) 

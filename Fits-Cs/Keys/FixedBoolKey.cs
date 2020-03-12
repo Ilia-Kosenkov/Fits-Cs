@@ -29,16 +29,21 @@ namespace FitsCs.Keys
     {
         private const char TrueConst = 'T';
         private const char FalseConst = 'F';
-        private protected override string TypePrefix => @"bool";
+        private protected override string TypePrefix => @"lgl";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public bool RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                string.Format($"= {{0,{FixedFieldSize}}}", RawValue ? TrueConst : FalseConst));
+        {
+            Span<char> buff = stackalloc char[FixedFieldSize + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            buff[^1] = RawValue ? TrueConst : FalseConst;
+
+            return TryFormat(span, buff);
+        }
 
 
         internal FixedBoolKey(string name, bool value, string? comment) : base(name, comment, 3)

@@ -100,7 +100,7 @@ namespace FitsCs
             return $"[{frmtStr,-3}|{TypePrefix,6}]: {ToString()}";
 
         }
-
+        
         public abstract bool TryFormat(Span<char> span);
 
         public bool TryGetBytes(Span<byte> span)
@@ -123,7 +123,7 @@ namespace FitsCs
             }
         }
 
-        private protected bool TryFormat(Span<char> span, string value)
+        private protected bool TryFormat(Span<char> span, ReadOnlySpan<char> value)
         {
             if (span.Length < EntrySizeInBytes)
                 return false;
@@ -134,7 +134,7 @@ namespace FitsCs
 
             span.Slice(0, EntrySizeInBytes).Fill(' ');
             Name.AsSpan().CopyTo(span);
-            value.AsSpan().CopyTo(span.Slice(NameSize));
+            value.CopyTo(span.Slice(NameSize));
 
 
             if (isCommentNull) return true;

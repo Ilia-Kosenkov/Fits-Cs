@@ -28,16 +28,21 @@ namespace FitsCs.Keys
     public sealed class FreeDoubleKey : 
         FreeFitsKey, IFitsValue<double>, IEquatable<IFitsValue<float>>
     {
-        private protected override string TypePrefix => @"double";
+        private protected override string TypePrefix => @"dbl";
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public double RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue.FormatDouble(17, 24)}");
+        {
+            Span<char> buff = stackalloc char[24 + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            if (!RawValue.TryFormatDouble(17, 24, buff[2..]))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
 
+            return TryFormat(span, buff);
+        }
 
         internal FreeDoubleKey(string name, double value, string? comment)
             : base(name, comment, 2 + 24)

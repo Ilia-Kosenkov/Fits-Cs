@@ -1,7 +1,9 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -178,28 +180,76 @@ namespace FitsCs
             return resultStr;
         }
 
-        internal static string FormatFloat(this float value, int decPos, int maxSize)
+        internal static bool TryFormatDouble(this double value, uint decPos, uint maxSize, Span<char> target)
         {
-            // Using straightforward two-attempt way
-            var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
+            Span<char> format = stackalloc char[12];
+            format[0] = 'G';
+            if (!decPos.TryFormat(format[1..], out _))
+                return false;
 
-
-            if (!resultStr.Contains('.')
-                && !resultStr.Contains('E'))
+            if (!value.TryFormat(target, out var nChars, format))
             {
-                Span<char> buff = stackalloc char[maxSize + 2];
-                resultStr.AsSpan().CopyTo(buff);
-                buff[^2] = '.';
-                buff[^1] = '0';
-                if (buff[0] == ' ' && buff[1] == ' ')
-                    resultStr = buff.Slice(2).ToString();
-                else
-                    resultStr = buff.ToString();
+                target[..nChars].Fill('\0');
+                if (!(maxSize - 7).TryFormat(format[1..], out _) ||
+                    !value.TryFormat(target, out nChars, format))
+                    return false;
             }
 
-            if (resultStr.Length > maxSize)
-                resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
-            return resultStr;
+            if (nChars > maxSize)
+                return false;
+
+            var data = target[..nChars];
+
+            if (!data.Contains('.'))
+            {
+                data.Fill('\0');
+                format.Fill('\0');
+                format[0] = 'F';
+                format[1] = '1';
+
+                if (!value.TryFormat(target, out nChars, format))
+                    return false;
+            }
+
+            if (nChars > maxSize)
+                return false;
+
+            target[..nChars].CopyTo(target[^nChars..]);
+            target[..^nChars].Fill(' ');
+
+            return true;
+        }
+
+        internal static bool TryFormatFloat(this float value, uint decPos, uint maxSize, Span<char> target)
+        {
+            Span<char> format = stackalloc char[12];
+            format[0] = 'G';
+            if(!decPos.TryFormat(format[1..], out _))
+                return false;
+
+            if (!value.TryFormat(target, out var nChars, format))
+                return false;
+
+            if (nChars > maxSize)
+                return false;
+
+            var data = target[..nChars];
+
+            if (!data.Contains('.'))
+            {
+                data.Fill('\0');
+                format.Fill('\0');
+                format[0] = 'F';
+                format[1] = '1';
+
+                if (!value.TryFormat(target, out nChars, format))
+                    return false;
+            }
+            
+            target[..nChars].CopyTo(target[^nChars..]);
+            target[..^nChars].Fill(' ');
+
+            return true;
         }
 
         internal static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding? enc = null)

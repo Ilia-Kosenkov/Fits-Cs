@@ -27,17 +27,22 @@ namespace FitsCs.Keys
     public sealed class FixedDoubleKey : 
         FixedFitsKey, IFitsValue<double>, IEquatable<IFitsValue<float>>
     {
-        private protected override string TypePrefix => @"double";
+        private protected override string TypePrefix => @"dbl";
 
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public double RawValue { get; }
 
-
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                 $"= {RawValue.FormatDouble(17, FixedFieldSize)}");
+        {
+            Span<char> buff = stackalloc char[FixedFieldSize + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+            if (!RawValue.TryFormatDouble(17, FixedFieldSize, buff[2..]))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff);
+        }
 
         internal FixedDoubleKey(string name, double value, string? comment = "") 
             : base(name, comment, FixedFieldSize + 2)

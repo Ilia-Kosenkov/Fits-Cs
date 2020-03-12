@@ -35,9 +35,18 @@ namespace FitsCs.Keys
 
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span, 
-                string.Format($"= {{0,{FixedFieldSize}}}", RawValue));
+        {
+            Span<char> buff = stackalloc char[FixedFieldSize + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+
+            if (!RawValue.TryFormat(buff[2..], out var nChars))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            buff.Slice(2, nChars).CopyTo(buff[^nChars..]);
+            buff[2..^nChars].Fill(' ');
+            return TryFormat(span, buff);
+        }
 
         internal FixedLongKey(string name, long value, string? comment = "") 
             : base(name, comment, FixedFieldSize + 2)

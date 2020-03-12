@@ -28,17 +28,27 @@ namespace FitsCs.Keys
 {
     public sealed class FreeComplexKey : FreeFitsKey, IFitsValue<Complex>
     {
-        private protected override string TypePrefix => @"cmplx";
+        private protected override string TypePrefix => @"cmp";
         public override object Value => RawValue;
         public override bool IsEmpty => false;
         public Complex RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue.Real.FormatDouble(17,24)}:{RawValue.Imaginary.FormatDouble(17, 24)}");
+        {
+            const int fieldSize = 24;
+            Span<char> buff = stackalloc char[2 * fieldSize + 3];
+            buff.Fill(' ');
+            buff[0] = '=';
+            buff[2 + fieldSize] = ':';
 
+            if (!RawValue.Real.TryFormatDouble(17, fieldSize, buff.Slice(2, fieldSize)))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
 
+            if (!RawValue.Imaginary.TryFormatDouble(17, fieldSize, buff.Slice(3 + fieldSize, fieldSize)))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff);
+        }
         internal FreeComplexKey(string name, Complex value, string? comment) 
             : base(name, comment, 2 + 2 * 24 + 1)
         {

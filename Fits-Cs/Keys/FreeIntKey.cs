@@ -34,9 +34,16 @@ namespace FitsCs.Keys
         public int RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue}");
+        {
+            Span<char> buff = stackalloc char[11 + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+
+            if (!RawValue.TryFormat(buff[2..], out var nChars))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            return TryFormat(span, buff[..(nChars + 2)]);
+        }
 
         internal FreeIntKey(string name, int value, string? comment) 
             : base(name, comment, value.SignificantDigitsCount() + 2)

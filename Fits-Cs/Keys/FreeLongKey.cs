@@ -34,9 +34,18 @@ namespace FitsCs.Keys
         public long RawValue { get; }
 
         public override bool TryFormat(Span<char> span)
-            => TryFormat(
-                span,
-                $"= {RawValue}");
+        {
+            Span<char> buff = stackalloc char[20 + 2];
+            buff.Fill(' ');
+            buff[0] = '=';
+
+            if (!RawValue.TryFormat(buff[2..], out var nChars))
+                throw new InvalidOperationException(SR.ShouldNotHappen);
+
+            buff.Slice(2, nChars).CopyTo(buff[^nChars..]);
+            buff[2..^nChars].Fill(' ');
+            return TryFormat(span, buff);
+        }
 
         internal FreeLongKey(string name, long value, string? comment) 
             : base(name, comment, value.SignificantDigitsCount() + 2)
