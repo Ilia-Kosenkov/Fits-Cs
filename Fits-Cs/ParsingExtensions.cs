@@ -1,19 +1,16 @@
 ﻿#nullable enable
 
 using System;
+using System.Buffers;
 using System.Globalization;
 using System.Numerics;
 using FitsCs.Keys;
 using MemoryExtensions;
-using TextExtensions;
 
 namespace FitsCs
 {
     public static class ParsingExtensions
     {
-        private static readonly RecycledString Rc = 
-            new RecycledString(FitsKey.EntrySize);
-
         public static ExtensionType FitsExtensionTypeFromString(string? extension = null)
             => extension?.ToLowerInvariant() switch
             {
@@ -61,21 +58,19 @@ namespace FitsCs
                     return false;
             }
 
-            if (start <= trimmedInput.Length - 1 &&
-                trimmedInput.Slice(start..).TryCopyTo(resultSpan.Slice(offset)))
-            {
-                @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
-                return true;
-            }
+            if (start > trimmedInput.Length - 1 ||
+                !trimmedInput.Slice(start..).TryCopyTo(resultSpan.Slice(offset))) 
+                return false;
+            @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
+            return true;
 
-            return false;
         }
 
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out int number) =>
             int.TryParse(
-                Rc.ProxyAsString(numberString),
+                numberString,
                 NumberStyles.Integer,
                 NumberFormatInfo.InvariantInfo, out number);
 
@@ -83,7 +78,7 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out long number) =>
             long.TryParse(
-                Rc.ProxyAsString(numberString),
+                numberString,
                 NumberStyles.Integer,
                 NumberFormatInfo.InvariantInfo, out number);
 
@@ -91,7 +86,7 @@ namespace FitsCs
             this ReadOnlySpan<char> numberString,
             out float number)
             => float.TryParse(
-                Rc.ProxyAsString(numberString),
+                numberString,
                 NumberStyles.Float, 
                 NumberFormatInfo.InvariantInfo, 
                 out number);
@@ -99,11 +94,34 @@ namespace FitsCs
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
             out double number)
-            => double.TryParse(
-                ProxyDoubleWithCorrectExponent(numberString),
-                NumberStyles.Float, 
-                NumberFormatInfo.InvariantInfo,
-                out number);
+        {
+            char[]? arrayBuff = null;
+
+            var trimmedInput = numberString.Trim();
+
+            try
+            {
+                var buff =
+                    trimmedInput.Length > 64
+                        ? (arrayBuff = ArrayPool<char>.Shared.Rent(trimmedInput.Length))[..trimmedInput.Length]
+                        : stackalloc char[trimmedInput.Length];
+
+                buff.Fill('\0');
+                trimmedInput.CopyTo(buff);
+                FixDoubleExponent(buff);
+
+                return double.TryParse(
+                    buff,
+                    NumberStyles.Float,
+                    NumberFormatInfo.InvariantInfo,
+                    out number);
+            }
+            finally
+            {
+                if (arrayBuff is { })
+                    ArrayPool<char>.Shared.Return(arrayBuff);
+            }
+        }
 
         public static bool TryParseRaw(
             this ReadOnlySpan<char> numberString,
@@ -137,22 +155,15 @@ namespace FitsCs
         }
 
 
-        private static string ProxyDoubleWithCorrectExponent(ReadOnlySpan<char> input)
+        private static void FixDoubleExponent(Span<char> input)
         {
-            var id = -1;
             for (var i = input.Length - 1; i >= 0; i--)
             {
                 if (input[i] != 'D' && input[i] != 'd') continue;
-                id = i;
-                break;
+                input[i] = 'E';
+                return;
             }
             
-            Rc.Clear();
-            Rc.TryCopy(input);
-            if (id != -1)
-                Rc.TryCopy("E", id);
-
-            return Rc.StringView;
         }
     }
 }
