@@ -9,9 +9,12 @@ This library is an updated version of the custom `FITS` IO lib that is used with
 While `FITS` [standard](https://fits.gsfc.nasa.gov/fits_standard.html) is quite complicated, the majority of the features are intended to be supported.
 
 ## What technologies?
-Because its predecessor was written before `.NET Core` maturity, it is essential to support `.NET Standard 2.0`, which is compatible with `.NET Framework 4.8` and `.NET Core 2.0`. The project is targeting both standard `2.0` and `2.1` as `2.1` has much, much more features available.
+<s>Because its predecessor was written before `.NET Core` maturity, it is essential to support `.NET Standard 2.0`, which is compatible with `.NET Framework 4.8` and `.NET Core 2.0`. The project is targeting both standard `2.0` and `2.1` as `2.1` has much, much more features available.</s>
 
-In order to make this library as fast and versatile as I can, I utilize the latest additions to the `C#` compiler and `BCL`, including `Span<T>` for allocation free buffer management, [`ValueTask<T>`](https://www.nuget.org/packages/System.Threading.Tasks.Extensions/) to power `async` IO and so on. Due to limited availability of some of the new APIs in standard `2.0`, I heavily rely on a number of custom extension/helper methods, see [Compatibility](https://github.com/Ilia-Kosenkov/Compatibility) project.
+<s>In order to make this library as fast and versatile as I can, I utilize the latest additions to the `C#` compiler and `BCL`, including `Span<T>` for allocation free buffer management, [`ValueTask<T>`](https://www.nuget.org/packages/System.Threading.Tasks.Extensions/) to power `async` IO and so on. Due to limited availability of some of the new APIs in standard `2.0`, I heavily rely on a number of custom extension/helper methods, see [Compatibility](https://github.com/Ilia-Kosenkov/Compatibility) project.</s>
+    
+**The project is no longer intended to run on `.NET Framework 4.8+`, therefore it was moved to `.NET Standard 2.1`.**
+Redundant dependencies that were included for compatibility were excluded as well.
 
 ## The concept
 `Fits-Cs` is built around `FitsReader`/`FitsWriter` classes, which mimic the role of `System.IO.StreamReader/StreamWriter`.
