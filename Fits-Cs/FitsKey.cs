@@ -461,7 +461,7 @@ namespace FitsCs
                             ? Create(name.ToString(),
                                 str,
                                 commentStart < contentSpan.Length - 1 - quoteEnd
-                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd))
+                                    ? MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 2 + quoteEnd))
                                         .ToString()
                                     : null,
                                 quoteEnd <= FixedFitsKey.FixedFieldSize
@@ -478,7 +478,7 @@ namespace FitsCs
                         return Create(name.ToString(),
                             (firstSymb == 'T'),
                             commentStart < contentSpan.Length - 1
-                                ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
+                                ? MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1)).ToString()
                                 : null,
                             pos == FixedFitsKey.FixedFieldSize - 1
                                 ? KeyType.Fixed
@@ -491,7 +491,7 @@ namespace FitsCs
                         var isNumber = DetectNumericFormat(innerStrSpan, out var nType, out var keyType);
                         if (!isNumber)
                             return null;
-                        var roSpan = System.MemoryExtensions.TrimEnd(innerStrSpan);
+                        var roSpan = MemoryExtensions.TrimEnd(innerStrSpan);
 
 
                         return nType switch
@@ -499,19 +499,19 @@ namespace FitsCs
                             NumericType.Integer =>
                             ParseIntoInteger(roSpan, name,
                                 commentStart < contentSpan.Length - 1
-                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                    ? MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
                                     : ReadOnlySpan<char>.Empty),
                             NumericType.Float =>
                             ParseIntoFloat(roSpan, name,
                                 commentStart < contentSpan.Length - 1
-                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                    ? MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
                                     : ReadOnlySpan<char>.Empty),
                             NumericType.Complex when roSpan.TryParseRaw(out Complex cVal, keyType) =>
                             Create(
                                 name.ToString(),
                                 cVal,
                                 commentStart < contentSpan.Length - 1
-                                    ? System.MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
+                                    ? MemoryExtensions.TrimEnd(contentSpan.Slice(commentStart + 1))
                                         .ToString()
                                     : null,
                                 keyType),

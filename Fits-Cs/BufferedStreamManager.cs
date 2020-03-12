@@ -56,7 +56,7 @@ namespace FitsCs
 
             Semaphore.Dispose();
             if (!LeaveOpen)
-                Stream?.Dispose();
+                Stream.Dispose();
         }
 
         public void Dispose()

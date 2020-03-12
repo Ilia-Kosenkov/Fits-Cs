@@ -28,7 +28,7 @@ namespace FitsCs
         public int GroupCount { get; }
         
         public bool IsEmpty =>
-            ItemSizeInBytes == 0 && AlignedNumKeys == 0 && DataType == null && ParamCount == 0 && GroupCount == 0;
+            ItemSizeInBytes == 0 && AlignedNumKeys == 0 && ParamCount == 0 && GroupCount == 0;
 
         public Descriptor(sbyte bitpix, int nKeys, 
             IEnumerable<int> naxis,

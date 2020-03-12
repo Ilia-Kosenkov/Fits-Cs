@@ -32,7 +32,7 @@ namespace FitsCs.Keys
             };
         }
 
-        private protected override string TypePrefix => @"spcl";
+        private protected override string TypePrefix => @"spc";
         public override object? Value => null;
         public override bool IsEmpty => string.IsNullOrWhiteSpace(Name) && string.IsNullOrWhiteSpace(Comment);
 
