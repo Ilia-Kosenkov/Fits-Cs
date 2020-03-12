@@ -2,7 +2,6 @@
 using System.Numerics;
 using System.Text;
 using FitsCs;
-using Microsoft.VisualBasic;
 using NUnit.Framework;
 
 namespace Tests
