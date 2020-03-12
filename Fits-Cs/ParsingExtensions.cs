@@ -5,7 +5,6 @@ using System.Buffers;
 using System.Globalization;
 using System.Numerics;
 using FitsCs.Keys;
-using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -59,7 +58,7 @@ namespace FitsCs
             }
 
             if (start > trimmedInput.Length - 1 ||
-                !trimmedInput.Slice(start..).TryCopyTo(resultSpan.Slice(offset))) 
+                !trimmedInput[start..].TryCopyTo(resultSpan.Slice(offset))) 
                 return false;
             @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
             return true;

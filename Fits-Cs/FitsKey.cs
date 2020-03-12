@@ -28,9 +28,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using FitsCs.Keys;
-using TextExtensions;
 using System.Numerics;
-using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -113,7 +111,7 @@ namespace FitsCs
                 var charSpan = charBuff.AsSpan(0, EntrySize);
                 if (!TryFormat(charSpan))
                     return false;
-
+                
                 var nBytes = Encoding.GetBytes(charSpan, span);
                 return nBytes > 0 && nBytes <= EntrySizeInBytes;
             }
@@ -270,7 +268,7 @@ namespace FitsCs
                 }
             }
 
-            if (input.Length >= 2 && input.Get(^2) != '\'' && input.Get(^1) == '\'')
+            if (input.Length >= 2 && input[^2] != '\'' && input[^1] == '\'')
                 return input.Length - 1;
 
             //return input.Length;
@@ -646,7 +644,7 @@ namespace FitsCs
 
             for (var i = 0;; i++)
             {
-                var currentChunk = text.Slice(offset..);
+                var currentChunk = text[offset..];
                 var (numSrcSymb, _) = currentChunk.MaxCompatibleStringSize(singleStrSize);
                 if (i != 0)
                 {
@@ -656,7 +654,7 @@ namespace FitsCs
                 }
 
                 if (numSrcSymb > 0)
-                    lastKeyStr = currentChunk.Slice(..numSrcSymb).ToString();
+                    lastKeyStr = currentChunk[..numSrcSymb].ToString();
 
                 offset += numSrcSymb;
                 if (offset >= text.Length)
@@ -675,7 +673,7 @@ namespace FitsCs
                 offset = 0;
                 for (var i = 0;; i++)
                 {
-                    var currentChunk = comment.Slice(offset..);
+                    var currentChunk = comment[offset..];
 
                     if (i == 0)
                     {
@@ -688,7 +686,7 @@ namespace FitsCs
                                 // Room for some comment
                                 var commSize = Math.Min(singleStrSize - strSize - 3, currentChunk.Length);
 
-                                lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
+                                lastCommentStr = " " + currentChunk[..commSize].ToString();
                                 offset += commSize;
                             }
                         }
@@ -696,7 +694,7 @@ namespace FitsCs
                         {
                             var commSize = Math.Min(currentChunk.Length, maxCommentLength);
                             lastKeyStr = string.Empty;
-                            lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
+                            lastCommentStr = " " + currentChunk[..commSize].ToString();
 
 
                             offset += commSize;
@@ -714,7 +712,7 @@ namespace FitsCs
                                 lastCommentStr));
                         var commSize = Math.Min(currentChunk.Length, maxCommentLength);
                         lastKeyStr = string.Empty;
-                        lastCommentStr = " " + currentChunk.Slice(..commSize).ToString();
+                        lastCommentStr = " " + currentChunk[..commSize].ToString();
                         offset += commSize;
                     }
 
@@ -742,8 +740,9 @@ namespace FitsCs
             IEnumerable<IFitsValue> keys,
             bool commentSpacePrefixed = false)
         {
-            using var textSb = new SimpleStringBuilder(4 * EntrySize);
-            using var commSb = new SimpleStringBuilder(4 * EntrySize);
+            
+            using var textSb = new TextExtensions.SimpleStringBuilder(4 * EntrySize);
+            using var commSb = new TextExtensions.SimpleStringBuilder(4 * EntrySize);
 
             var index = 0;
             var textWritten = 0;
@@ -768,7 +767,7 @@ namespace FitsCs
                 }
                 else if (key is IStringLikeValue continueKey)
                 {
-                    if (textWritten > 0 && textSb.View().Get(^1) == '&')
+                    if (textWritten > 0 && textSb.View()[^1] == '&')
                         textSb.DeleteBack();
 
                     textSb.Append(continueKey.RawValue ?? string.Empty);
@@ -793,7 +792,7 @@ namespace FitsCs
         public static string ParseCommentString(
             IEnumerable<IFitsValue> keys)
         {
-            using var textSb = new SimpleStringBuilder(4 * EntrySize);
+            using var textSb = new TextExtensions.SimpleStringBuilder(4 * EntrySize);
 
             foreach (var key in keys)
             {

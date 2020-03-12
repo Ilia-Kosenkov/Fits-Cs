@@ -2,12 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using FitsCs.Keys;
-using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -53,7 +51,7 @@ namespace FitsCs
             {
                 if (source[i] == '\'')
                 {
-                    if (!source.Slice(srcInd..(i + 1)).TryCopyTo(target.Slice(targetInd)))
+                    if (!source[srcInd..(i + 1)].TryCopyTo(target.Slice(targetInd)))
                         return false;
                     targetInd += i - srcInd + 1;
                     target[targetInd++] = '\'';
@@ -84,7 +82,7 @@ namespace FitsCs
 
             if (targetInd < minLength - 1)
             {
-                target.Slice(targetInd..(minLength - 1)).Fill(' ');
+                target[targetInd..(minLength - 1)].Fill(' ');
                 targetInd = minLength - 1;
             }
 
@@ -241,6 +239,38 @@ namespace FitsCs
             var n = enc.GetBytes(@string, buff);
             
             return n > 0 && buff.Slice(0, n).All(x => x >= 0x20 && x <= 0x7E);
+        }
+
+        public static bool Contains<T>(this Span<T> span, T value)
+            where T : unmanaged
+        {
+            ref var offset = ref Unsafe.AsRef(MemoryMarshal.GetReference(span));
+            if (offset.Equals(value))
+                return true;
+
+            for(var i = 1; i < span.Length; i++)
+            {
+                offset = ref Unsafe.Add(ref offset, 1);
+                if (offset.Equals(value))
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool All<T>(this Span<T> span, Func<T, bool> predicate)
+            where T : unmanaged
+        {
+            ref var offset = ref Unsafe.AsRef(MemoryMarshal.GetReference(span));
+            if (!predicate(offset))
+                return false;
+
+            for (var i = 1; i < span.Length; i++)
+            {
+                offset = ref Unsafe.Add(ref offset, 1);
+                if (!predicate(offset))
+                    return false;
+            }
+            return true;
         }
 
         public static IFitsValue? With<T>(

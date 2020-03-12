@@ -25,8 +25,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Drawing;
-using MemoryExtensions;
+//using MemoryExtensions;
 
 namespace FitsCs
 {
@@ -70,7 +69,7 @@ namespace FitsCs
         
         public bool TryInitialize(
             byte[] data)
-            => TryInitialize(data.AsReadOnlySpan());
+            => TryInitialize(data.AsSpan());
 
         public void Reset()
         {
