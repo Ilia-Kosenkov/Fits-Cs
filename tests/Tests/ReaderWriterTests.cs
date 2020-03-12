@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using FitsCs;
 using NUnit.Framework;
@@ -58,11 +57,13 @@ namespace Tests
         public static IEnumerable Test_FitsReader_Provider =>
             Test_FitsReader_Data()
                 .Select(x => new TestCaseData(x).SetName(
-                    $"Test_FitsReader_{Path.GetFileNameWithoutExtension(x.Name)}"));
+                    $"Test_FitsReader_{Path.GetFileNameWithoutExtension(x.Name)}"))
+                .ToList();
         public static IEnumerable Test_FitsReader_FitsWriter_Provider =>
             Test_FitsReader_Data()
                 .Select(x => new TestCaseData(x).SetName(
-                    $"Test_FitsReader_FitsWriter_{Path.GetFileNameWithoutExtension(x.Name)}"));
+                    $"Test_FitsReader_FitsWriter_{Path.GetFileNameWithoutExtension(x.Name)}"))
+                .ToList();
 
     }
 
@@ -130,19 +131,6 @@ namespace Tests
 
         }
 
-        [Test]
-        public void Test_CommentSpaces()
-        {
-            var bytes = new byte[80];
-            var bSpan = bytes.AsSpan();
-            bSpan.Fill((byte)' ');
-
-            Encoding.ASCII.GetBytes("TEST    = 1234/Comment").CopyTo(bSpan);
-
-            var key = FitsKey.ParseRawData(bSpan);
-            Assert.That(key is IFitsValue<int>);
-            Assert.That((int)key.Value, Is.EqualTo(1234));
-            Assert.That(key.Comment, Is.EqualTo(@" Comment"));
-        }
+        
     }
 }

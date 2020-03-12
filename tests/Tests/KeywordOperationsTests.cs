@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Numerics;
+using System.Text;
 using FitsCs;
+using Microsoft.VisualBasic;
 using NUnit.Framework;
 
 namespace Tests
@@ -54,6 +57,42 @@ namespace Tests
             Assert.That(keys.Length, Is.EqualTo(7));
             var roundTrip = FitsKey.ParseCommentString(keys);
             Assert.That(roundTrip.AsSpan().SequenceEqual(roundTrip.AsSpan()));
+        }
+
+        [Test]
+        public void Test_CommentSpaces()
+        {
+            var bytes = new byte[80];
+            var bSpan = bytes.AsSpan();
+            bSpan.Fill((byte)' ');
+
+            Encoding.ASCII.GetBytes("TEST    = 1234/Comment").CopyTo(bSpan);
+
+            var key = FitsKey.ParseRawData(bSpan);
+            Assert.That(key is IFitsValue<int>);
+            Assert.That((int)key.Value, Is.EqualTo(1234));
+            Assert.That(key.Comment, Is.EqualTo(@" Comment"));
+        }
+
+        [Test]
+        public void Test_ComplexKey()
+        {
+            var value = new Complex(-100500e-10, 100500e10);
+
+            var key = FitsKey.Create("TEST", value, type:KeyType.Free);
+            var str = key.ToString();
+
+            var buff = Encoding.ASCII.GetBytes(str);
+
+            var compKey1 = FitsKey.ParseRawData(buff);
+
+            key = FitsKey.Create("TEST", value);
+            str = key.ToString();
+            buff = Encoding.ASCII.GetBytes(str);
+
+            var compKey2 = FitsKey.ParseRawData(buff);
+
+            Assert.That(compKey1.Equals(compKey2));
         }
     }
 }
