@@ -95,7 +95,7 @@ namespace FitsCs
                 KeyType.Free => @"fre",
                 _ => @"udf"
             };
-            return $"[{frmtStr,-3}|{TypePrefix,6}]: {ToString()}";
+            return $"[{frmtStr,-3}|{TypePrefix,3}]: {ToString()}";
 
         }
         
