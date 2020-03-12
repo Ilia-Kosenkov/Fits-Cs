@@ -1,15 +1,13 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using FitsCs.Keys;
 using MemoryExtensions;
-using TextExtensions;
 
 namespace FitsCs
 {
@@ -156,44 +154,20 @@ namespace FitsCs
             return n;
         }
 
-        internal static string FormatDouble(this double value, int decPos, int maxSize)
-        {
-            // Using straightforward two-attempt way
-            var resultStr = string.Format($"{{0,{maxSize}:G{decPos}}}", value);
-
-
-            if (!resultStr.Contains('.') 
-                && !resultStr.Contains('E'))
-            {
-                Span<char> buff = stackalloc char[maxSize + 2];
-                resultStr.AsSpan().CopyTo(buff);
-                buff[^2] = '.';
-                buff[^1] = '0';
-                if (buff[0] == ' ' && buff[1] == ' ')
-                    resultStr = buff.Slice(2).ToString();
-                else
-                    resultStr = buff.ToString();
-            }
-
-            if (resultStr.Length > maxSize)
-                resultStr = string.Format($"{{0,{maxSize}:E{maxSize - 8}}}", value);
-            return resultStr;
-        }
-
         internal static bool TryFormatDouble(this double value, uint decPos, uint maxSize, Span<char> target)
         {
             Span<char> format = stackalloc char[12];
             format[0] = 'G';
             if (!decPos.TryFormat(format[1..], out _))
                 return false;
-
-            if (!value.TryFormat(target, out var nChars, format))
-            {
-                target[..nChars].Fill('\0');
-                if (!(maxSize - 7).TryFormat(format[1..], out _) ||
-                    !value.TryFormat(target, out nChars, format))
-                    return false;
-            }
+            
+            var reTry = !value.TryFormat(target, out var nChars, format);
+            if (reTry && !(maxSize - 7).TryFormat(format[1..], out _) ||
+                !value.TryFormat(target, out nChars, format))
+                reTry = true;
+            if (reTry && !(maxSize - 6).TryFormat(format[1..], out _) ||
+                !value.TryFormat(target, out nChars, format))
+                return false;
 
             if (nChars > maxSize)
                 return false;

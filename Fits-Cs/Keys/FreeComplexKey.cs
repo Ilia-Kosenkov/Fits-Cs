@@ -60,7 +60,8 @@ namespace FitsCs.Keys
         public bool Equals(IFitsValue<Complex>? other)
             => other is { }
                && base.Equals(other)
-               && RawValue.CorrectEquals(other.RawValue);
+               && Internal.UnsafeNumerics.MathOps.AlmostEqual(RawValue.Real, other.RawValue.Real)
+               && Internal.UnsafeNumerics.MathOps.AlmostEqual(RawValue.Imaginary, other.RawValue.Imaginary);
 
         public override bool Equals(IFitsValue? other)
             => other is IFitsValue<Complex> key

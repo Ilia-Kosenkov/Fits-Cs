@@ -53,12 +53,12 @@ namespace FitsCs.Keys
         public bool Equals(IFitsValue<double>? other)
             => other is { }
                && base.Equals(other)
-               && RawValue.CorrectEquals(other.RawValue);
+               && Internal.UnsafeNumerics.MathOps.AlmostEqual(RawValue, other.RawValue);
 
         public bool Equals(IFitsValue<float>? other)
             => other is { }
                && base.Equals(other)
-               && RawValue.CorrectEquals(other.RawValue);
+               && Internal.UnsafeNumerics.MathOps.AlmostEqual((float)RawValue, other.RawValue);
 
         public override bool Equals(IFitsValue? other)
             => other is IFitsValue<double> dKey && Equals(dKey)

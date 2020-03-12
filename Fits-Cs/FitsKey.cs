@@ -288,9 +288,9 @@ namespace FitsCs
             if (input.IsEmpty)
                 return false;
 
-            var trimmedStr = input.Trim();
+            var trimmedStr = input.TrimEnd();
 
-            switch (input.Length)
+            switch (trimmedStr.Length)
             {
                 case FixedFitsKey.FixedFieldSize:
                 {
@@ -325,7 +325,7 @@ namespace FitsCs
                         if (item != ':') continue;
 
                         isComplex = true;
-                        break;
+                        //break;
                     }
 
                     numericType = isComplex
@@ -364,7 +364,7 @@ namespace FitsCs
 
             var fVal = (float) dVal;
 
-            if (dVal.CorrectEquals(fVal))
+            if (Internal.UnsafeNumerics.MathOps.AlmostEqual(dVal, fVal))
                 return Create(name.ToString(), fVal, comment.IsEmpty ? null : comment.ToString());
             
             return Create(name.ToString(), dVal, comment.IsEmpty ? null : comment.ToString());

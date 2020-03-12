@@ -126,12 +126,13 @@ namespace FitsCs
                 if (columnPos == -1)
                     return false;
 
-                var result =
-                    numberString.Slice(0, columnPos).TryParseRaw(out double real)
-                    & numberString.Slice(columnPos + 1).TryParseRaw(out double image);
-
+                if (!trimmed[..columnPos].TryParseRaw(out double real) 
+                    || !trimmed[(columnPos + 1)..].TryParseRaw(out double image)) 
+                    return false;
+                
                 number = new Complex(real, image);
-                return result;
+                return true;
+
             }
         }
 
