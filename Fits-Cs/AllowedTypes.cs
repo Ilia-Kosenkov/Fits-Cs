@@ -11,31 +11,67 @@ namespace FitsCs
 {
     public static class AllowedTypes
     {
-        public static ImmutableArray<Type> KeywordTypes { get; } = new[]
+        public static ImmutableArray<Type> AllowedKeyTypes { get; } =
+            new[]
+            {
+                typeof(bool),
+                typeof(int),
+                typeof(long),
+                typeof(float),
+                typeof(double),
+                typeof(Complex),
+                typeof(string)
+
+            }.ToImmutableArray();
+
+        public static ImmutableArray<Type> AllowedDataTypes { get; } =
+            new[]
+            {
+                typeof(byte),
+                typeof(short),
+                typeof(int),
+                typeof(long),
+                typeof(float),
+                typeof(double)
+            }.ToImmutableArray();
+
+
+        // This is nicely optimized by the jit
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool CanBeKeyType<T>()
+            => default(T)! switch
+            {
+                bool { } => true,
+                int { } => true,
+                long { } => true,
+                float { } => true,
+                double { } => true,
+                Complex { } => true,
+                null when typeof(T) == typeof(string) => true,
+                _ => false
+            };
+
+        public static bool CanBeKeyType(Type type)
         {
-            typeof(bool),
-            typeof(int),
-            typeof(long),
-            typeof(float),
-            typeof(double),
-            typeof(string),
-            typeof(Complex)
-        }.ToImmutableArray();
+            if (type is null)
+                return false;
+            if (type == typeof(bool))
+                return true;
+            if (type == typeof(int))
+                return true;
+            if (type == typeof(long))
+                return true;
+            if (type == typeof(float))
+                return true;
+            if (type == typeof(double))
+                return true;
+            if (type == typeof(Complex))
+                return true;
+            if (type == typeof(string))
+                return true;
 
-        public static ImmutableArray<Type> DataTypes { get; } = new[]
-        {
-            typeof(byte),
-            typeof(short),
-            typeof(int),
-            typeof(long),
-            typeof(float),
-            typeof(double)
-        }.ToImmutableArray();
-
-        public static bool CanBeKeyType<T>() => KeywordTypes.Contains(typeof(T));
-
-        public static bool CanBeKeyType(Type type) =>
-            !(type is null) && KeywordTypes.Contains(type);
+            return false;
+        }
 
         public static void ValidateKeyType<T>()
         {
@@ -49,10 +85,38 @@ namespace FitsCs
                 throw new TypeAccessException(SR.KeyTypeNotSupported);
         }
 
-        public static bool CanBeDataType<T>() => DataTypes.Contains(typeof(T));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool CanBeDataType<T>()
+            => default(T)! switch
+            {
+                byte { } => true,
+                short { } => true,
+                int { } => true,
+                long { } => true,
+                float { } => true,
+                double { } => true,
+                _ => false
+            };
 
-        public static bool CanBeDataType(Type type) =>
-            !(type is null) && DataTypes.Contains(type);
+        public static bool CanBeDataType(Type type)
+        {
+            if (type is null)
+                return false;
+            if (type == typeof(byte))
+                return true;
+            if (type == typeof(short))
+                return true;
+            if (type == typeof(int))
+                return true;
+            if (type == typeof(long))
+                return true;
+            if (type == typeof(float))
+                return true;
+            if (type == typeof(double))
+                return true;
+            
+            return false;
+        }
 
         public static void ValidateDataType<T>()
         {
