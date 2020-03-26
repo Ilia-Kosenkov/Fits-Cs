@@ -79,6 +79,15 @@ namespace FitsCs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to HDU type is not currently supported..
+        /// </summary>
+        internal static string HduTypeNotSupported {
+            get {
+                return ResourceManager.GetString("HduTypeNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Argument is invalid..
         /// </summary>
         internal static string InvalidArgument {

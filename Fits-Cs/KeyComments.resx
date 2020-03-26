@@ -117,49 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="DataTypeNotSupported" xml:space="preserve">
-    <value>Data type is not supported.</value>
+  <data name="Bitpix" xml:space="preserve">
+    <value>Data type and size in bits</value>
   </data>
-  <data name="HduStringIllegal" xml:space="preserve">
-    <value>String contains characters that cannot be used in the HDU.</value>
+  <data name="Gcount" xml:space="preserve">
+    <value>Number of groups</value>
   </data>
-  <data name="HduTypeNotSupported" xml:space="preserve">
-    <value>HDU type is not currently supported.</value>
+  <data name="Naxis" xml:space="preserve">
+    <value>Number of dimensions</value>
   </data>
-  <data name="InvalidArgument" xml:space="preserve">
-    <value>Argument is invalid.</value>
+  <data name="Pcount" xml:space="preserve">
+    <value>Number of parameters</value>
   </data>
-  <data name="InvalidKey" xml:space="preserve">
-    <value>Unexpected FITS key.</value>
+  <data name="Simple_True" xml:space="preserve">
+    <value>Fits-compliant file</value>
   </data>
-  <data name="InvalidOperation" xml:space="preserve">
-    <value>Operation cannot be performed.</value>
+  <data name="Xtension_Bintable" xml:space="preserve">
+    <value>Binary table extension</value>
   </data>
-  <data name="IOReadFailure" xml:space="preserve">
-    <value>Failed to read file: it may be corrupted or of unsupported format.</value>
+  <data name="Xtension_Image" xml:space="preserve">
+    <value>Image extension</value>
   </data>
-  <data name="KeyNameTooLong" xml:space="preserve">
-    <value>Key name is too large.</value>
-  </data>
-  <data name="KeyNameTooShort" xml:space="preserve">
-    <value>Key name cannot be empty.</value>
-  </data>
-  <data name="KeyTypeNotSupported" xml:space="preserve">
-    <value>Key type is not supported.</value>
-  </data>
-  <data name="KeyValueTooLarge" xml:space="preserve">
-    <value>Key value is too large and cannot be stored.</value>
-  </data>
-  <data name="MethodNotImplemented" xml:space="preserve">
-    <value>Method is supported, but not implemented yet.</value>
-  </data>
-  <data name="NullArgument" xml:space="preserve">
-    <value>Argument cannot be null.</value>
-  </data>
-  <data name="ShouldNotHappen" xml:space="preserve">
-    <value>This exception should not happen. If you see this, there is a bug in the library.</value>
-  </data>
-  <data name="UnexpectedNullRef" xml:space="preserve">
-    <value>Required object is null.</value>
+  <data name="Xtension_Table" xml:space="preserve">
+    <value>Table extension</value>
   </data>
 </root>

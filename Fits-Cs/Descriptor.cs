@@ -157,5 +157,27 @@ namespace FitsCs
 
             return (prod + ParamCount) * GroupCount;
         }
+
+        public ImmutableList<IFitsValue> GenerateFitsHeader()
+        {
+            var builder = ImmutableList.CreateBuilder<IFitsValue>();
+            builder.Add(Type.ToFitsKey());
+            builder.Add(FitsKey.Create(
+                @"BITPIX",
+                (int)(Extensions.ConvertTypeToBitPix(DataType) ?? throw new InvalidOperationException(SR.ShouldNotHappen)),
+                KeyComments.Bitpix));
+            builder.Add(FitsKey.Create(@"NAXIS", Dimensions.Length, KeyComments.Naxis));
+
+            for(var i = 0; i < Dimensions.Length; i++)
+                builder.Add(FitsKey.Create(@$"NAXIS{i + 1}", Dimensions[i]));
+
+            if (ParamCount != 0 || GroupCount != 1)
+            {
+                builder.Add(FitsKey.Create(@"PCOUNT", ParamCount, KeyComments.Pcount));
+                builder.Add(FitsKey.Create(@"GCOUNT", GroupCount, KeyComments.Gcount));
+            }
+
+            return builder.ToImmutable();
+        }
     }
 }

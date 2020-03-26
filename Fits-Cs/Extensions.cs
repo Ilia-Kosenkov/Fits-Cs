@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using FitsCs.Keys;
 
@@ -393,6 +394,15 @@ namespace FitsCs
             }
         }
 
+        public static IFitsValue ToFitsKey(this ExtensionType type)
+            => type switch
+            {
+                ExtensionType.Image => FitsKey.Create(@"XTENSION", @"IMAGE", KeyComments.Xtension_Image),
+                ExtensionType.BinTable => FitsKey.Create(@"XTENSION", @"BINTABLE", KeyComments.Xtension_Bintable),
+                ExtensionType.Table => FitsKey.Create(@"XTENSION", @"TABLE", KeyComments.Xtension_Table),
+                ExtensionType.Primary => FitsKey.Create(@"SIMPLE", true, KeyComments.Simple_True),
+                _ => throw new NotSupportedException(SR.HduTypeNotSupported)
+            };
 
         public static Type? ConvertBitPixToType(int bitpix)
         {
