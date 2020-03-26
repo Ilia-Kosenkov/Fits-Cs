@@ -21,23 +21,18 @@ namespace FitsCs
         
         public ImmutableArray<int> Dimensions { get; }
         
-        public int AlignedNumKeys { get; }
-        
         public int ParamCount { get; }
         
         public int GroupCount { get; }
         
         public bool IsEmpty =>
-            ItemSizeInBytes == 0 && AlignedNumKeys == 0 && ParamCount == 0 && GroupCount == 0;
+            ItemSizeInBytes == 0 && ParamCount == 0 && GroupCount == 0;
 
-        public Descriptor(sbyte bitpix, int nKeys, 
+        public Descriptor(sbyte bitpix, 
             IEnumerable<int> naxis,
             ExtensionType type = ExtensionType.Primary,
             int paramCount = 0, int groupCount = 1)
         {
-            if (nKeys < 0)
-                throw new ArgumentOutOfRangeException(nameof(nKeys));
-
             if (paramCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(paramCount));
             if (groupCount <= 0)
@@ -48,7 +43,6 @@ namespace FitsCs
             DataType = dataType ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
             Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
-            AlignedNumKeys = nKeys;
             ParamCount = paramCount;
             GroupCount = groupCount;
         }
@@ -137,7 +131,6 @@ namespace FitsCs
             GroupCount = GroupCount == -1 ? 1 : GroupCount;
 
             Dimensions = builder.ToImmutableArray();
-            AlignedNumKeys = (header.Count + FitsKey.KeysPerUnit - 1) / FitsKey.KeysPerUnit;
         }
 
         public long GetFullSize()

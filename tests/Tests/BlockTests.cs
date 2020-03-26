@@ -21,7 +21,7 @@ namespace Tests
         [Test]
         public void Test_ByteFlipping()
         {
-            var desc = new Descriptor(32, 0, new[] { 20, 36 });
+            var desc = new Descriptor(32, new[] { 20, 36 });
 
             var block = Block.Create(desc, Enumerable.Empty<IFitsValue>()) as Block<int> ?? throw new Exception();
             MemoryMarshal.AsBytes<int>(_data).CopyTo(block.RawDataInternal);
