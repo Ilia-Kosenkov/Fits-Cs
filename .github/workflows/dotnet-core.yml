@@ -79,7 +79,7 @@ jobs:
           "testkeys2.fits"
         )
         $link = "https://fits.gsfc.nasa.gov/samples"
-        mkdir tests/Tests/TestData -ErrorAction SilentlyContinue
+        New-Item -type Directory -Path tests/Tests/TestData -ErrorAction SilentlyContinue
         foreach($f in $files) {
           (Invoke-WebRequest "$link/$f").Content > "tests/Tests/TestData/$f"
         }
