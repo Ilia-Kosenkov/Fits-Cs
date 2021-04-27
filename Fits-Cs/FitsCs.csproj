@@ -4,7 +4,6 @@
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
     <RootNamespace>FitsCs</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Ilia Kosenkov</Authors>
     <Description>An implementation of FITS standard in C#.</Description>
     <PackageProjectUrl>https://github.com/Ilia-Kosenkov/Fits-Cs</PackageProjectUrl>
