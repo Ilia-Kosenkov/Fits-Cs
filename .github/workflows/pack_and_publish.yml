@@ -1,0 +1,94 @@
+name: Pack and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+   
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+jobs:
+  build_pack:
+
+    runs-on: ubuntu-latest
+        
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET 5.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Download test data
+      run: |
+        $files = @(
+          "DDTSUVDATA.fits", 
+          "EUVEngc4151imgx.fits", 
+          "FGSf64y0106m_a1f.fits", 
+          "FOCx38i0101t_c0f.fits", 
+          "FOSy19g0309t_c1f.fits",
+          "FOSy19g0309t_c2f.fits",
+          "HRSz0yd020fm_c1f.fits",
+          "HRSz0yd020fm_c2f.fits", 
+          "IUElwp25637mxlo.fits",
+          "NICMOSn4hk12010_mos.fits", 
+          "UITfuv2582gc.fits", 
+          "WFPC2ASSNu5780205bx.fits",
+          "WFPC2u5780205r_c0fx.fits",
+          "testkeys.fits", 
+          "testkeys2.fits"
+        )
+        $link = "https://fits.gsfc.nasa.gov/samples"
+        New-Item -type Directory -Path tests/Tests/TestData -ErrorAction SilentlyContinue
+        foreach($f in $files) {
+          Invoke-WebRequest "$link/$f" -outfile "tests/Tests/TestData/$f"
+        }
+      shell: pwsh
+
+    - name: Install dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
+  
+    - name: Pack library
+      run: dotnet pack -o ./Packed -c Release -p:Deterministic=true
+
+    - name: Upload nuget
+      uses: actions/upload-artifact@v2.2.1
+      with: 
+        name: PackedLibrary
+        path: ./Packed
+
+    - name: Publish to github package registry
+      run: dotnet nuget push -s 'https://nuget.pkg.github.com/Ilia-Kosenkov/index.json' -k $GITHUB_TOKEN --skip-duplicate ./Packed/*nupkg
+      
+    - name: Creating release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+      
+    - name: Get exact package name and path
+      run: |
+        echo "ARTIFACT_FNAME=$(ls ./Packed/*nupkg | grep -Po '(?<=/)[^/]+?$')" >> $GITHUB_ENV
+        echo "ARTIFACT_PATH=$(ls ./Packed/*nupkg)" >> $GITHUB_ENV
+        
+    - name: Add artifact
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.ARTIFACT_PATH }}
+        asset_name: ${{ env.ARTIFACT_FNAME }}
+        asset_content_type: application/zip    
+
+
