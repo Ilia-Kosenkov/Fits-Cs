@@ -42,7 +42,7 @@ jobs:
         shell: pwsh
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
-      
+
     runs-on: ${{ matrix.os }}
     
     name: ${{ matrix.os }}
@@ -83,7 +83,7 @@ jobs:
         $link = "https://fits.gsfc.nasa.gov/samples"
         New-Item -type Directory -Path tests/Tests/TestData -ErrorAction SilentlyContinue
         foreach($f in $files) {
-          (Invoke-WebRequest "$link/$f").Content > "tests/Tests/TestData/$f"
+          Invoke-WebRequest "$link/$f" -outfile "tests/Tests/TestData/$f"
         }
 
 
