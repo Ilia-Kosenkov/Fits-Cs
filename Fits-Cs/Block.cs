@@ -22,7 +22,7 @@ namespace FitsCs
         {
             if (!BitConverter.IsLittleEndian)
                 return;
-            var span = RawDataInternal;
+            Span<byte> span = RawDataInternal;
             var itemSizeInBytes = Descriptor.ItemSizeInBytes;
             span.FlipEndianess(itemSizeInBytes);
         }
@@ -32,7 +32,7 @@ namespace FitsCs
 
         public abstract IEnumerable<DataBlob> AsBlobStream();
 
-        protected internal Block(Descriptor desc, IEnumerable<IFitsValue> keys)
+        protected internal Block(Descriptor desc, IEnumerable<IFitsValue>? keys)
         {
             if (desc.IsEmpty)
                 throw new ArgumentException(SR.InvalidArgument, nameof(desc));
@@ -41,7 +41,7 @@ namespace FitsCs
             Keys = keys?.ToImmutableList() ?? ImmutableList<IFitsValue>.Empty;
         }
 
-        public static Block Create(Descriptor desc, IEnumerable<IFitsValue> keys)
+        public static Block Create(Descriptor desc, IEnumerable<IFitsValue>? keys)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
             
@@ -61,7 +61,7 @@ namespace FitsCs
             throw new ArgumentException(SR.InvalidArgument, nameof(desc));
         }
 
-        public static Block Create(Descriptor desc, IEnumerable<IFitsValue> keys, Initializer<byte> initializer)
+        public static Block Create(Descriptor desc, IEnumerable<IFitsValue>? keys, Initializer<byte> initializer)
         {
             AllowedTypes.ValidateDataType(desc.DataType);
             _ = initializer ?? throw new ArgumentNullException(nameof(initializer));
@@ -86,7 +86,7 @@ namespace FitsCs
     public class Block<T> : Block where T : unmanaged
     {
         // ReSharper disable once InconsistentNaming
-        private protected T[] _data;
+        private protected readonly T[] _data;
         internal override Span<byte> RawDataInternal => MemoryMarshal.AsBytes(_data.AsSpan());
         public ReadOnlySpan<T> Data => _data;
         public override ReadOnlySpan<byte> RawData => RawDataInternal;
@@ -119,7 +119,7 @@ namespace FitsCs
             }
         }
 
-        protected internal Block(Descriptor desc, IEnumerable<IFitsValue> keys) : base(desc, keys)
+        protected internal Block(Descriptor desc, IEnumerable<IFitsValue>? keys) : base(desc, keys)
         {
             AllowedTypes.ValidateDataType<T>();
            
@@ -129,7 +129,7 @@ namespace FitsCs
 
         protected internal Block(
             Descriptor desc, 
-            IEnumerable<IFitsValue> keys,
+            IEnumerable<IFitsValue>? keys,
             Initializer<T> initializer)
             : base(desc, keys)
         {
@@ -145,7 +145,7 @@ namespace FitsCs
         // This is for generic byte-initialization
         public Block(
             Descriptor desc,
-            IEnumerable<IFitsValue> keys,
+            IEnumerable<IFitsValue>? keys,
             Initializer<byte> initializer)
             : base(desc, keys)
         {
@@ -162,7 +162,7 @@ namespace FitsCs
         // This is for public & external use; allows to write directly into the data array
         public static Block<T> CreateWithData(
             Descriptor desc,
-            IEnumerable<IFitsValue> keys,
+            IEnumerable<IFitsValue>? keys,
             Initializer<T> initializer)
         {
             if (typeof(T) != desc.DataType)

@@ -12,27 +12,30 @@ namespace FitsCs
         // Cannot fully abstract these,
         // Streams do not have Span overloads in .NS 2.0
         protected const int DefaultBufferSize = 16 * DataBlob.SizeInBytes;
-        protected byte[] Buffer;
+        protected readonly byte[] Buffer;
         protected volatile int NBytesAvailable;
         protected Span<byte> Span => Buffer;
 
         // 16 * 2880 bytes is ~ 45 KB
         // It allows to process up to 16 Fits IDUs at once
-        protected readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
+        protected readonly SemaphoreSlim Semaphore = new(1, 1);
 
         protected readonly Stream Stream;
         protected readonly bool LeaveOpen;
 
-        protected virtual void CompactBuffer(int n = 0)
+        protected void CompactBuffer(int n = 0)
         {
             if (NBytesAvailable <= 0 || n < 0)
                 return;
 
             n = n == 0 ? NBytesAvailable : Math.Min(n, NBytesAvailable);
-            
-            if(n < Span.Length)
+
+            if (n < Span.Length)
+            {
                 Span.Slice(n).CopyTo(Span);
-            NBytesAvailable -= n;
+            }
+
+            Interlocked.Add(ref NBytesAvailable, -n);
             
             Span.Slice(NBytesAvailable).Fill(0);
         }

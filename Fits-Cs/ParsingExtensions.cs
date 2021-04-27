@@ -23,7 +23,7 @@ namespace FitsCs
             out string? @string)
         {
             @string = null;
-            var trimmedInput = quotedString.TrimEnd();
+            ReadOnlySpan<char> trimmedInput = quotedString.TrimEnd();
             // If input is empty or exceeds one entry size;
             if (trimmedInput.Length > FitsKey.EntrySize)
                 return false;
@@ -58,8 +58,10 @@ namespace FitsCs
             }
 
             if (start > trimmedInput.Length - 1 ||
-                !trimmedInput[start..].TryCopyTo(resultSpan.Slice(offset))) 
+                !trimmedInput[start..].TryCopyTo(resultSpan.Slice(offset)))
+            {
                 return false;
+            }
             @string = resultSpan.Slice(0, offset + trimmedInput.Length - start).ToString();
             return true;
 
@@ -96,11 +98,11 @@ namespace FitsCs
         {
             char[]? arrayBuff = null;
 
-            var trimmedInput = numberString.Trim();
+            ReadOnlySpan<char> trimmedInput = numberString.Trim();
 
             try
             {
-                var buff =
+                Span<char> buff =
                     trimmedInput.Length > 64
                         ? (arrayBuff = ArrayPool<char>.Shared.Rent(trimmedInput.Length))[..trimmedInput.Length]
                         : stackalloc char[trimmedInput.Length];
@@ -138,7 +140,7 @@ namespace FitsCs
             else
             {
                 number = default;
-                var trimmed = numberString.Trim();
+                ReadOnlySpan<char> trimmed = numberString.Trim();
                 var columnPos = trimmed.IndexOf(':');
                 if (columnPos == -1)
                     return false;
