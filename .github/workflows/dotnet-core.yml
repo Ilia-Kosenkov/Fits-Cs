@@ -1,0 +1,103 @@
+name: Build & Test
+
+on:
+  push:
+    branches: 
+      - main
+      - master
+      - staging
+    paths:
+      - '**/global.json'
+      - '**/*cs'
+      - '**/*resx'
+      - '**/*csproj'
+      - '**/*sln'
+      - '**/dotnet-core.yml'
+      - '**/nuget.config'
+  pull_request:
+    branches: 
+      - main
+      - master
+      - staging
+    paths:
+      - '**/global.json'
+      - '**/*cs'
+      - '**/*resx'
+      - '**/*csproj'
+      - '**/*sln'
+      - '**/dotnet-core.yml'
+      - '**/nuget.config'
+  workflow_dispatch:
+
+jobs:
+  build_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['Windows-latest', 'ubuntu-latest', 'macOS-latest']
+        preview_version: ['6.0.100-preview.3.21207.34']
+        
+    defaults:
+      run:
+        shell: pwsh
+    
+    runs-on: ${{ matrix.os }}
+    
+    name: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.x'
+
+    - name: Setup .NET preview
+      if: matrix.preview_version != ''
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.preview_version }}
+            
+    - name: Download test data
+      run:
+        $files = @(
+          "DDTSUVDATA.fits", 
+          "EUVEngc4151imgx.fits", 
+          "FGSf64y0106m_a1f.fits", 
+          "FOCx38i0101t_c0f.fits", 
+          "FOSy19g0309t_c1f.fits",
+          "FOSy19g0309t_c2f.fits",
+          "HRSz0yd020fm_c1f.fits",
+          "HRSz0yd020fm_c2f.fits", 
+          "IUElwp25637mxlo.fits",
+          "NICMOSn4hk12010_mos.fits", 
+          "UITfuv2582gc.fits", 
+          "WFPC2ASSNu5780205bx.fits",
+          "WFPC2u5780205r_c0fx.fits",
+          "testkeys.fits", 
+          "testkeys2.fits"
+        )
+        $link = "https://fits.gsfc.nasa.gov/samples"
+        mkdir tests/Tests/TestData -ErrorAction SilentlyContinue
+        foreach($f in $files) {
+          (Invoke-WebRequest "$link/$f").Content > "tests/Tests/TestData/$f"
+        }
+
+
+    - name: Install dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: |
+        dotnet build -c Release --no-restore
+
+    - name: Test .NET Standard 2.1 using .NET 6.0 preview
+      if: matrix.preview_version != ''
+      run: dotnet test -c Release --no-restore --verbosity normal -f net6.0
+
+    - name: Test .NET Standard 2.1 using .NET 5.0
+      run: dotnet test -c Release --no-restore --verbosity normal -f net5.0
+      
+    # - name: Test .NET Standard 2.0 using Legacy Framework / Mono
+      # run: dotnet test -c Release --no-restore --verbosity normal -f net4.8
