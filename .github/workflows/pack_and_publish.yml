@@ -7,6 +7,7 @@ on:
    
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  GITHUB_NUGET_RO: ${{secrets.GITHUB_TOKEN}}
 jobs:
   build_pack:
 
