@@ -24,8 +24,10 @@ namespace FitsCs
                 // Regular character 1-to-1
                 sum += 1;
                 // Single quote 2-to-1
-                if(item == '\'')
+                if (item == '\'')
+                {
                     sum += 1;
+                }
                 // >>> Double quotes are treated as a single character, according to the standard
                 //// Double quote replaced by 4 single quotes
                 //if (item == '"')
@@ -40,9 +42,11 @@ namespace FitsCs
             Span<char> target,
             int minLength = MinFixedStringSize)
         {
-          
+
             if (target.Length < source.Length + 2)
+            {
                 return false;
+            }
 
             target[0] = '\'';
             var srcInd = 0;
@@ -53,7 +57,9 @@ namespace FitsCs
                 if (source[i] == '\'')
                 {
                     if (!source[srcInd..(i + 1)].TryCopyTo(target.Slice(targetInd)))
+                    {
                         return false;
+                    }
                     targetInd += i - srcInd + 1;
                     target[targetInd++] = '\'';
                     srcInd = i + 1;
@@ -74,12 +80,16 @@ namespace FitsCs
             if (srcInd < source.Length)
             {
                 if (!source.Slice(srcInd).TryCopyTo(target.Slice(targetInd)))
+                {
                     return false;
+                }
                 targetInd += source.Length - srcInd;
             }
 
             if (targetInd >= target.Length)
+            {
                 return false;
+            }
 
             if (targetInd < minLength - 1)
             {
@@ -97,7 +107,9 @@ namespace FitsCs
             int length)
         {
             if (length <= 1)
+            {
                 return (source.Length, 0);
+            }
 
             var srcId = 0;
             var numConvSymb = 2;
@@ -120,9 +132,14 @@ namespace FitsCs
         internal static int SignificantDigitsCount(this int value)
         {
             if (value == 0)
+            {
                 return 1;
+            }
+
             if (value < 0)
+            {
                 value = -value;
+            }
 
             var n = 0;
 
@@ -138,9 +155,14 @@ namespace FitsCs
         internal static int SignificantDigitsCount(this long value)
         {
             if (value == 0)
+            {
                 return 1;
+            }
+
             if (value < 0)
+            {
                 value = -value;
+            }
 
             var n = 0;
 
@@ -163,15 +185,22 @@ namespace FitsCs
             var reTry = !value.TryFormat(target, out var nChars, format);
             if (reTry && !(maxSize - 7).TryFormat(format[1..], out _) ||
                 !value.TryFormat(target, out nChars, format))
+            {
                 reTry = true;
+            }
+
             if (reTry && !(maxSize - 6).TryFormat(format[1..], out _) ||
                 !value.TryFormat(target, out nChars, format))
+            {
                 return false;
+            }
 
             if (nChars > maxSize)
+            {
                 return false;
+            }
 
-            var data = target[..nChars];
+            Span<char> data = target.Slice(0, nChars);
 
             if (!data.Contains('.'))
             {
@@ -187,8 +216,8 @@ namespace FitsCs
             if (nChars > maxSize)
                 return false;
 
-            target[..nChars].CopyTo(target[^nChars..]);
-            target[..^nChars].Fill(' ');
+            target.Slice(0, nChars).CopyTo(target.Slice(target.Length - nChars));
+            target.Slice(0, target.Length - nChars).Fill(' ');
 
             return true;
         }
@@ -197,16 +226,22 @@ namespace FitsCs
         {
             Span<char> format = stackalloc char[12];
             format[0] = 'G';
-            if(!decPos.TryFormat(format[1..], out _))
+            if (!decPos.TryFormat(format[1..], out _))
+            {
                 return false;
+            }
 
             if (!value.TryFormat(target, out var nChars, format))
+            {
                 return false;
+            }
 
             if (nChars > maxSize)
+            {
                 return false;
+            }
 
-            var data = target[..nChars];
+            Span<char> data = target.Slice(0, nChars);
 
             if (!data.Contains('.'))
             {
@@ -216,26 +251,29 @@ namespace FitsCs
                 format[1] = '1';
 
                 if (!value.TryFormat(target, out nChars, format))
+                {
                     return false;
+                }
             }
             
-            target[..nChars].CopyTo(target[^nChars..]);
-            target[..^nChars].Fill(' ');
+            target.Slice(0, nChars).CopyTo(target.Slice(target.Length - nChars));
+            target.Slice(0, target.Length - nChars).Fill(' ');
 
             return true;
         }
 
         internal static bool IsStringHduCompatible(this ReadOnlySpan<char> @string, Encoding? enc = null)
         {
-            if (enc is null)
-                enc= Encoding.ASCII;
-            
-            if(@string.IsEmpty)
+            enc ??= Encoding.ASCII;
+
+            if (@string.IsEmpty)
+            {
                 return true;
+            }
 
             var byteSize = enc.GetByteCount(@string);
 
-            var buff = @string.Length < 512 ? stackalloc byte[byteSize] : new byte[byteSize];
+            Span<byte> buff = @string.Length < 512 ? stackalloc byte[byteSize] : new byte[byteSize];
 
             var n = enc.GetBytes(@string, buff);
             
@@ -243,9 +281,9 @@ namespace FitsCs
         }
 
         public static bool Contains<T>(this Span<T> span, T value)
-            where T : unmanaged
+            where T : unmanaged, IEquatable<T>
         {
-            ref var offset = ref Unsafe.AsRef(MemoryMarshal.GetReference(span));
+            ref var offset = ref span[0];
             if (offset.Equals(value))
                 return true;
 
@@ -253,23 +291,29 @@ namespace FitsCs
             {
                 offset = ref Unsafe.Add(ref offset, 1);
                 if (offset.Equals(value))
+                {
                     return true;
+                }
             }
             return false;
         }
 
-        public static bool All<T>(this Span<T> span, Func<T, bool> predicate)
+        private static bool All<T>(this Span<T> span, Func<T, bool> predicate)
             where T : unmanaged
         {
-            ref var offset = ref Unsafe.AsRef(MemoryMarshal.GetReference(span));
+            ref var offset = ref span[0];
             if (!predicate(offset))
+            {
                 return false;
+            }
 
             for (var i = 1; i < span.Length; i++)
             {
                 offset = ref Unsafe.Add(ref offset, 1);
                 if (!predicate(offset))
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -278,12 +322,17 @@ namespace FitsCs
             this IFitsValue<T> @this, 
             Action<KeyUpdater> updateAction)
         {
-            if(@this is null)
+            if (@this is null)
+            {
                 throw new ArgumentNullException(nameof(@this), SR.NullArgument);
-            if (updateAction is null)
-                throw new ArgumentNullException(nameof(updateAction), SR.NullArgument);
+            }
 
-            var updater = new KeyUpdater()
+            if (updateAction is null)
+            {
+                throw new ArgumentNullException(nameof(updateAction), SR.NullArgument);
+            }
+
+            var updater = new KeyUpdater
             {
                 Name = @this.Name,
                 Comment = @this.Comment,
@@ -305,13 +354,17 @@ namespace FitsCs
         }
 
 
-        public static IFitsValue GetFirstByName(this IReadOnlyList<IFitsValue> keys, string name)
+        public static IFitsValue? GetFirstByName(this IReadOnlyList<IFitsValue> keys, string name)
         {
             if (keys is null)
+            {
                 throw new ArgumentNullException(nameof(keys), SR.NullArgument);
+            }
 
             if (string.IsNullOrWhiteSpace(name))
+            {
                 throw new ArgumentNullException(nameof(name), SR.NullArgument);
+            }
 
             return keys.FirstOrDefault(item => item?.Name == name);
         }
@@ -319,19 +372,26 @@ namespace FitsCs
         public static bool IsEnd(this IReadOnlyList<IFitsValue> keys)
         {
             if (keys is null)
+            {
                 throw new ArgumentNullException(nameof(keys), SR.NullArgument);
+            }
 
             for(var i = keys.Count - 1; i >= 0; i--)
-                if (keys[i]?.Name == @"END")
-                    return true;
+            {
+                if (keys[i] is not {Name: @"END"}) continue;
+                
+                return true;
+            }
 
             return false;
         }
 
         public static void FlipEndianess(this Span<byte> span, int itemSizeInBytes)
         {
-            if(span.IsEmpty)
+            if (span.IsEmpty)
+            {
                 return;
+            }
             
             var length = span.Length / itemSizeInBytes;
 
@@ -431,7 +491,7 @@ namespace FitsCs
         public static sbyte? ConvertTypeToBitPix<T>()
             where T : unmanaged
             => AllowedTypes.CanBeDataType<T>()
-                ? (sbyte?)(default(T) switch
+                ? (sbyte?) (default(T) switch
                 {
                     float _ => sizeof(float) * -8,
                     double _ => sizeof(double) * -8,

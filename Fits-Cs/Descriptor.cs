@@ -37,12 +37,17 @@ namespace FitsCs
                 throw new ArgumentOutOfRangeException(nameof(paramCount));
             if (groupCount <= 0)
                 throw new ArgumentOutOfRangeException(nameof(groupCount));
-
+            if (naxis is null)
+            {
+                throw new ArgumentNullException(nameof(naxis));
+            }
+            
+            
             Type = type;
             var dataType = Extensions.ConvertBitPixToType(bitpix);
             DataType = dataType ?? throw new ArgumentException(nameof(bitpix), SR.InvalidArgument);
             ItemSizeInBytes = (byte)((bitpix < 0 ? -bitpix : bitpix) / 8);
-            Dimensions = naxis?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(naxis));
+            Dimensions = naxis.ToImmutableArray();
             ParamCount = paramCount;
             GroupCount = groupCount;
         }
@@ -61,18 +66,20 @@ namespace FitsCs
                 throw new ArgumentException(SR.InvalidArgument, nameof(header));
 
             var first = header[0];
-            Type = ParsingExtensions.FitsExtensionTypeFromString(first.Name switch
-            {
-                @"SIMPLE" when first is IFitsValue<bool> simpleKey && simpleKey.RawValue => null,
-                @"XTENSION" when first is IFitsValue<string> extDesc => extDesc.RawValue,
-                _ => throw new InvalidOperationException(SR.InvalidKey)
-
-            });
-
+            Type = ParsingExtensions.FitsExtensionTypeFromString(
+                first switch
+                {
+                    IFitsValue<bool> {Name: @"SIMPLE", RawValue: true} => null,
+                    IFitsValue<string> {Name: @"XTENSION", RawValue: var extDesc} => extDesc,
+                    _ => throw new InvalidOperationException(SR.InvalidKey)
+                }
+            );
+                
+          
             var bitPix =
                 header[1] switch
                 {
-                    IFitsValue<int> bpxKey when bpxKey.Name == @"BITPIX" => bpxKey.RawValue,
+                    IFitsValue<int> {Name: @"BITPIX", RawValue: var bpxVal} => bpxVal,
                     _ => throw new InvalidOperationException(SR.InvalidKey)
                 };
 
@@ -83,12 +90,7 @@ namespace FitsCs
 
             var nAxis = header[2] switch
             {
-                IFitsValue<int> naxisKey
-                    when
-                        naxisKey.Name == @"NAXIS"
-                        && naxisKey.RawValue >= 0
-                    => naxisKey.RawValue,
-
+                IFitsValue<int> {Name: @"NAXIS", RawValue: var naxisVal and >= 0} => naxisVal,
                 _ => throw new InvalidOperationException(SR.InvalidKey)
             };
 
@@ -98,11 +100,9 @@ namespace FitsCs
             {
                 builder[i] = header[3 + i] switch
                 {
-                    IFitsValue<int> naxisKey 
-                    when
-                        naxisKey.Name == $@"NAXIS{i + 1}" 
-                        && naxisKey.RawValue >= 0
-                    => naxisKey.RawValue,
+                    IFitsValue<int> {Name: var naxisName, RawValue: var naxisVal and >= 0}
+                        when naxisName == $@"NAXIS{i + 1}"
+                        => naxisVal,
                     _ => throw new InvalidOperationException(SR.InvalidKey)
                 };
             }
@@ -113,18 +113,20 @@ namespace FitsCs
 
             foreach (var key in header.Skip(3 + nAxis))
             {
-                switch (key.Name)
+                switch (key)
                 {
-                    case @"PCOUNT" when key is IFitsValue<int> pCountKey:
-                        ParamCount = pCountKey.RawValue;
+                    case IFitsValue<int> {Name: @"PCOUNT", RawValue: var pCount}:
+                        ParamCount = pCount;
                         break;
-                    case @"GCOUNT" when key is IFitsValue<int> gCountKey:
-                        GroupCount = gCountKey.RawValue;
+                    case IFitsValue<int>{Name:@"GCOUNT", RawValue: var gCount}:
+                        GroupCount = gCount;
                         break;
                 }
-
+                
                 if (ParamCount != -1 && GroupCount != -1)
+                {
                     break;
+                }
             }
 
             ParamCount = ParamCount == -1 ? 0 : ParamCount;
@@ -142,11 +144,19 @@ namespace FitsCs
 
             // A signature of oldish random group
             if (Dimensions.Length > 1 && Dimensions[0] == 0)
+            {
                 for (var i = 1; i < Dimensions.Length; i++)
+                {
                     prod *= Dimensions[i];
+                }
+            }
             else
+            {
                 foreach (var item in Dimensions)
+                {
                     prod *= item;
+                }
+            }
 
             return (prod + ParamCount) * GroupCount;
         }

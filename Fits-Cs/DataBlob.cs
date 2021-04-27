@@ -55,8 +55,10 @@ namespace FitsCs
             if (IsInitialized || span.Length > SizeInBytes)
                 return false;
 
-            if(_data is null)
+            if (_data is null)
+            {
                 _data = new byte[SizeInBytes];
+            }
 
             span.CopyTo(_data);
             IsInitialized = true;
@@ -67,10 +69,6 @@ namespace FitsCs
         public bool TryInitialize(ReadOnlyMemory<byte> memory)
             => TryInitialize(memory.Span);
         
-        public bool TryInitialize(
-            byte[] data)
-            => TryInitialize(data.AsSpan());
-
         public void Reset()
         {
             _data?.AsSpan().Fill(0);
@@ -80,11 +78,13 @@ namespace FitsCs
         public BlobType GetContentType()
         {
             if (!IsInitialized)
+            {
                 return BlobType.Empty;
+            }
             // Check if blob starts with key name
             var step = FitsKey.EntrySizeInBytes;
             var size = FitsKey.NameSize * FitsKey.CharSizeInBytes;
-            var span = Data;
+            ReadOnlySpan<byte> span = Data;
 
             // If not a key, assume it is data
             if (!FitsKey.IsValidKeyName(span.Slice(0, size), true)) return BlobType.Data;
@@ -101,13 +101,15 @@ namespace FitsCs
         public ImmutableArray<IFitsValue> AsKeyCollection()
         {
             var builder = ImmutableArray.CreateBuilder<IFitsValue>(SizeInBytes / FitsKey.EntrySizeInBytes);
-            var data = Data;
-            for (var i = 0; i < 36; i++)
+            ReadOnlySpan<byte> data = Data;
+            for (var i = 0; i < KeysPerBlob; i++)
             {
                 var newKey = FitsKey.ParseRawData(data.Slice(i * FitsKey.EntrySizeInBytes));
-                
-                // No support for [MaybeNull] implemented, thus `!`
-                builder.Add(newKey!);
+
+                if (newKey is { })
+                {
+                    builder.Add(newKey);
+                }
             }
 
             return builder.ToImmutable();
@@ -139,9 +141,11 @@ namespace FitsCs
 
                     for (var j = 0; i * KeysPerBlob + j < keys.Count && j < KeysPerBlob; j++)
                     {
-                        var target = blob._data.AsSpan(j * FitsKey.EntrySizeInBytes);
+                        Span<byte> target = blob._data.AsSpan(j * FitsKey.EntrySizeInBytes);
                         if (!keys[i * KeysPerBlob + j].TryGetBytes(target))
+                        {
                             throw new InvalidOperationException(SR.InvalidOperation);
+                        }
                     }
 
                     yield return blob;

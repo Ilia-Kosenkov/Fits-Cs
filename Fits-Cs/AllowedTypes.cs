@@ -36,22 +36,16 @@ namespace FitsCs
             }.ToImmutableArray();
 
 
-        // This is nicely optimized by the jit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool CanBeKeyType<T>()
-            => default(T)! switch
+            => default(T) switch
             {
-                bool { } => true,
-                int { } => true,
-                long { } => true,
-                float { } => true,
-                double { } => true,
-                Complex { } => true,
+                bool or int or long or float or double or Complex => true,
                 null when typeof(T) == typeof(string) => true,
                 _ => false
             };
 
-        public static bool CanBeKeyType(Type type)
+        public static bool CanBeKeyType(Type? type)
         {
             if (type is null)
                 return false;
@@ -87,18 +81,13 @@ namespace FitsCs
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool CanBeDataType<T>()
-            => default(T)! switch
+            => default(T) switch
             {
-                byte { } => true,
-                short { } => true,
-                int { } => true,
-                long { } => true,
-                float { } => true,
-                double { } => true,
+                byte or short or int or long or float or double => true,
                 _ => false
             };
 
-        public static bool CanBeDataType(Type type)
+        public static bool CanBeDataType(Type? type)
         {
             if (type is null)
                 return false;

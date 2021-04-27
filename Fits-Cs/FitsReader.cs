@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 
 namespace FitsCs
 {
-    public class FitsReader : BufferedStreamManager
+    public sealed class FitsReader : BufferedStreamManager
     {
 
 
@@ -53,7 +53,7 @@ namespace FitsCs
         {
         }
 
-        protected virtual void ReturnToBuffer(ReadOnlySpan<byte> data)
+        private void ReturnToBuffer(ReadOnlySpan<byte> data)
         {
             if(Buffer is null)
                 throw new NullReferenceException(SR.UnexpectedNullRef);
@@ -61,10 +61,10 @@ namespace FitsCs
             if (!data.TryCopyTo(Span.Slice(NBytesAvailable)))
                 throw new InvalidOperationException(SR.InvalidOperation);
 
-            NBytesAvailable += data.Length;
+            Interlocked.Add(ref NBytesAvailable, data.Length);
         }
 
-        protected virtual async ValueTask<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
+        private async ValueTask<int> ReadIntoBuffer(int start, int length, CancellationToken token, bool @lock)
         {
             if (@lock)
                 // Synchronizing read access
@@ -79,18 +79,22 @@ namespace FitsCs
             finally
             {
                 if (@lock)
+                {
                     Semaphore.Release();
+                }
             }
         }
 
-        protected virtual async ValueTask<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
+        private async ValueTask<bool> ReadInnerAsync(DataBlob blob, CancellationToken token, bool @lock)
         {
             if (blob is null)
                 throw new ArgumentException(SR.NullArgument, nameof(blob));
-            
-            if(@lock)
-            // Synchronizing read access
+
+            if (@lock)
+                // Synchronizing read access
+            {
                 await Semaphore.WaitAsync(token);
+            }
 
             try
             {
@@ -100,37 +104,51 @@ namespace FitsCs
                     await ReadIntoBuffer(NBytesAvailable, Buffer.Length - NBytesAvailable, token, false);
 
                     if (NBytesAvailable < DataBlob.SizeInBytes)
+                    {
                         return false;
+                    }
                 }
 
                 if (blob.IsInitialized)
+                {
                     blob.Reset();
+                }
 
                 if (!blob.TryInitialize(Span.Slice(0, DataBlob.SizeInBytes)))
+                {
                     return false;
+                }
                 CompactBuffer(DataBlob.SizeInBytes);
 
                 return true;
             }
             finally
             {
-                if(@lock)
+                if (@lock)
+                {
                     Semaphore.Release();
+                }
             }
         }
 
-        protected virtual async ValueTask<int> FillDataAsync(
+        private async ValueTask<int> FillDataAsync(
             Block block, CancellationToken token, bool @lock)
         {
             if (block is null)
+            {
                 throw new ArgumentNullException(nameof(block), SR.NullArgument);
+            }
 
             if (block.RawDataInternal.IsEmpty)
+            {
                 return default;
+            }
 
             if (@lock)
                 // Synchronizing read access
+            {
                 await Semaphore.WaitAsync(token);
+            }
             try
             {
                 var len = block.RawDataInternal.Length;
@@ -145,7 +163,9 @@ namespace FitsCs
                         return len;
                     }
                     else
+                    {
                         return -1;
+                    }
                 }
                 else
                 {
@@ -163,17 +183,23 @@ namespace FitsCs
                     for (var i = 0; i < nReads - 1; i++)
                     {
                         if (await ReadIntoBuffer(0, Buffer.Length, token, false) != Buffer.Length)
+                        {
                             return -1;
+                        }
 
                         if (!Span.TryCopyTo(block.RawDataInternal.Slice(count)))
+                        {
                             return -1;
+                        }
                         count += Buffer.Length;
                         CompactBuffer();
                     }
 
                     if (await ReadIntoBuffer(0, Buffer.Length, token, false) < (alignedLen - count)
                         || !Span.Slice(0, len - count).TryCopyTo(block.RawDataInternal.Slice(count)))
+                    {
                         return -1;
+                    }
                     
                     CompactBuffer(alignedLen - count);
                     count += len - count;
@@ -184,7 +210,9 @@ namespace FitsCs
             finally
             {
                 if (@lock)
+                {
                     Semaphore.Release();
+                }
             }
         }
 
@@ -214,7 +242,7 @@ namespace FitsCs
                 while (@continue)
                 {
                     if (!await ReadInnerAsync(blob, token, false))
-                        return null;//throw new InvalidOperationException(SR.InvalidOperation);
+                        return null; //throw new InvalidOperationException(SR.InvalidOperation);
 
                     if (blob.GetContentType() == BlobType.FitsHeader &&
                         blob.AsKeyCollection() is var tempKeyCollection)
@@ -236,7 +264,9 @@ namespace FitsCs
                 var nBytesFilled = await FillDataAsync(block, token, false);
 
                 if (nBytesFilled != block.DataSizeInBytes())
-                    return null;//throw new IOException(SR.IOReadFailure);
+                {
+                    return null; //throw new IOException(SR.IOReadFailure);
+                }
 
                 block.FlipEndianess();
 
@@ -251,8 +281,10 @@ namespace FitsCs
         public async IAsyncEnumerable<Block> EnumerateBlocksAsync([EnumeratorCancellation] CancellationToken token = default)
         {
             Block? block;
-            while ((block = await ReadBlockAsync(token)) is {})
+            while ((block = await ReadBlockAsync(token)) is not null)
+            {
                 yield return block;
+            }
         }
     }
 }
