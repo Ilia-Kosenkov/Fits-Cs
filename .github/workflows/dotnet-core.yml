@@ -60,7 +60,7 @@ jobs:
         dotnet-version: ${{ matrix.preview_version }}
             
     - name: Download test data
-      run:
+      run: |
         $files = @(
           "DDTSUVDATA.fits", 
           "EUVEngc4151imgx.fits", 
