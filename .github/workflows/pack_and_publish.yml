@@ -22,12 +22,6 @@ jobs:
       with:
         dotnet-version: 5.0.x
 
-    - name: Setup .NET preview
-      if: matrix.preview_version != ''
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.100-preview.3.21207.34
-
     - name: Download test data
       run: |
         $files = @(

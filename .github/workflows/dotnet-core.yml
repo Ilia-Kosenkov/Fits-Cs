@@ -42,6 +42,7 @@ jobs:
         shell: pwsh
     env: 
       GITHUB_NUGET_RO: ${{ secrets.GITHUB_TOKEN }}
+      DOTENT_EXTRA_TARGET: "net6.0"
 
     runs-on: ${{ matrix.os }}
     
